@@ -206,6 +206,12 @@ tempCodeRunnerFile.py
 # Ruff stuff:
 .ruff_cache/
 
+# Generated animation runs
+outputs/*
+!outputs/.gitkeep
+outputs_smoke/
+outputs_*/
+
 # PyPI configuration file
 .pypirc
 
