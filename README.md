@@ -134,6 +134,10 @@ uv run python scripts/pdca_controlnet_assets.py \
 
 Each run also writes `evaluation_report.json` with local heuristics for foreground count, frame-to-frame center/scale stability, color consistency, and motion variation. The summary is embedded in `manifest.json`.
 Current 120-frame ControlNet PDCA findings are documented in `docs/controlnet_pdca_findings.md`.
+Current Wan I2V walk findings are documented in `docs/wan_i2v_walk_findings.md`.
+Current Wan-to-Image2Image refinement findings are documented in `docs/img2img_refine_pdca_findings.md`.
+Current artifact repair and quality-gate findings are documented in `docs/artifact_repair_pdca_findings.md`.
+The local cleanup and next-task planning report is documented in `docs/local_cleanup_and_next_tasks_report.md`.
 
 Practical animation-mechanics prototype:
 
@@ -303,7 +307,7 @@ Backends implement `AnimationBackend.generate_frames(...)`. The MVP ships with `
 - `FutureVideoBackend`
 - `RiggedSpriteBackend`
 
-For practical game-animation validation, prefer `RiggedSpriteBackend` with `--rig-motion-style sfc --rig-source-frames 120`: generate dense motion first, hold most parts still, then sample a small set of game frames with clear anticipation, impact, and recovery.
+Rigged and cutout backends are historical diagnostics only. The main generation path remains reference interpretation plus reusable action controls, currently `novaOrangeXL`, OpenPose templates, Wan video generation, and explicit local quality gates.
 
 ## Roadmap
 

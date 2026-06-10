@@ -102,6 +102,35 @@ Reject or retake when any of these are visible in contact sheets, side-by-side s
 
 Do not adopt a candidate just because the heuristic score is high. Treat `quality_gate.status == needs_retake_or_manual_review` as blocking until the side-by-side sheet and full contact sheet have been reviewed.
 
+## Artifact Repair Gate
+
+After Wan/Image2Image produces plausible motion, run explicit artifact repair before adoption:
+
+```bash
+uv run python scripts/repair_frame_artifacts.py \
+  --frames-dir outputs_wan_img2img_refine/run_cleanup72_d035_20260611_010329/frames \
+  --output-root outputs_artifact_repair_pdca \
+  --run-label run_artifact_repair \
+  --weapon none \
+  --width 1024 \
+  --height 1024
+```
+
+Use `--mask-only` first when tuning thresholds. Review `comparison_sheet.png`, `overlay_contact_sheet.png`, and `artifact_repair_report.json`.
+
+Repair is allowed only for small masked artifacts such as pale ghost specks, background streaks, or detached tiny fragments. Do not use inpaint to hide structural failures.
+
+Treat these issue codes as retake/retrim blockers:
+
+- `strong_duplicate_silhouette_risk`
+- `double_foot_or_duplicate_leg_risk`
+- `weapon_missing`
+- `weapon_fragmented`
+- `weapon_not_elongated`
+- `repair_mask_too_large`
+
+For sword, axe, and bow outputs, pass `--weapon sword`, `--weapon axe`, or `--weapon bow`. If the weapon gate fails, return to weapon-specific generation control instead of polishing the broken frame.
+
 ## Retake Policy
 
 - Pose/action mismatch: revise keypoint template first.
@@ -111,6 +140,8 @@ Do not adopt a candidate just because the heuristic score is high. Treat `qualit
 - Weapon breakage: add weapon-specific prompt/control guidance.
 - Frame jitter: keep `seed_step=0`, reduce stochastic variation, and compare side-by-side sheets.
 - Loop issue: revise first and last pose templates.
+- Small ghost artifacts: use explicit masked inpaint after the motion already reads correctly.
+- Duplicate legs, large afterimages, or broken weapons: retrim, retake, or add action-specific control.
 
 Record every rejected candidate with failure reasons in the PDCA log.
 

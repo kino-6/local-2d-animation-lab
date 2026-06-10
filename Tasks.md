@@ -203,6 +203,24 @@
 - [x] Keep generated outputs ignored by git.
 - [x] Commit source code, templates, docs, and tests only.
 
+## Artifact Repair And Quality Gate
+
+- [x] Add explicit artifact repair workflow for post-video frames.
+- [x] Generate local repair masks for small ghost trails and detached artifacts.
+- [x] Keep protected character pixels out of the repair mask.
+- [x] Use ComfyUI `VAEEncodeForInpaint` for masked local cleanup.
+- [x] Composite repaired pixels only inside the explicit mask.
+- [x] Block inpaint when the repair mask is too broad.
+- [x] Detect strong duplicate silhouette risk.
+- [x] Detect double-foot or duplicate-leg risk.
+- [x] Detect fragmented weapon risk for sword-style outputs.
+- [x] Treat duplicate legs, strong afterimages, and broken weapons as retake/retrim failures.
+- [x] Verify masked inpaint on the current walk/run refinement output.
+- [x] Verify weapon gate on the current sword refinement output.
+- [x] Probe Wan `continue_motion_max_frames` as a generation-side afterimage control.
+- [x] Document why masked inpaint helps only small artifacts.
+- [x] Document why large duplicate silhouettes and weapon structure failures must return to generation control.
+
 ## Done Criteria
 
 - [x] `attack_sword` has a complete ControlNet-based PDCA run.
