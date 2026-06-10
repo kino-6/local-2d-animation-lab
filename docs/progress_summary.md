@@ -51,6 +51,8 @@ Current local pipeline:
 - `godot/project.godot`
 - `godot/tests/e2e_runner.gd`
 - `docs/local_skills/reference_walk_cycle_pdca.md`
+- `docs/local_skills/natural-sprite-asset-pdca/SKILL.md`
+- `docs/local_workflows/natural_sprite_asset_improvement_plan.md`
 
 ## Best Known Walk Setup
 
@@ -137,11 +139,16 @@ Stable:
 - Explicit hit variants: light stagger, heavy damage, knockback
 - Local transparent action effect layers for attack/hit readability
 - Godot headless E2E validation for manifest loading and animation playback
+- Semantic action-readability metadata in local evaluation reports
+- Frame events plus rough hitbox/hurtbox metadata in manifests
+- Batch Godot validation for best candidates in a PDCA summary
 
 Needs more work:
 
 - Weapon continuity still drifts across frames, especially sword and axe.
 - Hit reaction body poses still need stronger action-specific pose templates.
-- Effect layers are currently heuristic overlays; next step is anchoring them to pose keypoints or generated masks.
+- Effect layers now use frame metadata anchors, but should eventually anchor to detected/generated pose keypoints or masks.
 - Reference identity would benefit from local IP-Adapter, a character LoRA, or another reference-guided workflow.
-- Evaluation still needs a semantic action recognizer, not only heuristic image statistics.
+- Evaluation now has semantic metadata checks, but still needs a true local vision semantic recognizer.
+
+See `docs/local_workflows/natural_sprite_asset_improvement_plan.md` for the staged improvement plan.

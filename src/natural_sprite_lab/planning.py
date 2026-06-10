@@ -140,7 +140,7 @@ def _fallback_plan(image_report: dict[str, Any], prompt: str, spec: AnimationSpe
         "view_note": image_report["estimated_view"],
         "generation_intent": "Generate new full-body frames that match this reference character design.",
     }
-    frame_plan = _frame_plan_for_action(spec.action, prompt)
+    frame_plan = _annotate_frame_plan(spec.action, prompt, _frame_plan_for_action(spec.action, prompt))
     return {
         "character_profile": character_profile,
         "identity_features": [
@@ -163,6 +163,7 @@ def _fallback_plan(image_report: dict[str, Any], prompt: str, spec: AnimationSpe
             "director": "fallback_walk_cycle_director",
             "ollama_used": False,
             "input_prompt": prompt,
+            "action_variant": _action_variant(spec.action, prompt),
             "image_report": image_report,
             "prototype_limitation": (
                 "This director can interpret the reference and create prompts, but identity consistency "
@@ -281,6 +282,82 @@ def _frame_plan_for_action(action: Action, prompt: str = "") -> list[dict[str, A
         _frame("passing_left", "left", 2, 4, -8, "right foot passes under the hip"),
         _frame("up_left", "left", -7, 18, -18, "body rises as the right foot swings forward"),
     ]
+
+
+def _annotate_frame_plan(action: Action, prompt: str, frame_plan: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    variant = _action_variant(action, prompt)
+    return [_annotate_frame(action, variant, frame) for frame in frame_plan]
+
+
+def _action_variant(action: Action, prompt: str) -> str:
+    if action == Action.ATTACK:
+        return detect_attack_variant(prompt)
+    if action == Action.HIT:
+        return detect_hit_variant(prompt)
+    return action.value
+
+
+def _annotate_frame(action: Action, variant: str, frame: dict[str, Any]) -> dict[str, Any]:
+    label = str(frame["label"])
+    enriched = dict(frame)
+    enriched["action_variant"] = variant
+    enriched["semantic_tags"] = _semantic_tags(action, variant, label)
+    enriched["effect_anchor"] = _effect_anchor(action, variant, label)
+    enriched["game_events"] = _game_events(action, variant, label)
+    return enriched
+
+
+def _semantic_tags(action: Action, variant: str, label: str) -> list[str]:
+    if action == Action.ATTACK:
+        tags = ["attack", variant]
+        if variant == "sword":
+            tags.append("slash_arc")
+        elif variant == "axe":
+            tags.extend(["heavy_weapon", "impact_arc"])
+        elif variant == "bow":
+            tags.extend(["projectile", "aim_release"])
+        if any(token in label for token in ("impact", "release", "follow")):
+            tags.append("active_frame")
+        return tags
+    if action == Action.HIT:
+        tags = ["hit_reaction", variant]
+        if variant in {"heavy", "knockback"}:
+            tags.append("strong_recoil")
+        if any(token in label for token in ("impact", "recoil", "airborne", "peak", "fall", "land")):
+            tags.append("reaction_frame")
+        return tags
+    return [action.value]
+
+
+def _effect_anchor(action: Action, variant: str, label: str) -> dict[str, Any]:
+    if action == Action.ATTACK:
+        if variant == "sword":
+            return {"kind": "slash_arc", "center": [0.58, 0.43], "radius": [0.24, 0.26], "active": _has(label, "start", "impact", "follow")}
+        if variant == "axe":
+            return {"kind": "axe_impact", "center": [0.61, 0.49], "impact": [0.54, 0.74], "active": _has(label, "overhead", "impact", "follow")}
+        if variant == "bow":
+            return {"kind": "projectile_line", "start": [0.48, 0.34], "end": [0.82, 0.32], "active": _has(label, "aim", "release", "follow")}
+    if action == Action.HIT:
+        active = _has(label, "impact", "recoil", "airborne", "peak", "fall", "land", "collapse")
+        if variant == "knockback":
+            return {"kind": "hit_burst", "center": [0.32, 0.48], "direction": [-1, 0], "intensity": 1.0, "active": active}
+        if variant == "heavy":
+            return {"kind": "hit_burst", "center": [0.36, 0.48], "direction": [-1, 0], "intensity": 0.82, "active": active}
+        return {"kind": "hit_burst", "center": [0.40, 0.48], "direction": [-1, 0], "intensity": 0.55, "active": _has(label, "impact", "recoil", "peak")}
+    return {"kind": "none", "active": False}
+
+
+def _game_events(action: Action, variant: str, label: str) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    if action == Action.ATTACK and _has(label, "impact", "release"):
+        events.append({"type": "attack_active", "variant": variant})
+    if action == Action.HIT and _has(label, "impact"):
+        events.append({"type": "damage_received", "variant": variant})
+    return events
+
+
+def _has(text: str, *tokens: str) -> bool:
+    return any(token in text for token in tokens)
 
 
 def _merge_plan(fallback: dict[str, Any], llm_plan: dict[str, Any] | None) -> dict[str, Any]:

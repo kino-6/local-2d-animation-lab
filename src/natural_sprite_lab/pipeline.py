@@ -66,7 +66,7 @@ def run_pipeline(
                 run_dir / "contact_sheet_with_effects.png",
             )
 
-    evaluation = evaluate_animation(generated.frame_paths)
+    evaluation = evaluate_animation(generated.frame_paths, spec=spec, effect_frame_paths=effect_frame_paths)
     evaluation_path = write_json(run_dir / "evaluation_report.json", evaluation)
 
     outputs = PipelineOutputs(
@@ -125,11 +125,79 @@ def _manifest(
             "score": evaluation.get("score"),
             "issues": evaluation.get("issues", []),
             "summary": evaluation.get("summary", {}),
+            "semantic": evaluation.get("semantic", {}),
         },
-        "game_engine_metadata": {
-            "frame_width": None,
-            "frame_height": None,
-            "pivot": {"x": 0.5, "y": 1.0},
-            "pixels_per_unit": 100,
-        },
+        "game_engine_metadata": _game_engine_metadata(spec, generated, evaluation),
     }
+
+
+def _game_engine_metadata(spec: Any, generated: Any, evaluation: dict[str, Any]) -> dict[str, Any]:
+    frame_width = None
+    frame_height = None
+    frames = evaluation.get("frames", [])
+    if generated.frame_paths:
+        from PIL import Image
+
+        with Image.open(generated.frame_paths[0]) as image:
+            frame_width, frame_height = image.size
+    frame_duration = round(1 / 8, 4)
+    return {
+        "frame_width": frame_width,
+        "frame_height": frame_height,
+        "frame_duration_seconds": frame_duration,
+        "pivot": {"x": 0.5, "y": 1.0},
+        "pixels_per_unit": 100,
+        "loop": bool(getattr(spec, "loop", True)),
+        "frame_events": _frame_events(spec),
+        "hurtboxes": _hurtboxes(frames),
+        "hitboxes": _hitboxes(spec, frames),
+    }
+
+
+def _frame_events(spec: Any) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for index, frame in enumerate(getattr(spec, "frame_plan", []) or []):
+        for event in frame.get("game_events", []):
+            enriched = dict(event)
+            enriched["frame"] = index
+            events.append(enriched)
+    return events
+
+
+def _hurtboxes(frames: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    boxes = []
+    for index, frame in enumerate(frames):
+        width = float(frame.get("bbox_width_ratio", 0.0))
+        height = float(frame.get("bbox_height_ratio", 0.0))
+        center_x = float(frame.get("center_x_ratio", 0.5))
+        boxes.append(
+            {
+                "frame": index,
+                "x": round(center_x - width / 2, 4),
+                "y": round(1.0 - height, 4),
+                "width": round(width, 4),
+                "height": round(height, 4),
+            }
+        )
+    return boxes
+
+
+def _hitboxes(spec: Any, frames: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    boxes = []
+    for index, frame in enumerate(getattr(spec, "frame_plan", []) or []):
+        if not any(event.get("type") == "attack_active" for event in frame.get("game_events", [])):
+            continue
+        report = frames[index] if index < len(frames) else {}
+        center_x = float(report.get("center_x_ratio", 0.5))
+        variant = frame.get("action_variant", "attack")
+        boxes.append(
+            {
+                "frame": index,
+                "variant": variant,
+                "x": round(min(0.92, center_x + 0.08), 4),
+                "y": 0.28,
+                "width": 0.22 if variant != "axe" else 0.28,
+                "height": 0.32 if variant != "bow" else 0.12,
+            }
+        )
+    return boxes

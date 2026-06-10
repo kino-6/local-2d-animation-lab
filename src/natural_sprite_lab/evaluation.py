@@ -7,7 +7,11 @@ from typing import Any
 from PIL import Image, ImageStat
 
 
-def evaluate_animation(frame_paths: list[Path]) -> dict[str, Any]:
+def evaluate_animation(
+    frame_paths: list[Path],
+    spec: Any | None = None,
+    effect_frame_paths: list[Path] | None = None,
+) -> dict[str, Any]:
     """Local heuristic evaluation for generated animation runs."""
     frame_reports = [_evaluate_frame(path) for path in frame_paths]
     if not frame_reports:
@@ -47,6 +51,10 @@ def evaluate_animation(frame_paths: list[Path]) -> dict[str, Any]:
     score -= min(0.25, mean(color_distances or [0.0]) / 260)
     score -= 0.08 * sum(max(0, report["component_count"] - 1) for report in frame_reports) / len(frame_reports)
     score += min(0.12, max(pose_deltas or [0.0]))
+    semantic = _evaluate_semantics(frame_reports, spec, effect_frame_paths or [])
+    if semantic:
+        score -= max(0.0, 1.0 - float(semantic["score"])) * 0.20
+        issues.extend(str(issue) for issue in semantic["issues"])
     score = max(0.0, min(1.0, score))
 
     return {
@@ -59,6 +67,7 @@ def evaluate_animation(frame_paths: list[Path]) -> dict[str, Any]:
             "mean_color_distance": round(mean(color_distances or [0.0]), 3),
             "max_pose_delta": round(max(pose_deltas or [0.0]), 3),
         },
+        "semantic": semantic,
         "frames": frame_reports,
     }
 
@@ -148,3 +157,75 @@ def _flood(mask: Image.Image, start_x: int, start_y: int, seen: set[tuple[int, i
 
 def _color_distance(left: list[int], right: list[int]) -> float:
     return sum(abs(left[index] - right[index]) for index in range(3)) / 3
+
+
+def _evaluate_semantics(
+    frame_reports: list[dict[str, Any]],
+    spec: Any | None,
+    effect_frame_paths: list[Path],
+) -> dict[str, Any]:
+    if spec is None:
+        return {}
+    action = getattr(getattr(spec, "action", ""), "value", getattr(spec, "action", ""))
+    frame_plan = list(getattr(spec, "frame_plan", []) or [])
+    if action not in {"attack", "hit"} or not frame_plan:
+        return {}
+
+    active_frames = [
+        index
+        for index, frame in enumerate(frame_plan)
+        if "active_frame" in frame.get("semantic_tags", []) or "reaction_frame" in frame.get("semantic_tags", [])
+    ]
+    effect_non_empty = _effect_non_empty(effect_frame_paths)
+    issues: list[str] = []
+    if not active_frames:
+        issues.append("semantic metadata has no active action frames")
+    if effect_frame_paths and not any(effect_non_empty):
+        issues.append("semantic action cue layers are empty")
+    if effect_frame_paths and active_frames:
+        missing = [index for index in active_frames if index < len(effect_non_empty) and not effect_non_empty[index]]
+        if missing:
+            issues.append(f"semantic action cue missing on active frames: {missing}")
+
+    pose_delta = _max_report_delta(frame_reports)
+    if action == "hit" and pose_delta < 0.045:
+        issues.append("hit semantic motion is too weak")
+    if action == "attack" and pose_delta < 0.035:
+        issues.append("attack semantic motion is too weak")
+
+    score = 1.0
+    score -= 0.22 * len(issues)
+    if effect_frame_paths and active_frames:
+        active_with_effect = sum(1 for index in active_frames if index < len(effect_non_empty) and effect_non_empty[index])
+        score += min(0.1, active_with_effect / max(1, len(active_frames)) * 0.1)
+    score = max(0.0, min(1.0, score))
+    return {
+        "score": round(score, 3),
+        "issues": issues,
+        "action": action,
+        "variant": frame_plan[0].get("action_variant", action),
+        "active_frames": active_frames,
+        "effect_non_empty": effect_non_empty,
+    }
+
+
+def _effect_non_empty(effect_frame_paths: list[Path]) -> list[bool]:
+    values: list[bool] = []
+    for path in effect_frame_paths:
+        if not path.exists():
+            values.append(False)
+            continue
+        image = Image.open(path).convert("RGBA")
+        alpha = image.getchannel("A")
+        values.append(bool(alpha.getbbox()))
+    return values
+
+
+def _max_report_delta(frame_reports: list[dict[str, Any]]) -> float:
+    if len(frame_reports) < 2:
+        return 0.0
+    return max(
+        abs(frame_reports[index]["center_x_ratio"] - frame_reports[index - 1]["center_x_ratio"])
+        + abs(frame_reports[index]["bbox_height_ratio"] - frame_reports[index - 1]["bbox_height_ratio"])
+        for index in range(1, len(frame_reports))
+    )

@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from PIL import Image
 
@@ -97,6 +98,17 @@ def test_attack_pipeline_writes_effect_layers(tmp_path: Path) -> None:
     assert all(path.exists() for path in outputs.composited_frame_paths)
     assert outputs.effect_contact_sheet_path is not None and outputs.effect_contact_sheet_path.exists()
     assert outputs.composited_contact_sheet_path is not None and outputs.composited_contact_sheet_path.exists()
+    spec_text = outputs.spec_path.read_text(encoding="utf-8")
+    assert "effect_anchor" in spec_text
+    assert "semantic_tags" in spec_text
+    report_text = (outputs.run_dir / "evaluation_report.json").read_text(encoding="utf-8")
+    assert '"semantic"' in report_text
+    assert "active_frames" in report_text
+    manifest = json.loads(outputs.manifest_path.read_text(encoding="utf-8"))
+    assert manifest["game_engine_metadata"]["frame_width"] > 0
+    assert manifest["game_engine_metadata"]["frame_events"]
+    assert manifest["game_engine_metadata"]["hitboxes"]
+    assert manifest["evaluation"]["semantic"]["action"] == "attack"
 
 
 def test_evaluation_scores_consistent_frames(tmp_path: Path) -> None:

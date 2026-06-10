@@ -118,6 +118,7 @@ uv run python scripts/pdca_walk_cycle.py \
 ```
 
 The PDCA criteria are documented in `docs/local_skills/reference_walk_cycle_pdca.md`.
+The broader asset-generation workflow is documented in `docs/local_skills/natural-sprite-asset-pdca/SKILL.md`, with the improvement roadmap in `docs/local_workflows/natural_sprite_asset_improvement_plan.md`.
 
 Multi-asset PDCA sweep for the same reference character:
 
@@ -156,6 +157,13 @@ godot --headless --path godot --script res://tests/e2e_runner.gd -- \
 
 The Godot harness reads `manifest.json`, resolves generated PNG frames, builds an `AnimatedSprite2D`, starts playback, and prints a JSON validation result. The pytest suite also runs this path when `godot` is installed.
 
+Validate all best candidates from a PDCA summary:
+
+```bash
+uv run python scripts/godot_validate_summary.py \
+  --summary outputs_action_variants_effect_pdca/multi_asset_pdca_summary.json
+```
+
 Outputs are written under:
 
 ```text
@@ -173,6 +181,8 @@ Each run contains:
 - `preview.gif`
 - `animation_spec.json`
 - `manifest.json`
+
+`manifest.json` includes local evaluation summaries, semantic action-readability metadata, frame events, rough hitboxes/hurtboxes, frame timing, and Godot-readable frame paths.
 
 ## Project Layout
 
