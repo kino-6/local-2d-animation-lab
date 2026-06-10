@@ -1,0 +1,20 @@
+; Engine configuration file.
+; Keep this project tiny: it is an E2E harness for generated 2D animation assets.
+
+config_version=5
+
+[application]
+
+config/name="Natural Sprite Lab E2E"
+run/main_scene="res://scenes/animation_viewer.tscn"
+config/features=PackedStringArray("4.6")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

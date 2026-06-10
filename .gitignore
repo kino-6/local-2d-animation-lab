@@ -212,6 +212,10 @@ outputs/*
 outputs_smoke/
 outputs_*/
 
+# Godot local import/cache files
+godot/.godot/
+godot/*.import
+
 # PyPI configuration file
 .pypirc
 

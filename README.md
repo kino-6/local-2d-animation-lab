@@ -40,6 +40,7 @@ Current support:
 - Prototype ComfyUI backend that generates new frames from director prompt packs
 - Action-specific variants for sword, axe, bow, light hit, heavy hit, and knockback
 - Transparent action effect layers for attack and hit readability
+- Godot 4 E2E harness for loading generated manifests and validating playback
 - Sprite sheet, contact sheet, preview GIF, spec JSON, and manifest JSON
 - Retake-friendly run directories
 
@@ -146,6 +147,15 @@ Regenerate only those local effect layers for an existing output root:
 uv run python scripts/regenerate_action_effects.py outputs_action_variants_effect_pdca
 ```
 
+Godot E2E validation:
+
+```bash
+godot --headless --path godot --script res://tests/e2e_runner.gd -- \
+  --manifest ..\outputs_action_variants_effect_pdca\anima_00013\attack\attack_bow_balanced\manifest.json
+```
+
+The Godot harness reads `manifest.json`, resolves generated PNG frames, builds an `AnimatedSprite2D`, starts playback, and prints a JSON validation result. The pytest suite also runs this path when `godot` is installed.
+
 Outputs are written under:
 
 ```text
@@ -190,6 +200,20 @@ tests/
 assets/
   reference/
 outputs/
+```
+
+Godot E2E harness:
+
+```text
+godot/
+  project.godot
+  scenes/
+    animation_viewer.tscn
+  scripts/
+    asset_manifest.gd
+    animation_viewer.gd
+  tests/
+    e2e_runner.gd
 ```
 
 ## Backend Strategy

@@ -36,6 +36,7 @@ Current local pipeline:
    - `manifest.json`
    - `evaluation_report.json`
 8. Run local heuristic evaluation for consistency, foreground structure, and motion variation.
+9. Validate generated manifests in Godot as an E2E game-engine playback check.
 
 ## Key Files
 
@@ -46,6 +47,8 @@ Current local pipeline:
 - `scripts/pdca_walk_cycle.py`
 - `scripts/pdca_multi_asset.py`
 - `scripts/regenerate_action_effects.py`
+- `godot/project.godot`
+- `godot/tests/e2e_runner.gd`
 - `docs/local_skills/reference_walk_cycle_pdca.md`
 
 ## Best Known Walk Setup
@@ -109,6 +112,13 @@ Action-variant PDCA with NovaOrangeXL:
 
 PDCA finding: generic `attack` and `hit` are too underspecified. The workflow now treats weapon category and damage reaction as first-class variants. OpenPose improves pose, while separate transparent action cue layers make attack arcs, arrows, axe impact, and hit direction readable as game assets.
 
+Godot E2E validation:
+
+- platform: Godot `4.6.3`
+- command: `godot --headless --path godot --script res://tests/e2e_runner.gd -- --manifest ..\outputs_action_variants_effect_pdca\anima_00013\attack\attack_bow_balanced\manifest.json`
+- result: loaded `attack_bow_balanced` as `AnimatedSprite2D`, frame count `8`, frame size `768x768`, using composited effect frames
+- automated test: `tests/test_godot_e2e.py`
+
 These generated outputs are intentionally ignored by git because they are heavy and reproducible from local commands.
 
 ## Current Assessment
@@ -125,6 +135,7 @@ Stable:
 - Explicit attack variants: sword, axe, bow
 - Explicit hit variants: light stagger, heavy damage, knockback
 - Local transparent action effect layers for attack/hit readability
+- Godot headless E2E validation for manifest loading and animation playback
 
 Needs more work:
 
