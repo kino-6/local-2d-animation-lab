@@ -298,6 +298,46 @@ def _make_pose_image(spec: AnimationSpec, index: int, width: int, height: int) -
         left_leg *= 0.25
         right_leg *= 0.25
 
+    label = str(plan.get("label", ""))
+    if label.startswith("attack_bow"):
+        left_arm = -44
+        right_arm = -42
+        left_leg *= 0.45
+        right_leg *= 0.45
+    elif label.startswith("attack_axe"):
+        left_arm = 52 if "impact" not in label and "follow" not in label else 28
+        right_arm = 58 if "impact" not in label and "follow" not in label else 22
+        left_leg *= 0.7
+        right_leg *= 0.7
+    elif label.startswith("attack_sword"):
+        left_arm = front * 1.35 + 22
+        right_arm = front * 1.25 + 28
+    elif label.startswith("hit_knockback"):
+        neck = (neck[0] + 36, neck[1] - 10)
+        pelvis = (pelvis[0] + 20, pelvis[1] + 12)
+        if "airborne" in label or "peak" in label:
+            neck = (neck[0] + 16, neck[1] - 18)
+            pelvis = (pelvis[0] + 12, pelvis[1] - 10)
+        left_arm = -46
+        right_arm = -40
+        left_leg = -28
+        right_leg = -22
+    elif label.startswith("hit_heavy"):
+        neck = (neck[0] - 26, neck[1] + 4)
+        pelvis = (pelvis[0] - 10, pelvis[1] + 8)
+        left_arm = -34
+        right_arm = -30
+        left_leg = -18
+        right_leg = 14
+    elif label.startswith("hit_light"):
+        neck = (neck[0] - 12, neck[1])
+        left_arm = -20
+        right_arm = -18
+
+    shoulder_l = (neck[0] - int(width * 0.08), neck[1] + int(height * 0.035))
+    shoulder_r = (neck[0] + int(width * 0.08), neck[1] + int(height * 0.035))
+    hip_l = (pelvis[0] - int(width * 0.045), pelvis[1])
+    hip_r = (pelvis[0] + int(width * 0.045), pelvis[1])
     left_knee, left_foot = _leg_points(hip_l, left_leg, height)
     right_knee, right_foot = _leg_points(hip_r, right_leg, height)
     left_elbow, left_hand = _arm_points(shoulder_l, left_arm, height, side=-1)

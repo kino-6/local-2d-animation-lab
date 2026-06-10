@@ -91,6 +91,10 @@ class PipelineOutputs:
     sprite_sheet_path: Path | None = None
     gif_path: Path | None = None
     contact_sheet_path: Path | None = None
+    effect_frame_paths: list[Path] = field(default_factory=list)
+    effect_contact_sheet_path: Path | None = None
+    composited_frame_paths: list[Path] = field(default_factory=list)
+    composited_contact_sheet_path: Path | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -100,6 +104,12 @@ class PipelineOutputs:
             "sprite_sheet_path": str(self.sprite_sheet_path) if self.sprite_sheet_path else None,
             "gif_path": str(self.gif_path) if self.gif_path else None,
             "contact_sheet_path": str(self.contact_sheet_path) if self.contact_sheet_path else None,
+            "effect_frame_paths": [str(path) for path in self.effect_frame_paths],
+            "effect_contact_sheet_path": str(self.effect_contact_sheet_path) if self.effect_contact_sheet_path else None,
+            "composited_frame_paths": [str(path) for path in self.composited_frame_paths],
+            "composited_contact_sheet_path": (
+                str(self.composited_contact_sheet_path) if self.composited_contact_sheet_path else None
+            ),
             "spec_path": str(self.spec_path),
             "manifest_path": str(self.manifest_path),
         }

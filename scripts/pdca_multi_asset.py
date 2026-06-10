@@ -19,12 +19,28 @@ ASSETS = [
         "prompt": "Create an 8-frame calm idle breathing animation, facing right. Interpret the reference as a character design and generate new full-body frames of the same character standing naturally.",
     },
     {
-        "name": "attack",
-        "prompt": "Create an 8-frame quick slash attack animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character attacking.",
+        "name": "attack_sword",
+        "prompt": "Create an 8-frame quick sword slash attack animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character using a sword slash attack.",
     },
     {
-        "name": "hit",
-        "prompt": "Create an 8-frame hit damage reaction animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character recoiling from a hit.",
+        "name": "attack_axe",
+        "prompt": "Create an 8-frame heavy axe swing attack animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character holding a large axe and performing a heavy overhead chop.",
+    },
+    {
+        "name": "attack_bow",
+        "prompt": "Create an 8-frame bow attack animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character drawing a bow, aiming, and releasing an arrow.",
+    },
+    {
+        "name": "hit_light",
+        "prompt": "Create an 8-frame light hit reaction animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character making a small stagger from a weak hit.",
+    },
+    {
+        "name": "hit_heavy",
+        "prompt": "Create an 8-frame heavy damage reaction animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character taking big damage with a strong recoil.",
+    },
+    {
+        "name": "hit_knockback",
+        "prompt": "Create an 8-frame knockback damage reaction animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character being blown away backward by a powerful hit.",
     },
 ]
 

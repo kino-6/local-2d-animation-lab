@@ -38,6 +38,8 @@ Current support:
 - Dummy backend that creates 8 transparent PNG frames
 - Prototype cutout backend that preserves source pixels with coarse walk-cycle transforms
 - Prototype ComfyUI backend that generates new frames from director prompt packs
+- Action-specific variants for sword, axe, bow, light hit, heavy hit, and knockback
+- Transparent action effect layers for attack and hit readability
 - Sprite sheet, contact sheet, preview GIF, spec JSON, and manifest JSON
 - Retake-friendly run directories
 
@@ -126,6 +128,24 @@ uv run python scripts/pdca_multi_asset.py \
 
 This generates walk, idle, attack, and hit-reaction candidates with local evaluation reports. Walk and idle are currently the most stable; attack and hit are useful baseline outputs but need stronger action-specific control.
 
+Attack and hit are split into explicit semantic variants instead of being treated as generic poses:
+
+- attacks: `attack_sword`, `attack_axe`, `attack_bow`
+- hit reactions: `hit_light`, `hit_heavy`, `hit_knockback`
+
+For attack and hit runs, the pipeline also writes transparent action cue layers and composited previews:
+
+- `effects/*_effect.png`
+- `effect_contact_sheet.png`
+- `frames_with_effects/*_with_effect.png`
+- `contact_sheet_with_effects.png`
+
+Regenerate only those local effect layers for an existing output root:
+
+```bash
+uv run python scripts/regenerate_action_effects.py outputs_action_variants_effect_pdca
+```
+
 Outputs are written under:
 
 ```text
@@ -135,8 +155,11 @@ outputs/<character_id>/<action>/<run_id>/
 Each run contains:
 
 - `frames/*.png`
+- `effects/*.png` for attack/hit runs
+- `frames_with_effects/*.png` for attack/hit runs
 - `spritesheet.png`
 - `contact_sheet.png`
+- `contact_sheet_with_effects.png` for attack/hit runs
 - `preview.gif`
 - `animation_spec.json`
 - `manifest.json`
@@ -157,6 +180,7 @@ src/natural_sprite_lab/
     dummy_backend.py
   planning.py
   postprocess/
+    action_effects.py
     gif_preview.py
     spritesheet.py
   utils/

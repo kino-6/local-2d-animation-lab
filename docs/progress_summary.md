@@ -26,9 +26,12 @@ Current local pipeline:
 6. Optionally generate and upload OpenPose ControlNet pose maps.
 7. Save game-asset outputs:
    - `frames/*.png`
+   - `effects/*.png` for attack/hit action cues
+   - `frames_with_effects/*.png` for composited preview frames
    - `spritesheet.png`
    - `preview.gif`
    - `contact_sheet.png`
+   - `contact_sheet_with_effects.png` for attack/hit runs
    - `animation_spec.json`
    - `manifest.json`
    - `evaluation_report.json`
@@ -38,9 +41,11 @@ Current local pipeline:
 
 - `src/natural_sprite_lab/planning.py`
 - `src/natural_sprite_lab/backends/comfy_backend.py`
+- `src/natural_sprite_lab/postprocess/action_effects.py`
 - `src/natural_sprite_lab/evaluation.py`
 - `scripts/pdca_walk_cycle.py`
 - `scripts/pdca_multi_asset.py`
+- `scripts/regenerate_action_effects.py`
 - `docs/local_skills/reference_walk_cycle_pdca.md`
 
 ## Best Known Walk Setup
@@ -88,6 +93,22 @@ Representative local outputs:
 - Multi-asset attack: `outputs_multi_asset_pdca/anima_00013/attack/attack_strong_pose/contact_sheet.png`
 - Refined hit reaction: `outputs_multi_asset_pdca_refined/anima_00013/hit/20260610_002534_r01/contact_sheet.png`
 
+Action-variant PDCA with NovaOrangeXL:
+
+- command: `uv run python scripts/pdca_multi_asset.py --input assets/reference/Anima_00013_.png --output-root outputs_action_variants_effect_pdca`
+- checkpoint: `novaOrangeXL_v120.safetensors`
+- ControlNet: `SDXL\OpenPoseXL2.safetensors`
+- best walk: `outputs_action_variants_effect_pdca/anima_00013/walk/walk_strong_pose/contact_sheet.png`, score `0.881`
+- best idle: `outputs_action_variants_effect_pdca/anima_00013/idle/idle_balanced/contact_sheet.png`, score `0.944`
+- best sword attack: `outputs_action_variants_effect_pdca/anima_00013/attack/attack_sword_balanced/contact_sheet_with_effects.png`, score `0.901`
+- best axe attack: `outputs_action_variants_effect_pdca/anima_00013/attack/attack_axe_balanced/contact_sheet_with_effects.png`, score `0.924`
+- best bow attack: `outputs_action_variants_effect_pdca/anima_00013/attack/attack_bow_balanced/contact_sheet_with_effects.png`, score `0.969`
+- best light hit: `outputs_action_variants_effect_pdca/anima_00013/hit/hit_light_balanced/contact_sheet_with_effects.png`, score `0.929`
+- best heavy hit: `outputs_action_variants_effect_pdca/anima_00013/hit/hit_heavy_balanced/contact_sheet_with_effects.png`, score `0.946`
+- best knockback hit: `outputs_action_variants_effect_pdca/anima_00013/hit/hit_knockback_balanced/contact_sheet_with_effects.png`, score `0.924`
+
+PDCA finding: generic `attack` and `hit` are too underspecified. The workflow now treats weapon category and damage reaction as first-class variants. OpenPose improves pose, while separate transparent action cue layers make attack arcs, arrows, axe impact, and hit direction readable as game assets.
+
 These generated outputs are intentionally ignored by git because they are heavy and reproducible from local commands.
 
 ## Current Assessment
@@ -101,10 +122,14 @@ Stable:
 - Same-seed identity stabilization
 - Local evaluation report generation
 - PDCA sweeps across settings and checkpoints
+- Explicit attack variants: sword, axe, bow
+- Explicit hit variants: light stagger, heavy damage, knockback
+- Local transparent action effect layers for attack/hit readability
 
 Needs more work:
 
-- Attack action needs stronger action-specific control.
-- Hit reaction improved after prompt refinement but still needs better pose templates.
+- Weapon continuity still drifts across frames, especially sword and axe.
+- Hit reaction body poses still need stronger action-specific pose templates.
+- Effect layers are currently heuristic overlays; next step is anchoring them to pose keypoints or generated masks.
 - Reference identity would benefit from local IP-Adapter, a character LoRA, or another reference-guided workflow.
 - Evaluation still needs a semantic action recognizer, not only heuristic image statistics.

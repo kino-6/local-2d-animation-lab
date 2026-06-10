@@ -78,6 +78,27 @@ def test_director_builds_character_profile_and_prompt_pack(tmp_path: Path) -> No
     assert "prompt_pack" in spec_text
 
 
+def test_attack_pipeline_writes_effect_layers(tmp_path: Path) -> None:
+    source = tmp_path / "hero.png"
+    Image.new("RGBA", (96, 128), (210, 120, 80, 255)).save(source)
+
+    outputs = run_pipeline(
+        source_image=source,
+        prompt="Create an 8-frame quick sword slash attack animation facing right.",
+        backend=DummyBackend(),
+        output_root=tmp_path / "outputs",
+        run_id="attack_run",
+        director=WalkCycleDirector(use_ollama=False),
+    )
+
+    assert len(outputs.effect_frame_paths) == 8
+    assert all(path.exists() for path in outputs.effect_frame_paths)
+    assert len(outputs.composited_frame_paths) == 8
+    assert all(path.exists() for path in outputs.composited_frame_paths)
+    assert outputs.effect_contact_sheet_path is not None and outputs.effect_contact_sheet_path.exists()
+    assert outputs.composited_contact_sheet_path is not None and outputs.composited_contact_sheet_path.exists()
+
+
 def test_evaluation_scores_consistent_frames(tmp_path: Path) -> None:
     paths = []
     for index in range(3):

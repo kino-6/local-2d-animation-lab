@@ -138,7 +138,7 @@ def _fallback_plan(image_report: dict[str, Any], prompt: str, spec: AnimationSpe
         "view_note": image_report["estimated_view"],
         "generation_intent": "Generate new full-body frames that match this reference character design.",
     }
-    frame_plan = _frame_plan_for_action(spec.action)
+    frame_plan = _frame_plan_for_action(spec.action, prompt)
     return {
         "character_profile": character_profile,
         "identity_features": [
@@ -189,7 +189,9 @@ def _frame(
     }
 
 
-def _frame_plan_for_action(action: Action) -> list[dict[str, Any]]:
+def _frame_plan_for_action(action: Action, prompt: str = "") -> list[dict[str, Any]]:
+    attack_variant = _attack_variant(prompt)
+    hit_variant = _hit_variant(prompt)
     if action == Action.IDLE:
         return [
             _frame("idle_neutral", "both", 0, 0, 0, "relaxed standing pose, both feet planted"),
@@ -202,26 +204,70 @@ def _frame_plan_for_action(action: Action) -> list[dict[str, Any]]:
             _frame("idle_sway_right", "both", 1, 2, -2, "tiny weight shift to the right foot"),
         ]
     if action == Action.ATTACK:
+        if attack_variant == "bow":
+            return [
+                _frame("attack_bow_ready", "back", 0, -8, 12, "archer stance, bow held forward, arrow ready"),
+                _frame("attack_bow_draw", "back", -2, -12, 14, "draw bowstring, rear elbow pulled back strongly"),
+                _frame("attack_bow_aim", "both", -1, -6, 8, "aim forward, torso steady, bow arm extended"),
+                _frame("attack_bow_release", "front", 0, 4, -4, "release arrow, bow arm extended, string hand snaps forward"),
+                _frame("attack_bow_follow", "front", 2, 8, -6, "follow through after arrow release"),
+                _frame("attack_bow_recover", "both", 3, 2, -2, "lower bow slightly, regain balance"),
+                _frame("attack_bow_return", "both", 1, 0, 0, "return to archer ready stance"),
+                _frame("attack_bow_ready_loop", "back", 0, -8, 12, "archer ready stance for loop transition"),
+            ]
+        if attack_variant == "axe":
+            return [
+                _frame("attack_axe_ready", "back", 2, -18, 18, "heavy axe ready stance, wide footing"),
+                _frame("attack_axe_windup", "back", -5, -24, 20, "large overhead windup, axe raised behind head"),
+                _frame("attack_axe_lift", "back", -7, -20, 18, "lift heavy axe high, shoulders tense"),
+                _frame("attack_axe_overhead", "front", -2, 10, -12, "start overhead chop, weight shifts forward"),
+                _frame("attack_axe_impact", "front", 5, 28, -22, "heavy downward axe impact pose, strong squash"),
+                _frame("attack_axe_follow", "front", 7, 20, -16, "follow through low after heavy chop"),
+                _frame("attack_axe_recover", "both", 4, 6, -6, "recover slowly from axe swing"),
+                _frame("attack_axe_ready_loop", "back", 2, -16, 16, "wide ready stance for loop transition"),
+            ]
         return [
-            _frame("attack_ready", "back", 0, -12, 16, "combat ready stance, weight on back foot"),
-            _frame("attack_windup", "back", -3, -20, 18, "wind up for a quick slash, torso twists back"),
-            _frame("attack_start", "front", 1, 12, -10, "step forward and begin the slash"),
-            _frame("attack_impact", "front", -2, 24, -18, "fast forward slash pose, action line implied"),
-            _frame("attack_follow_through", "front", 2, 18, -14, "follow through after the slash"),
-            _frame("attack_recover", "front", 4, 6, -6, "recover from the attack, weapon arm lowers"),
-            _frame("attack_return", "both", 1, 0, 0, "return toward ready stance"),
-            _frame("attack_ready_loop", "back", 0, -10, 14, "ready stance for loop transition"),
+            _frame("attack_sword_ready", "back", 0, -12, 16, "sword combat ready stance, weight on back foot"),
+            _frame("attack_sword_windup", "back", -3, -20, 18, "wind up for a quick sword slash, torso twists back"),
+            _frame("attack_sword_start", "front", 1, 12, -10, "step forward and begin the sword slash"),
+            _frame("attack_sword_impact", "front", -2, 24, -18, "fast forward sword slash pose, action line implied"),
+            _frame("attack_sword_follow", "front", 2, 18, -14, "follow through after the sword slash"),
+            _frame("attack_sword_recover", "front", 4, 6, -6, "recover from the sword attack, weapon arm lowers"),
+            _frame("attack_sword_return", "both", 1, 0, 0, "return toward sword ready stance"),
+            _frame("attack_sword_ready_loop", "back", 0, -10, 14, "sword ready stance for loop transition"),
         ]
     if action == Action.HIT:
+        if hit_variant == "knockback":
+            return [
+                _frame("hit_knockback_neutral", "both", 0, 0, 0, "neutral stance before a strong knockback impact"),
+                _frame("hit_knockback_impact", "back", -6, -16, 18, "impact launches body backward, shocked expression"),
+                _frame("hit_knockback_airborne", "none", -18, -26, 26, "body lifted off the ground, limbs trailing backward"),
+                _frame("hit_knockback_peak", "none", -24, -30, 28, "peak airborne knockback, torso arched backward"),
+                _frame("hit_knockback_fall", "back", -10, -22, 22, "falling backward, preparing to land"),
+                _frame("hit_knockback_land", "back", 8, -18, 18, "hard landing after knockback, knees bent"),
+                _frame("hit_knockback_recover", "both", 6, -6, 6, "push back up from knockback"),
+                _frame("hit_knockback_settle", "both", 1, 0, 0, "settle back toward neutral"),
+            ]
+        if hit_variant == "heavy":
+            return [
+                _frame("hit_heavy_neutral", "both", 0, 0, 0, "neutral stance before heavy damage"),
+                _frame("hit_heavy_impact", "back", -5, -14, 16, "heavy damage impact, torso crumples backward"),
+                _frame("hit_heavy_recoil", "back", -10, -22, 22, "strong recoil, arms raised defensively"),
+                _frame("hit_heavy_peak", "back", -8, -26, 24, "peak heavy damage reaction, body curled"),
+                _frame("hit_heavy_collapse", "both", 8, -14, 14, "collapse downward from heavy damage, knees bend deeply"),
+                _frame("hit_heavy_recover", "both", 10, -6, 6, "slow recovery, still hurt"),
+                _frame("hit_heavy_stand", "both", 4, -2, 2, "standing back up from heavy damage"),
+                _frame("hit_heavy_neutral_loop", "both", 0, 0, 0, "neutral stance for loop transition"),
+            ]
         return [
-            _frame("hit_neutral", "both", 0, 0, 0, "neutral stance before impact"),
-            _frame("hit_impact", "back", -4, -10, 12, "body recoils from a hit, startled expression"),
-            _frame("hit_recoil", "back", -8, -18, 18, "strong backward recoil, arms raised defensively"),
-            _frame("hit_peak", "back", -6, -22, 20, "peak hit reaction, torso leaned back"),
-            _frame("hit_falloff", "both", 3, -8, 8, "recovering balance after impact"),
-            _frame("hit_recover", "both", 5, -2, 2, "knees bent, regaining stance"),
-            _frame("hit_settle", "both", 2, 0, 0, "settling back to neutral"),
-            _frame("hit_neutral_loop", "both", 0, 0, 0, "neutral stance for loop transition"),
+            _frame("hit_light_neutral", "both", 0, 0, 0, "neutral stance before a light hit"),
+            _frame("hit_light_impact", "back", -3, -8, 10, "small hit impact, startled expression"),
+            _frame("hit_light_recoil", "back", -5, -12, 12, "small backward stagger, arms raised slightly"),
+            _frame("hit_light_peak", "back", -4, -14, 14, "peak light stagger, torso leaned back"),
+            _frame("hit_light_falloff", "both", 2, -6, 6, "recovering balance after small hit"),
+            _frame("hit_light_recover", "both", 4, -2, 2, "knees bent slightly, regaining stance"),
+            _frame("hit_light_settle", "both", 2, 0, 0, "settling back to neutral after light stagger"),
+            _frame("hit_light_neutral_loop", "both", 0, 0, 0, "neutral stance for loop transition"),
         ]
     return [
         _frame("contact_right", "right", 0, 18, -18, "right foot planted forward; left foot back"),
@@ -233,6 +279,24 @@ def _frame_plan_for_action(action: Action) -> list[dict[str, Any]]:
         _frame("passing_left", "left", 2, 4, -8, "right foot passes under the hip"),
         _frame("up_left", "left", -7, 18, -18, "body rises as the right foot swings forward"),
     ]
+
+
+def _attack_variant(prompt: str) -> str:
+    text = prompt.lower()
+    if any(token in text for token in ("bow", "arrow", "archer", "弓", "矢")):
+        return "bow"
+    if any(token in text for token in ("axe", "hatchet", "斧")):
+        return "axe"
+    return "sword"
+
+
+def _hit_variant(prompt: str) -> str:
+    text = prompt.lower()
+    if any(token in text for token in ("knockback", "blown away", "launch", "吹き飛ばし", "吹き飛ぶ")):
+        return "knockback"
+    if any(token in text for token in ("heavy", "big damage", "large damage", "大ダメージ", "強攻撃")):
+        return "heavy"
+    return "light"
 
 
 def _merge_plan(fallback: dict[str, Any], llm_plan: dict[str, Any] | None) -> dict[str, Any]:

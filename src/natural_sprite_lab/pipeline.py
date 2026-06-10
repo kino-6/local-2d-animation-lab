@@ -9,6 +9,7 @@ from natural_sprite_lab.evaluation import evaluate_animation
 from natural_sprite_lab.models import OutputFormat, PipelineOutputs
 from natural_sprite_lab.nl_parser import parse_prompt
 from natural_sprite_lab.planning import WalkCycleDirector
+from natural_sprite_lab.postprocess.action_effects import make_action_effect_layers
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet, make_sprite_sheet
 from natural_sprite_lab.utils.io import write_json
@@ -37,10 +38,19 @@ def run_pipeline(
 
     spec_path = write_json(run_dir / "animation_spec.json", spec.to_dict())
     generated = backend.generate_frames(source_image, spec, frames_dir, retake=retake)
+    effect_frame_paths, composited_frame_paths = make_action_effect_layers(
+        generated.frame_paths,
+        spec.frame_plan,
+        spec.action,
+        run_dir / "effects",
+        run_dir / "frames_with_effects",
+    )
 
     sprite_sheet_path = None
     gif_path = None
     contact_sheet_path = None
+    effect_contact_sheet_path = None
+    composited_contact_sheet_path = None
 
     if OutputFormat.SPRITE_SHEET in spec.output_formats:
         sprite_sheet_path = make_sprite_sheet(generated.frame_paths, run_dir / "spritesheet.png")
@@ -48,6 +58,13 @@ def run_pipeline(
         gif_path = make_preview_gif(generated.frame_paths, run_dir / "preview.gif", loop=spec.loop)
     if OutputFormat.CONTACT_SHEET in spec.output_formats:
         contact_sheet_path = make_contact_sheet(generated.frame_paths, run_dir / "contact_sheet.png")
+        if effect_frame_paths:
+            effect_contact_sheet_path = make_contact_sheet(effect_frame_paths, run_dir / "effect_contact_sheet.png")
+        if composited_frame_paths:
+            composited_contact_sheet_path = make_contact_sheet(
+                composited_frame_paths,
+                run_dir / "contact_sheet_with_effects.png",
+            )
 
     evaluation = evaluate_animation(generated.frame_paths)
     evaluation_path = write_json(run_dir / "evaluation_report.json", evaluation)
@@ -61,6 +78,10 @@ def run_pipeline(
         sprite_sheet_path=sprite_sheet_path,
         gif_path=gif_path,
         contact_sheet_path=contact_sheet_path,
+        effect_frame_paths=effect_frame_paths,
+        effect_contact_sheet_path=effect_contact_sheet_path,
+        composited_frame_paths=composited_frame_paths,
+        composited_contact_sheet_path=composited_contact_sheet_path,
     )
     manifest_path = write_json(outputs.manifest_path, _manifest(source_image, prompt, spec, generated, outputs, evaluation_path, evaluation))
 
@@ -73,6 +94,10 @@ def run_pipeline(
         sprite_sheet_path=outputs.sprite_sheet_path,
         gif_path=outputs.gif_path,
         contact_sheet_path=outputs.contact_sheet_path,
+        effect_frame_paths=outputs.effect_frame_paths,
+        effect_contact_sheet_path=outputs.effect_contact_sheet_path,
+        composited_frame_paths=outputs.composited_frame_paths,
+        composited_contact_sheet_path=outputs.composited_contact_sheet_path,
     )
 
 
