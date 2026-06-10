@@ -32,6 +32,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--seed", default=None, type=int, help="Base seed for generated frames.")
     parser.add_argument("--seed-step", default=1, type=int, help="Seed increment per frame for ComfyUI.")
     parser.add_argument(
+        "--rig-source-frames",
+        default=120,
+        type=int,
+        help="Internal high-density source frame count for rigged-sprite sampling.",
+    )
+    parser.add_argument(
+        "--rig-motion-style",
+        default="sfc",
+        choices=["sfc", "puppet"],
+        help="Motion style for rigged-sprite. sfc keeps nonessential parts held.",
+    )
+    parser.add_argument(
         "--controlnet",
         default=None,
         help="Optional ComfyUI ControlNet name, for example SDXL\\OpenPoseXL2.safetensors.",
@@ -80,7 +92,12 @@ def main(argv: list[str] | None = None) -> None:
     elif args.backend == "cutout-walk":
         backend = CutoutWalkBackend()
     elif args.backend == "rigged-sprite":
-        backend = RiggedSpriteBackend(width=args.width, height=args.height)
+        backend = RiggedSpriteBackend(
+            width=args.width,
+            height=args.height,
+            source_frame_count=args.rig_source_frames,
+            motion_style=args.rig_motion_style,
+        )
     else:
         backend = DummyBackend()
     director = None

@@ -48,6 +48,7 @@ Current local pipeline:
 - `src/natural_sprite_lab/postprocess/action_effects.py`
 - `src/natural_sprite_lab/evaluation.py`
 - `scripts/pdca_rigged_assets.py`
+- `scripts/pdca_sfc_motion_assets.py`
 - `scripts/report_animation_viability.py`
 - `scripts/pdca_walk_cycle.py`
 - `scripts/pdca_multi_asset.py`
@@ -140,6 +141,20 @@ Rigged animation-mechanics PDCA:
 
 Agent review finding: these outputs are acceptable as a technical rig prototype, but not yet as player-facing final animation. The rigged path is now the practical workflow baseline because it preserves part continuity, loop behavior, prop readability, and hit/attack timing better than independent ComfyUI frame generation. The next step is replacing procedural parts with reference-derived or generated character parts while keeping the same rig and viability gates.
 
+SFC-style limited-animation PDCA:
+
+- command: `uv run python scripts/pdca_sfc_motion_assets.py --input assets/reference/Anima_00013_.png --output-root outputs_sfc_motion_pdca --width 512 --height 512`
+- rule: plan from high-density motion first, hold nonessential body parts still, then sample game-ready frames.
+- adopted summary: `outputs_sfc_motion_pdca/sfc_motion_pdca_summary.json`
+- report: `outputs_sfc_motion_pdca/animation_viability_report.md`
+- adopted walk: `outputs_sfc_motion_pdca/anima_00013/walk/walk_sfc_120/contact_sheet.png`
+- adopted sword attack: `outputs_sfc_motion_pdca/anima_00013/attack/attack_sword_sfc_120/contact_sheet_with_effects.png`
+- adopted bow attack: `outputs_sfc_motion_pdca/anima_00013/attack/attack_bow_sfc_120/contact_sheet_with_effects.png`
+- adopted knockback: `outputs_sfc_motion_pdca/anima_00013/hit/hit_knockback_sfc_120/contact_sheet_with_effects.png`
+- Godot batch validation: all adopted SFC candidates loaded as 512x512 animations; attack and hit variants use composited effect frames.
+
+Agent review finding: SFC-style limited animation reduces puppet-like motion compared with a full-body rig because nonessential body parts are held. It is acceptable as a technical prototype. Remaining issues are contact/weight, force transfer through shoulder/torso/head, and sharper frame selection for anticipation/impact/recovery.
+
 ## Current Assessment
 
 Stable:
@@ -160,12 +175,13 @@ Stable:
 - Batch Godot validation for best candidates in a PDCA summary
 - Rigged-sprite backend for deterministic animation-mechanics prototypes
 - Animation viability metrics for loop closure, motion amplitude, silhouette stability, and rig-like frame continuity
+- Motion economy metrics for SFC-style limited animation, including source frame count, sampled source frames, and active part count
 
 Needs more work:
 
 - The rigged prototype is puppet-like and not final visual quality.
-- Walk loop closure is improved but still needs stronger contact polish.
-- Bow, sword, and axe attacks are readable as technical prototypes, but need real weapon/body mechanics and better anticipation/recovery.
+- Walk loop closure is improved, but contact/weight still needs stronger polish.
+- Bow, sword, and axe attacks are readable as technical prototypes, but need better shoulder/torso force transfer.
 - Hit reactions need displacement, weight, and recovery polish before player-facing use.
 - Weapon continuity still drifts across frames, especially sword and axe.
 - Hit reaction body poses still need stronger action-specific pose templates.

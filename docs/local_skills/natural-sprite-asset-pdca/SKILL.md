@@ -16,11 +16,12 @@ Treat the input image as a character design reference and the prompt as an asset
 3. Select or add an asset recipe in `src/natural_sprite_lab/action_catalog.py`.
 4. Build an action-specific `frame_plan` and per-frame `prompt_pack`.
 5. Generate frames locally. Use ComfyUI/NovaOrangeXL for visual target exploration, and use `rigged-sprite` for animation-mechanics validation.
-6. Use OpenPose ControlNet for body pose control when running ComfyUI.
-7. Add separate effect/action cue layers for attacks and hit reactions.
-8. Save game-ready outputs and metadata, including frame events, rough hitboxes/hurtboxes, and animation viability metrics.
-9. Validate with local heuristics, Godot headless playback, and visual/Agent review.
-10. Record findings and apply the smallest useful control change before regenerating.
+6. For practical 2D game animation, prefer SFC-style limited animation: plan from 120 internal source frames, hold nonessential parts still, and sample the frames that express anticipation, impact, recovery, and loop closure.
+7. Use OpenPose ControlNet for body pose control when running ComfyUI.
+8. Add separate effect/action cue layers for attacks and hit reactions.
+9. Save game-ready outputs and metadata, including frame events, rough hitboxes/hurtboxes, and animation viability metrics.
+10. Validate with local heuristics, Godot headless playback, and visual/Agent review.
+11. Record findings and apply the smallest useful control change before regenerating.
 
 ## Stable Defaults
 
@@ -31,7 +32,10 @@ Treat the input image as a character design reference and the prompt as an asset
 - Balanced config: steps `24`, cfg `6.0`, controlnet strength `0.75`
 - Strong pose config: steps `24`, cfg `6.0`, controlnet strength `0.9`
 - Animation-mechanics backend: `rigged-sprite`
+- Rig motion style: `sfc`
+- Rig source frames: `120`
 - Adopted prototype output root: `outputs_rigged_pdca`
+- Adopted SFC output root: `outputs_sfc_motion_pdca`
 
 ## Action Semantics
 
@@ -59,6 +63,7 @@ Every candidate should pass these checks before being treated as a useful asset:
 - PDCA summary validation passes for all best candidates when a summary exists.
 - `evaluation_report.json` includes semantic action-readability metadata for attack/hit.
 - `evaluation_report.json` includes `animation_viability` with acceptable loop closure, frame-to-frame continuity, and rig-like stability.
+- `animation_viability.summary.motion_economy` records `style=sfc`, source frame count, sampled source frames, and active-part count.
 - Human or Agent review agrees that the sequence reads as animation, not just separate still images.
 - The output still matches the top rule: image interpreted as character design, prompt interpreted as asset request.
 
@@ -90,6 +95,16 @@ Write the animation viability report:
 uv run python scripts/report_animation_viability.py \
   --summary outputs_rigged_pdca/rigged_asset_pdca_summary.json \
   --output outputs_rigged_pdca/animation_viability_report.md
+```
+
+Run SFC-style limited-animation PDCA:
+
+```bash
+uv run python scripts/pdca_sfc_motion_assets.py \
+  --input assets/reference/Anima_00013_.png \
+  --output-root outputs_sfc_motion_pdca \
+  --width 512 \
+  --height 512
 ```
 
 Regenerate only local action cue layers:

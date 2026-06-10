@@ -73,6 +73,7 @@ def build_report(summary_path: Path) -> str:
 def _asset_lines(asset: str, result: dict[str, Any]) -> list[str]:
     viability = result.get("animation_viability", {})
     summary = viability.get("summary", {})
+    economy = summary.get("motion_economy", {})
     return [
         f"### {asset}",
         "",
@@ -84,6 +85,10 @@ def _asset_lines(asset: str, result: dict[str, Any]) -> list[str]:
         f"- loop delta: `{summary.get('loop_delta')}`",
         f"- mean frame delta: `{summary.get('mean_frame_delta')}`",
         f"- max pose delta: `{summary.get('max_pose_delta')}`",
+        f"- motion style: `{economy.get('style')}`",
+        f"- source frames: `{economy.get('source_frame_count')}`",
+        f"- sampled source frames: `{economy.get('sampled_indices')}`",
+        f"- mean active part count: `{economy.get('mean_active_part_count')}`",
         f"- issues: `{result.get('issues', [])}`",
         "",
     ]

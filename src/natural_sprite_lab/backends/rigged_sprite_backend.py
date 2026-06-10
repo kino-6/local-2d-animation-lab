@@ -12,13 +12,21 @@ from natural_sprite_lab.utils.paths import frame_filename
 
 
 class RiggedSpriteBackend(AnimationBackend):
-    """Generate coherent 2D puppet animation frames from a local procedural rig."""
+    """Generate coherent 2D game-animation frames from a local procedural rig."""
 
     name = "rigged-sprite"
 
-    def __init__(self, width: int = 512, height: int = 512) -> None:
+    def __init__(
+        self,
+        width: int = 512,
+        height: int = 512,
+        source_frame_count: int = 120,
+        motion_style: str = "sfc",
+    ) -> None:
         self.width = width
         self.height = height
+        self.source_frame_count = max(4, source_frame_count)
+        self.motion_style = motion_style
 
     def generate_frames(
         self,
@@ -29,7 +37,12 @@ class RiggedSpriteBackend(AnimationBackend):
     ) -> GeneratedFrames:
         frames_dir.mkdir(parents=True, exist_ok=True)
         palette = _palette_from_reference(source_image)
-        rig_frames = _motion_frames(spec)
+        rig_frames, source_count, sampled_indices = _motion_frames(
+            spec,
+            source_count=self.source_frame_count,
+            output_count=spec.frame_count,
+            style=self.motion_style,
+        )
         frame_paths: list[Path] = []
         for index, rig in enumerate(rig_frames):
             image = _draw_frame(self.width, self.height, palette, rig)
@@ -41,15 +54,19 @@ class RiggedSpriteBackend(AnimationBackend):
             frame_paths=frame_paths,
             backend_name=self.name,
             backend_metadata={
-                "description": "Procedural 2D puppet rig. Uses a stable part hierarchy for animation-valid frames.",
+                "description": "Procedural 2D game rig. Uses stable held parts plus selective SFC-style motion.",
                 "source_image": str(source_image),
                 "frame_width": self.width,
                 "frame_height": self.height,
+                "source_frame_count": source_count,
+                "sampled_indices": sampled_indices,
+                "motion_style": self.motion_style,
                 "palette": palette,
                 "rig_frames": rig_frames,
                 "validation_intent": (
-                    "This backend is intended as a practical animation baseline: temporal coherence, "
-                    "loop closure, and stable character parts are prioritized over model-rendered image polish."
+                    "This backend is intended as a practical animation baseline: high-density motion is "
+                    "sampled down into game frames, while stable character parts are held unless the action "
+                    "requires them to move."
                 ),
             },
         )
@@ -80,15 +97,41 @@ def _palette_from_reference(source_image: Path) -> dict[str, tuple[int, int, int
     }
 
 
-def _motion_frames(spec: AnimationSpec) -> list[dict[str, Any]]:
-    count = spec.frame_count
+def _motion_frames(
+    spec: AnimationSpec,
+    source_count: int,
+    output_count: int,
+    style: str,
+) -> tuple[list[dict[str, Any]], int, list[int]]:
+    count = max(output_count, 1)
+    dense_count = max(source_count, count)
     if spec.action == Action.IDLE:
-        return [_idle_pose(index, count) for index in range(count)]
-    if spec.action == Action.ATTACK:
-        return [_attack_pose(index, count, _variant(spec)) for index in range(count)]
-    if spec.action == Action.HIT:
-        return [_hit_pose(index, count, _variant(spec)) for index in range(count)]
-    return [_walk_pose(index, count) for index in range(count)]
+        dense = [_idle_pose(index, dense_count, style) for index in range(dense_count)]
+    elif spec.action == Action.ATTACK:
+        dense = [_attack_pose(index, dense_count, _variant(spec), style) for index in range(dense_count)]
+    elif spec.action == Action.HIT:
+        dense = [_hit_pose(index, dense_count, _variant(spec), style) for index in range(dense_count)]
+    else:
+        dense = [_walk_pose(index, dense_count, style) for index in range(dense_count)]
+    indices = _sample_indices(dense_count, count, spec.action)
+    frames = [dict(dense[index], source_frame=index, source_frame_count=dense_count) for index in indices]
+    return frames, dense_count, indices
+
+
+def _sample_indices(source_count: int, output_count: int, action: Action) -> list[int]:
+    if output_count <= 1:
+        return [0]
+    if action in {Action.WALK, Action.IDLE}:
+        return [round(index * (source_count - 1) / (output_count - 1)) for index in range(output_count)]
+
+    # SFC-style attacks/hits spend frames on anticipation, impact, and recovery instead of uniform time.
+    if action == Action.ATTACK:
+        emphasis = [0.0, 0.10, 0.24, 0.31, 0.36, 0.43, 0.62, 1.0]
+    else:
+        emphasis = [0.0, 0.08, 0.18, 0.30, 0.42, 0.58, 0.78, 1.0]
+    if output_count != len(emphasis):
+        emphasis = [index / (output_count - 1) for index in range(output_count)]
+    return [round(value * (source_count - 1)) for value in emphasis]
 
 
 def _variant(spec: AnimationSpec) -> str:
@@ -97,41 +140,50 @@ def _variant(spec: AnimationSpec) -> str:
     return spec.action.value
 
 
-def _walk_pose(index: int, count: int) -> dict[str, Any]:
+def _walk_pose(index: int, count: int, style: str) -> dict[str, Any]:
     phase = index / max(1, count - 1) * math.tau
     left_swing = max(0.0, math.sin(phase))
     right_swing = max(0.0, math.sin(phase + math.pi))
+    torso_sway = 1.1 if style == "sfc" else 3.0
+    foot_stride = 40 if style == "sfc" else 48
+    lift = 24 if style == "sfc" else 34
+    arm_swing = 18 if style == "sfc" else 34
     return {
         "label": "walk",
-        "root": [0.0, math.sin(phase * 2) * 3],
-        "torso": math.sin(phase) * 3,
-        "head": -math.sin(phase) * 2,
-        "left_foot": [math.sin(phase) * 48 - 20, -left_swing * 34],
-        "right_foot": [math.sin(phase + math.pi) * 48 + 20, -right_swing * 34],
-        "left_hand": [math.sin(phase + math.pi) * 34 - 34, 92],
-        "right_hand": [math.sin(phase) * 34 + 34, 92],
+        "root": [0.0, math.sin(phase * 2) * (1.5 if style == "sfc" else 3.0)],
+        "torso": math.sin(phase) * torso_sway,
+        "head": -math.sin(phase) * (0.6 if style == "sfc" else 2.0),
+        "left_foot": [math.sin(phase) * foot_stride - 20, -left_swing * lift],
+        "right_foot": [math.sin(phase + math.pi) * foot_stride + 20, -right_swing * lift],
+        "left_hand": [math.sin(phase + math.pi) * arm_swing - 34, 92],
+        "right_hand": [math.sin(phase) * arm_swing + 34, 92],
         "effect": "none",
         "prop": "none",
+        "active_parts": ["legs", "forearms"],
+        "style": style,
     }
 
 
-def _idle_pose(index: int, count: int) -> dict[str, Any]:
+def _idle_pose(index: int, count: int, style: str) -> dict[str, Any]:
     phase = index / count * math.tau
+    breath = 1.5 if style == "sfc" else 3.0
     return {
         "label": "idle",
-        "root": [0.0, math.sin(phase) * 3],
-        "torso": math.sin(phase) * 1.5,
-        "head": math.sin(phase) * 1.0,
+        "root": [0.0, math.sin(phase) * breath],
+        "torso": math.sin(phase) * (0.5 if style == "sfc" else 1.5),
+        "head": math.sin(phase) * (0.4 if style == "sfc" else 1.0),
         "left_foot": [-18, 0],
         "right_foot": [20, 0],
-        "left_hand": [-40 + math.sin(phase) * 3, 95],
-        "right_hand": [40 - math.sin(phase) * 3, 95],
+        "left_hand": [-40 + math.sin(phase) * (1.0 if style == "sfc" else 3.0), 95],
+        "right_hand": [40 - math.sin(phase) * (1.0 if style == "sfc" else 3.0), 95],
         "effect": "none",
         "prop": "none",
+        "active_parts": ["torso_breath"],
+        "style": style,
     }
 
 
-def _attack_pose(index: int, count: int, variant: str) -> dict[str, Any]:
+def _attack_pose(index: int, count: int, variant: str, style: str) -> dict[str, Any]:
     t = index / max(1, count - 1)
     windup = math.sin(min(t, 0.34) / 0.34 * math.pi) if t < 0.34 else 0.0
     strike = math.sin(max(0.0, min(1.0, (t - 0.24) / 0.30)) * math.pi)
@@ -140,39 +192,50 @@ def _attack_pose(index: int, count: int, variant: str) -> dict[str, Any]:
     bow = variant == "bow"
     bow_draw = min(1.0, max(0.0, t / 0.42))
     bow_release = max(0.0, min(1.0, (t - 0.42) / 0.18))
+    snap = math.sin(max(0.0, min(1.0, (t - 0.30) / 0.12)) * math.pi)
+    body_scale = 0.38 if style == "sfc" else 1.0
+    arm_scale = 1.12 if style == "sfc" else 1.0
+    foot_scale = 0.28 if style == "sfc" else 1.0
     return {
         "label": f"attack_{variant}",
-        "root": [strike * 24 * heavy - recover * 10, strike * 2],
-        "torso": -windup * 16 + strike * 22 * heavy,
-        "head": -strike * 5,
-        "left_foot": [-42 - windup * 14 + strike * 36, 0],
-        "right_foot": [38 + strike * 18, 0],
-        "left_hand": ([-86, 54] if bow else [-62 - windup * 34 + strike * 80 * heavy, 50 - windup * 58 + strike * 6]),
-        "right_hand": ([88 - bow_draw * 72 + bow_release * 86, 58 + bow_draw * 4] if bow else [48 - windup * 48 + strike * 112 * heavy, 52 + strike * 12]),
+        "root": [(strike * 18 * heavy - recover * 8) * body_scale, strike * body_scale],
+        "torso": (-windup * 10 + strike * 14 * heavy) * body_scale + snap * (5.0 if style == "sfc" else 0.0),
+        "head": -strike * (1.8 if style == "sfc" else 5.0) - snap * (3.0 if style == "sfc" else 0.0),
+        "left_foot": [-42 - windup * 10 * foot_scale + strike * 22 * foot_scale, 0],
+        "right_foot": [38 + strike * 12 * foot_scale, 0],
+        "left_hand": ([-86, 54] if bow else [-62 - windup * 34 * arm_scale + strike * 80 * heavy * arm_scale, 50 - windup * 58 * arm_scale + strike * 6]),
+        "right_hand": ([88 - bow_draw * 72 * arm_scale + bow_release * 86 * arm_scale, 58 + bow_draw * 4] if bow else [48 - windup * 48 * arm_scale + strike * 112 * heavy * arm_scale, 52 + strike * 12]),
         "effect": "arrow" if bow and 0.28 <= t <= 0.62 else ("slash" if 0.30 <= t <= 0.68 else "none"),
         "prop": variant,
+        "active_parts": ["weapon_arm", "prop", "effect"],
+        "style": style,
     }
 
 
-def _hit_pose(index: int, count: int, variant: str) -> dict[str, Any]:
+def _hit_pose(index: int, count: int, variant: str, style: str) -> dict[str, Any]:
     t = index / max(1, count - 1)
     impact = math.sin(min(1.0, t / 0.38) * math.pi)
     recover = max(0.0, (t - 0.45) / 0.55)
     strength = {"light": 0.55, "heavy": 1.05, "knockback": 1.65}.get(variant, 0.75)
     airborne = -42 * strength if variant == "knockback" and 0.22 <= t <= 0.58 else 0.0
+    snap = math.sin(max(0.0, min(1.0, (t - 0.10) / 0.18)) * math.pi)
     recoil = impact * strength * (1.0 - recover * 0.55)
     slide = 48 * strength if variant == "knockback" else 24 * strength
+    leg_scale = 0.35 if style == "sfc" else 1.0
+    arm_scale = 1.1 if style == "sfc" else 1.0
     return {
         "label": f"hit_{variant}",
         "root": [recoil * slide, airborne + recoil * 8],
-        "torso": -recoil * 25,
-        "head": -recoil * 20,
-        "left_foot": [-32 - recoil * 32, 0 if airborne == 0 else airborne * 0.25],
-        "right_foot": [34 - recoil * 20, 0 if airborne == 0 else airborne * 0.25],
-        "left_hand": [-58 - recoil * 48, 68 - recoil * 24],
-        "right_hand": [46 - recoil * 42, 76 - recoil * 18],
+        "torso": -recoil * (18 if style == "sfc" else 25) - snap * (5.0 if style == "sfc" else 0.0),
+        "head": -recoil * (12 if style == "sfc" else 20) - snap * (4.0 if style == "sfc" else 0.0),
+        "left_foot": [-32 - recoil * 32 * leg_scale, 0 if airborne == 0 else airborne * 0.25],
+        "right_foot": [34 - recoil * 20 * leg_scale, 0 if airborne == 0 else airborne * 0.25],
+        "left_hand": [-58 - recoil * 48 * arm_scale, 68 - recoil * 24 * arm_scale],
+        "right_hand": [46 - recoil * 42 * arm_scale, 76 - recoil * 18 * arm_scale],
         "effect": "hit" if 0.08 <= t <= 0.58 else "none",
         "prop": "none",
+        "active_parts": ["root", "torso", "arms", "effect"],
+        "style": style,
     }
 
 
@@ -190,18 +253,23 @@ def _draw_frame(width: int, height: int, palette: dict[str, tuple[int, int, int,
     right_foot = _target_from(hip, ground, pose, "right_foot", scale, default_angle=float(pose.get("right_leg", 0)), default_side=1)
     left_hand = _target_from(neck, neck[1], pose, "left_hand", scale, default_angle=float(pose.get("left_arm", 0)), default_side=-1, arm=True)
     right_hand = _target_from(neck, neck[1], pose, "right_hand", scale, default_angle=float(pose.get("right_arm", 0)), default_side=1, arm=True)
+    sfc_style = pose.get("style") == "sfc"
 
     _shadow(draw, cx, ground, width, scale)
     _draw_effect(draw, pose, palette, cx, neck, right_hand, width, height, scale)
-    _draw_prop(draw, pose, palette, left_hand, right_hand, neck, scale)
-    _limb(draw, hip, left_foot, palette["skin"], palette["line"], scale, width=12)
-    _limb(draw, hip, right_foot, palette["skin"], palette["line"], scale, width=12)
+    if sfc_style:
+        _limb(draw, neck, left_hand, palette["shirt"], palette["line"], scale, width=13, soft=True)
+        _limb(draw, neck, right_hand, palette["shirt"], palette["line"], scale, width=13, soft=True)
+    _limb(draw, hip, left_foot, palette["skin"], palette["line"], scale, width=13 if sfc_style else 12, soft=sfc_style)
+    _limb(draw, hip, right_foot, palette["skin"], palette["line"], scale, width=13 if sfc_style else 12, soft=sfc_style)
     _shoe(draw, left_foot, palette, scale)
     _shoe(draw, right_foot, palette, scale)
     _body(draw, hip, neck, palette, scale)
     draw.line([(neck[0], neck[1] - 4 * scale), (head[0], head[1] + 36 * scale)], fill=palette["skin"], width=12 * scale)
-    _limb(draw, neck, left_hand, palette["shirt"], palette["line"], scale, width=11)
-    _limb(draw, neck, right_hand, palette["shirt"], palette["line"], scale, width=11)
+    if not sfc_style:
+        _limb(draw, neck, left_hand, palette["shirt"], palette["line"], scale, width=11)
+        _limb(draw, neck, right_hand, palette["shirt"], palette["line"], scale, width=11)
+    _draw_prop(draw, pose, palette, left_hand, right_hand, neck, scale)
     _hand(draw, left_hand, palette, scale)
     _hand(draw, right_hand, palette, scale)
     _head(draw, head, palette, scale)
@@ -244,8 +312,10 @@ def _limb(
     line: tuple[int, int, int, int],
     scale: int,
     width: int,
+    soft: bool = False,
 ) -> None:
-    draw.line([start, end], fill=line, width=width * scale + 4 * scale)
+    outline = 2 if soft else 4
+    draw.line([start, end], fill=line, width=width * scale + outline * scale)
     draw.line([start, end], fill=fill, width=width * scale)
 
 

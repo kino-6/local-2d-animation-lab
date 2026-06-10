@@ -122,6 +122,18 @@ uv run python scripts/pdca_rigged_assets.py \
 
 The rigged-sprite route is the current adopted validation path for "does this read as animation?" because it keeps body parts, props, effects, frame timing, and loop behavior deterministic. It is not a final player-facing art solution. Its purpose is to establish the Skill/workflow contract before replacing procedural parts with reference-derived or generated body parts.
 
+SFC-style limited-animation PDCA:
+
+```bash
+uv run python scripts/pdca_sfc_motion_assets.py \
+  --input assets/reference/Anima_00013_.png \
+  --output-root outputs_sfc_motion_pdca \
+  --width 512 \
+  --height 512
+```
+
+This route plans motion internally at 120 source frames, holds nonessential body parts still, samples anticipation/impact/recovery frames for game output, and compares it against a fuller puppet-style rig. It is the preferred direction for reducing puppet-like motion while keeping deterministic local validation.
+
 Generate the viability report for the adopted prototype outputs:
 
 ```bash
@@ -134,7 +146,7 @@ Validate those adopted prototype outputs in Godot:
 
 ```bash
 uv run python scripts/godot_validate_summary.py \
-  --summary outputs_rigged_pdca/rigged_asset_pdca_summary.json
+  --summary outputs_sfc_motion_pdca/sfc_motion_pdca_summary.json
 ```
 
 Local PDCA sweep:
@@ -212,7 +224,7 @@ Each run contains:
 
 `manifest.json` includes local evaluation summaries, semantic action-readability metadata, frame events, rough hitboxes/hurtboxes, frame timing, and Godot-readable frame paths.
 
-Rigged-sprite runs also include `animation_viability` metadata for frame count, motion amplitude, loop closure, silhouette stability, frame-to-frame continuity, and whether the result appears rig-driven rather than redrawn independently.
+Rigged-sprite runs also include `animation_viability` metadata for frame count, motion amplitude, loop closure, silhouette stability, frame-to-frame continuity, whether the result appears rig-driven rather than redrawn independently, and `motion_economy` data for SFC-style limited animation.
 
 ## Project Layout
 
@@ -265,6 +277,8 @@ Backends implement `AnimationBackend.generate_frames(...)`. The MVP ships with `
 - `ComfyBackend`
 - `FutureVideoBackend`
 - `RiggedSpriteBackend`
+
+For practical game-animation validation, prefer `RiggedSpriteBackend` with `--rig-motion-style sfc --rig-source-frames 120`: generate dense motion first, hold most parts still, then sample a small set of game frames with clear anticipation, impact, and recovery.
 
 ## Roadmap
 

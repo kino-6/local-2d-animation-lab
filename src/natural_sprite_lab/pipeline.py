@@ -66,7 +66,12 @@ def run_pipeline(
                 run_dir / "contact_sheet_with_effects.png",
             )
 
-    evaluation = evaluate_animation(generated.frame_paths, spec=spec, effect_frame_paths=effect_frame_paths)
+    evaluation = evaluate_animation(
+        generated.frame_paths,
+        spec=spec,
+        effect_frame_paths=effect_frame_paths,
+        backend_metadata=generated.backend_metadata,
+    )
     evaluation_path = write_json(run_dir / "evaluation_report.json", evaluation)
 
     outputs = PipelineOutputs(

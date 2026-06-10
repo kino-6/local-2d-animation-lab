@@ -134,6 +134,8 @@ def test_rigged_sprite_backend_writes_animation_viability(tmp_path: Path) -> Non
 
     assert viability["score"] >= 0.75
     assert viability["summary"]["rigged_like"] is True
+    assert viability["summary"]["motion_economy"]["style"] == "sfc"
+    assert viability["summary"]["motion_economy"]["source_frame_count"] == 120
     assert manifest["evaluation"]["animation_viability"]["score"] == viability["score"]
     assert len(outputs.frame_paths) == 8
 

@@ -11,6 +11,7 @@ def evaluate_animation(
     frame_paths: list[Path],
     spec: Any | None = None,
     effect_frame_paths: list[Path] | None = None,
+    backend_metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Local heuristic evaluation for generated animation runs."""
     frame_reports = [_evaluate_frame(path) for path in frame_paths]
@@ -52,7 +53,7 @@ def evaluate_animation(
     score -= 0.08 * sum(max(0, report["component_count"] - 1) for report in frame_reports) / len(frame_reports)
     score += min(0.12, max(pose_deltas or [0.0]))
     semantic = _evaluate_semantics(frame_reports, spec, effect_frame_paths or [])
-    viability = _evaluate_animation_viability(frame_paths, frame_reports, spec)
+    viability = _evaluate_animation_viability(frame_paths, frame_reports, spec, backend_metadata or {})
     if semantic:
         score -= max(0.0, 1.0 - float(semantic["score"])) * 0.20
         issues.extend(str(issue) for issue in semantic["issues"])
@@ -239,6 +240,7 @@ def _evaluate_animation_viability(
     frame_paths: list[Path],
     frame_reports: list[dict[str, Any]],
     spec: Any | None,
+    backend_metadata: dict[str, Any],
 ) -> dict[str, Any]:
     action = getattr(getattr(spec, "action", ""), "value", getattr(spec, "action", ""))
     backend_name = ""
@@ -250,6 +252,7 @@ def _evaluate_animation_viability(
     height_stdev = pstdev([report["bbox_height_ratio"] for report in frame_reports]) if frame_reports else 0.0
     loop_delta = _loop_delta(frame_paths) if frame_paths else 1.0
     rigged = _looks_rigged(frame_paths)
+    motion_economy = _motion_economy(backend_metadata)
 
     issues: list[str] = []
     if len(frame_paths) < 4:
@@ -264,6 +267,7 @@ def _evaluate_animation_viability(
         issues.append("loop closure is weak")
     if not rigged and mean(frame_deltas or [0.0]) > 0.16:
         issues.append("frame-to-frame changes look like independent redraws")
+    issues.extend(motion_economy["issues"])
 
     score = 1.0
     score -= min(0.25, center_stdev)
@@ -273,6 +277,7 @@ def _evaluate_animation_viability(
         score -= 0.22
     if rigged:
         score += 0.08
+    score += min(0.08, float(motion_economy["score"]) * 0.08)
     score -= min(0.18, max(0.0, mean(frame_deltas or [0.0]) - 0.18))
     score = max(0.0, min(1.0, score))
     return {
@@ -287,7 +292,47 @@ def _evaluate_animation_viability(
             "height_stdev": round(height_stdev, 4),
             "rigged_like": rigged,
             "backend_hint": backend_name,
+            "motion_economy": motion_economy,
         },
+    }
+
+
+def _motion_economy(backend_metadata: dict[str, Any]) -> dict[str, Any]:
+    style = str(backend_metadata.get("motion_style", ""))
+    source_count = int(backend_metadata.get("source_frame_count", 0) or 0)
+    sampled_indices = list(backend_metadata.get("sampled_indices", []) or [])
+    rig_frames = list(backend_metadata.get("rig_frames", []) or [])
+    active_counts = [
+        len(frame.get("active_parts", []))
+        for frame in rig_frames
+        if isinstance(frame, dict) and isinstance(frame.get("active_parts", []), list)
+    ]
+    mean_active = mean(active_counts or [0.0])
+
+    issues: list[str] = []
+    if style == "sfc" and source_count < 60:
+        issues.append("SFC-style motion should be planned from at least 60 source frames")
+    if style == "sfc" and mean_active > 4.0:
+        issues.append("too many body parts are marked active for SFC-style limited animation")
+    if sampled_indices and sampled_indices != sorted(sampled_indices):
+        issues.append("sampled source frames are not monotonic")
+
+    score = 1.0
+    if style != "sfc":
+        score -= 0.25
+    if source_count >= 120:
+        score += 0.08
+    elif source_count >= 60:
+        score += 0.04
+    score -= 0.08 * len(issues)
+    score = max(0.0, min(1.0, score))
+    return {
+        "score": round(score, 3),
+        "style": style,
+        "source_frame_count": source_count,
+        "sampled_indices": sampled_indices,
+        "mean_active_part_count": round(mean_active, 3),
+        "issues": issues,
     }
 
 
