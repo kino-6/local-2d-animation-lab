@@ -23,6 +23,7 @@ Current local pipeline:
    - deterministic `DummyBackend`
    - prototype `CutoutWalkBackend`
    - ComfyUI `ComfyBackend`
+   - deterministic `RiggedSpriteBackend` for animation-mechanics validation
 6. Optionally generate and upload OpenPose ControlNet pose maps.
 7. Save game-asset outputs:
    - `frames/*.png`
@@ -43,8 +44,11 @@ Current local pipeline:
 - `src/natural_sprite_lab/planning.py`
 - `src/natural_sprite_lab/action_catalog.py`
 - `src/natural_sprite_lab/backends/comfy_backend.py`
+- `src/natural_sprite_lab/backends/rigged_sprite_backend.py`
 - `src/natural_sprite_lab/postprocess/action_effects.py`
 - `src/natural_sprite_lab/evaluation.py`
+- `scripts/pdca_rigged_assets.py`
+- `scripts/report_animation_viability.py`
 - `scripts/pdca_walk_cycle.py`
 - `scripts/pdca_multi_asset.py`
 - `scripts/regenerate_action_effects.py`
@@ -124,6 +128,18 @@ Godot E2E validation:
 
 These generated outputs are intentionally ignored by git because they are heavy and reproducible from local commands.
 
+Rigged animation-mechanics PDCA:
+
+- command: `uv run python scripts/pdca_rigged_assets.py --input assets/reference/Anima_00013_.png --output-root outputs_rigged_pdca --width 512 --height 512`
+- report: `outputs_rigged_pdca/animation_viability_report.md`
+- summary: `outputs_rigged_pdca/rigged_asset_pdca_summary.json`
+- adopted walk prototype: `outputs_rigged_pdca/anima_00013/walk/walk_rigged/contact_sheet.png`
+- adopted bow attack prototype: `outputs_rigged_pdca/anima_00013/attack/attack_bow_rigged/contact_sheet_with_effects.png`
+- adopted knockback prototype: `outputs_rigged_pdca/anima_00013/hit/hit_knockback_rigged/contact_sheet_with_effects.png`
+- Godot batch validation: all best rigged candidates loaded as 512x512 animations; attack and hit variants use composited effect frames.
+
+Agent review finding: these outputs are acceptable as a technical rig prototype, but not yet as player-facing final animation. The rigged path is now the practical workflow baseline because it preserves part continuity, loop behavior, prop readability, and hit/attack timing better than independent ComfyUI frame generation. The next step is replacing procedural parts with reference-derived or generated character parts while keeping the same rig and viability gates.
+
 ## Current Assessment
 
 Stable:
@@ -142,9 +158,15 @@ Stable:
 - Semantic action-readability metadata in local evaluation reports
 - Frame events plus rough hitbox/hurtbox metadata in manifests
 - Batch Godot validation for best candidates in a PDCA summary
+- Rigged-sprite backend for deterministic animation-mechanics prototypes
+- Animation viability metrics for loop closure, motion amplitude, silhouette stability, and rig-like frame continuity
 
 Needs more work:
 
+- The rigged prototype is puppet-like and not final visual quality.
+- Walk loop closure is improved but still needs stronger contact polish.
+- Bow, sword, and axe attacks are readable as technical prototypes, but need real weapon/body mechanics and better anticipation/recovery.
+- Hit reactions need displacement, weight, and recovery polish before player-facing use.
 - Weapon continuity still drifts across frames, especially sword and axe.
 - Hit reaction body poses still need stronger action-specific pose templates.
 - Effect layers now use frame metadata anchors, but should eventually anchor to detected/generated pose keypoints or masks.

@@ -3,7 +3,7 @@ import json
 
 from PIL import Image
 
-from natural_sprite_lab.backends import CutoutWalkBackend, DummyBackend
+from natural_sprite_lab.backends import CutoutWalkBackend, DummyBackend, RiggedSpriteBackend
 from natural_sprite_lab.evaluation import evaluate_animation
 from natural_sprite_lab.pipeline import run_pipeline
 from natural_sprite_lab.planning import WalkCycleDirector
@@ -109,6 +109,33 @@ def test_attack_pipeline_writes_effect_layers(tmp_path: Path) -> None:
     assert manifest["game_engine_metadata"]["frame_events"]
     assert manifest["game_engine_metadata"]["hitboxes"]
     assert manifest["evaluation"]["semantic"]["action"] == "attack"
+
+
+def test_rigged_sprite_backend_writes_animation_viability(tmp_path: Path) -> None:
+    source = tmp_path / "hero.png"
+    image = Image.new("RGBA", (96, 160), (0, 0, 0, 0))
+    for y in range(16, 150):
+        for x in range(32, 64):
+            image.putpixel((x, y), (210, 100 + y // 4, 72, 255))
+    image.save(source)
+
+    outputs = run_pipeline(
+        source_image=source,
+        prompt="Create an 8-frame bow attack animation facing right with a clear draw, release, and recovery.",
+        backend=RiggedSpriteBackend(width=256, height=256),
+        output_root=tmp_path / "outputs",
+        run_id="rigged_attack_run",
+        director=WalkCycleDirector(use_ollama=False),
+    )
+
+    report = json.loads((outputs.run_dir / "evaluation_report.json").read_text(encoding="utf-8"))
+    viability = report["animation_viability"]
+    manifest = json.loads(outputs.manifest_path.read_text(encoding="utf-8"))
+
+    assert viability["score"] >= 0.75
+    assert viability["summary"]["rigged_like"] is True
+    assert manifest["evaluation"]["animation_viability"]["score"] == viability["score"]
+    assert len(outputs.frame_paths) == 8
 
 
 def test_evaluation_scores_consistent_frames(tmp_path: Path) -> None:

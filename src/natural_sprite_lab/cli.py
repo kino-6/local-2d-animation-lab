@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from natural_sprite_lab.backends import ComfyBackend, CutoutWalkBackend, DummyBackend
+from natural_sprite_lab.backends import ComfyBackend, CutoutWalkBackend, DummyBackend, RiggedSpriteBackend
 from natural_sprite_lab.pipeline import run_pipeline
 from natural_sprite_lab.planning import WalkCycleDirector
 
@@ -20,7 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--backend",
         default="dummy",
-        choices=["dummy", "cutout-walk", "comfy"],
+        choices=["dummy", "cutout-walk", "comfy", "rigged-sprite"],
         help="Frame generation backend.",
     )
     parser.add_argument("--comfy-url", default="http://127.0.0.1:8188", help="ComfyUI server URL.")
@@ -79,6 +79,8 @@ def main(argv: list[str] | None = None) -> None:
         )
     elif args.backend == "cutout-walk":
         backend = CutoutWalkBackend()
+    elif args.backend == "rigged-sprite":
+        backend = RiggedSpriteBackend(width=args.width, height=args.height)
     else:
         backend = DummyBackend()
     director = None

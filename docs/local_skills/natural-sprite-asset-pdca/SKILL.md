@@ -15,11 +15,11 @@ Treat the input image as a character design reference and the prompt as an asset
 2. Interpret the reference into `CharacterProfile`.
 3. Select or add an asset recipe in `src/natural_sprite_lab/action_catalog.py`.
 4. Build an action-specific `frame_plan` and per-frame `prompt_pack`.
-5. Generate frames locally, preferably through ComfyUI with NovaOrangeXL baseline settings.
-6. Use OpenPose ControlNet for body pose control.
+5. Generate frames locally. Use ComfyUI/NovaOrangeXL for visual target exploration, and use `rigged-sprite` for animation-mechanics validation.
+6. Use OpenPose ControlNet for body pose control when running ComfyUI.
 7. Add separate effect/action cue layers for attacks and hit reactions.
-8. Save game-ready outputs and metadata, including frame events and rough hitboxes/hurtboxes.
-9. Validate with local heuristics and Godot headless playback.
+8. Save game-ready outputs and metadata, including frame events, rough hitboxes/hurtboxes, and animation viability metrics.
+9. Validate with local heuristics, Godot headless playback, and visual/Agent review.
 10. Record findings and apply the smallest useful control change before regenerating.
 
 ## Stable Defaults
@@ -30,6 +30,8 @@ Treat the input image as a character design reference and the prompt as an asset
 - Seed step: `0`
 - Balanced config: steps `24`, cfg `6.0`, controlnet strength `0.75`
 - Strong pose config: steps `24`, cfg `6.0`, controlnet strength `0.9`
+- Animation-mechanics backend: `rigged-sprite`
+- Adopted prototype output root: `outputs_rigged_pdca`
 
 ## Action Semantics
 
@@ -56,7 +58,11 @@ Every candidate should pass these checks before being treated as a useful asset:
 - Godot headless validation can load the manifest and start animation playback.
 - PDCA summary validation passes for all best candidates when a summary exists.
 - `evaluation_report.json` includes semantic action-readability metadata for attack/hit.
+- `evaluation_report.json` includes `animation_viability` with acceptable loop closure, frame-to-frame continuity, and rig-like stability.
+- Human or Agent review agrees that the sequence reads as animation, not just separate still images.
 - The output still matches the top rule: image interpreted as character design, prompt interpreted as asset request.
+
+Passing these gates means "technical rig prototype", not "player-facing final animation". Do not claim production quality until the procedural parts are replaced with reference-derived or generated character parts and the motion still passes the same checks.
 
 ## Commands
 
@@ -66,6 +72,24 @@ Run multi-asset PDCA:
 uv run python scripts/pdca_multi_asset.py \
   --input assets/reference/Anima_00013_.png \
   --output-root outputs_action_variants_effect_pdca
+```
+
+Run adopted rigged animation-mechanics PDCA:
+
+```bash
+uv run python scripts/pdca_rigged_assets.py \
+  --input assets/reference/Anima_00013_.png \
+  --output-root outputs_rigged_pdca \
+  --width 512 \
+  --height 512
+```
+
+Write the animation viability report:
+
+```bash
+uv run python scripts/report_animation_viability.py \
+  --summary outputs_rigged_pdca/rigged_asset_pdca_summary.json \
+  --output outputs_rigged_pdca/animation_viability_report.md
 ```
 
 Regenerate only local action cue layers:

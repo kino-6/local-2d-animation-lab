@@ -38,6 +38,7 @@ Current support:
 - Dummy backend that creates 8 transparent PNG frames
 - Prototype cutout backend that preserves source pixels with coarse walk-cycle transforms
 - Prototype ComfyUI backend that generates new frames from director prompt packs
+- Prototype rigged-sprite backend that creates deterministic part-based frames for animation-mechanics validation
 - Action-specific variants for sword, axe, bow, light hit, heavy hit, and knockback
 - Transparent action effect layers for attack and hit readability
 - Godot 4 E2E harness for loading generated manifests and validating playback
@@ -49,7 +50,7 @@ Not included yet:
 - GUI
 - cloud API dependency
 - production-grade animation quality
-- advanced rigging
+- production-grade rigging or character-part extraction
 - hardcoded model vendor integration
 
 ## Install
@@ -108,6 +109,33 @@ python -m natural_sprite_lab \
 The ComfyUI prototype uses the reference image through the director-generated `CharacterProfile` and per-frame prompt pack. OpenPose ControlNet constrains the generated motion, while `--seed-step 0` keeps identity more stable across frames. `novaOrangeXL_v120.safetensors` is the current default because its outputs are visually clean and game-asset friendly; checkpoint sweeps can still compare it against Illustrious, Pony, and other local models. Stronger identity consistency requires a dedicated reference-guided workflow such as IP-Adapter or a character LoRA.
 
 Each run also writes `evaluation_report.json` with local heuristics for foreground count, frame-to-frame center/scale stability, color consistency, and motion variation. The summary is embedded in `manifest.json`.
+
+Practical animation-mechanics prototype:
+
+```bash
+uv run python scripts/pdca_rigged_assets.py \
+  --input assets/reference/Anima_00013_.png \
+  --output-root outputs_rigged_pdca \
+  --width 512 \
+  --height 512
+```
+
+The rigged-sprite route is the current adopted validation path for "does this read as animation?" because it keeps body parts, props, effects, frame timing, and loop behavior deterministic. It is not a final player-facing art solution. Its purpose is to establish the Skill/workflow contract before replacing procedural parts with reference-derived or generated body parts.
+
+Generate the viability report for the adopted prototype outputs:
+
+```bash
+uv run python scripts/report_animation_viability.py \
+  --summary outputs_rigged_pdca/rigged_asset_pdca_summary.json \
+  --output outputs_rigged_pdca/animation_viability_report.md
+```
+
+Validate those adopted prototype outputs in Godot:
+
+```bash
+uv run python scripts/godot_validate_summary.py \
+  --summary outputs_rigged_pdca/rigged_asset_pdca_summary.json
+```
 
 Local PDCA sweep:
 
@@ -184,6 +212,8 @@ Each run contains:
 
 `manifest.json` includes local evaluation summaries, semantic action-readability metadata, frame events, rough hitboxes/hurtboxes, frame timing, and Godot-readable frame paths.
 
+Rigged-sprite runs also include `animation_viability` metadata for frame count, motion amplitude, loop closure, silhouette stability, frame-to-frame continuity, and whether the result appears rig-driven rather than redrawn independently.
+
 ## Project Layout
 
 ```text
@@ -199,6 +229,7 @@ src/natural_sprite_lab/
     comfy_backend.py
     cutout_walk_backend.py
     dummy_backend.py
+    rigged_sprite_backend.py
   planning.py
   postprocess/
     action_effects.py
@@ -233,7 +264,7 @@ Backends implement `AnimationBackend.generate_frames(...)`. The MVP ships with `
 
 - `ComfyBackend`
 - `FutureVideoBackend`
-- `FutureRigBackend`
+- `RiggedSpriteBackend`
 
 ## Roadmap
 

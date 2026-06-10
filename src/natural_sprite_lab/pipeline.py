@@ -126,6 +126,7 @@ def _manifest(
             "issues": evaluation.get("issues", []),
             "summary": evaluation.get("summary", {}),
             "semantic": evaluation.get("semantic", {}),
+            "animation_viability": evaluation.get("animation_viability", {}),
         },
         "game_engine_metadata": _game_engine_metadata(spec, generated, evaluation),
     }

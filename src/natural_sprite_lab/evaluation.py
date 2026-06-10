@@ -52,9 +52,12 @@ def evaluate_animation(
     score -= 0.08 * sum(max(0, report["component_count"] - 1) for report in frame_reports) / len(frame_reports)
     score += min(0.12, max(pose_deltas or [0.0]))
     semantic = _evaluate_semantics(frame_reports, spec, effect_frame_paths or [])
+    viability = _evaluate_animation_viability(frame_paths, frame_reports, spec)
     if semantic:
         score -= max(0.0, 1.0 - float(semantic["score"])) * 0.20
         issues.extend(str(issue) for issue in semantic["issues"])
+    score -= max(0.0, 1.0 - float(viability["score"])) * 0.25
+    issues.extend(str(issue) for issue in viability["issues"])
     score = max(0.0, min(1.0, score))
 
     return {
@@ -68,6 +71,7 @@ def evaluate_animation(
             "max_pose_delta": round(max(pose_deltas or [0.0]), 3),
         },
         "semantic": semantic,
+        "animation_viability": viability,
         "frames": frame_reports,
     }
 
@@ -229,3 +233,89 @@ def _max_report_delta(frame_reports: list[dict[str, Any]]) -> float:
         + abs(frame_reports[index]["bbox_height_ratio"] - frame_reports[index - 1]["bbox_height_ratio"])
         for index in range(1, len(frame_reports))
     )
+
+
+def _evaluate_animation_viability(
+    frame_paths: list[Path],
+    frame_reports: list[dict[str, Any]],
+    spec: Any | None,
+) -> dict[str, Any]:
+    action = getattr(getattr(spec, "action", ""), "value", getattr(spec, "action", ""))
+    backend_name = ""
+    if spec is not None:
+        backend_name = str(getattr(spec, "director_metadata", {}).get("backend_name", ""))
+    frame_deltas = _frame_alpha_deltas(frame_paths)
+    max_pose_delta = _max_report_delta(frame_reports)
+    center_stdev = pstdev([report["center_x_ratio"] for report in frame_reports]) if frame_reports else 0.0
+    height_stdev = pstdev([report["bbox_height_ratio"] for report in frame_reports]) if frame_reports else 0.0
+    loop_delta = _loop_delta(frame_paths) if frame_paths else 1.0
+    rigged = _looks_rigged(frame_paths)
+
+    issues: list[str] = []
+    if len(frame_paths) < 4:
+        issues.append("animation has too few frames for viability review")
+    if max_pose_delta < 0.035 and action != "idle":
+        issues.append("animation motion amplitude is too low")
+    if center_stdev > 0.20:
+        issues.append("animation root motion drifts too much")
+    if height_stdev > 0.14:
+        issues.append("animation silhouette height is unstable")
+    if action in {"walk", "idle"} and loop_delta > 0.12:
+        issues.append("loop closure is weak")
+    if not rigged and mean(frame_deltas or [0.0]) > 0.16:
+        issues.append("frame-to-frame changes look like independent redraws")
+
+    score = 1.0
+    score -= min(0.25, center_stdev)
+    score -= min(0.22, height_stdev * 1.2)
+    score -= min(0.25, loop_delta if action in {"walk", "idle"} else 0.0)
+    if max_pose_delta < 0.035 and action != "idle":
+        score -= 0.22
+    if rigged:
+        score += 0.08
+    score -= min(0.18, max(0.0, mean(frame_deltas or [0.0]) - 0.18))
+    score = max(0.0, min(1.0, score))
+    return {
+        "score": round(score, 3),
+        "issues": issues,
+        "summary": {
+            "mean_frame_delta": round(mean(frame_deltas or [0.0]), 4),
+            "max_frame_delta": round(max(frame_deltas or [0.0]), 4),
+            "loop_delta": round(loop_delta, 4),
+            "max_pose_delta": round(max_pose_delta, 4),
+            "center_x_stdev": round(center_stdev, 4),
+            "height_stdev": round(height_stdev, 4),
+            "rigged_like": rigged,
+            "backend_hint": backend_name,
+        },
+    }
+
+
+def _frame_alpha_deltas(frame_paths: list[Path]) -> list[float]:
+    images = [Image.open(path).convert("RGBA").resize((96, 96), Image.Resampling.BILINEAR) for path in frame_paths]
+    return [_image_delta(images[index - 1], images[index]) for index in range(1, len(images))]
+
+
+def _loop_delta(frame_paths: list[Path]) -> float:
+    if len(frame_paths) < 2:
+        return 1.0
+    first = Image.open(frame_paths[0]).convert("RGBA").resize((96, 96), Image.Resampling.BILINEAR)
+    last = Image.open(frame_paths[-1]).convert("RGBA").resize((96, 96), Image.Resampling.BILINEAR)
+    return _image_delta(first, last)
+
+
+def _image_delta(left: Image.Image, right: Image.Image) -> float:
+    left_pixels = left.tobytes()
+    right_pixels = right.tobytes()
+    total = 0.0
+    for left_pixel, right_pixel in zip(left_pixels, right_pixels, strict=True):
+        total += abs(left_pixel - right_pixel) / 255
+    return total / (left.width * left.height * 4)
+
+
+def _looks_rigged(frame_paths: list[Path]) -> bool:
+    # A procedural rig keeps a stable transparent canvas and part colors; generated redraws usually vary more.
+    if len(frame_paths) < 2:
+        return False
+    deltas = _frame_alpha_deltas(frame_paths)
+    return bool(deltas and mean(deltas) < 0.14 and max(deltas) < 0.28)

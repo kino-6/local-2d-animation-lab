@@ -323,7 +323,7 @@ def _semantic_tags(action: Action, variant: str, label: str) -> list[str]:
         tags = ["hit_reaction", variant]
         if variant in {"heavy", "knockback"}:
             tags.append("strong_recoil")
-        if any(token in label for token in ("impact", "recoil", "airborne", "peak", "fall", "land")):
+        if _has(label, "impact", "recoil", "airborne", "peak", "land", "collapse") or label.endswith("_fall"):
             tags.append("reaction_frame")
         return tags
     return [action.value]
