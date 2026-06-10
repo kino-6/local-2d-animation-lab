@@ -14,7 +14,7 @@ def main() -> None:
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--prompt", required=True)
     parser.add_argument("--output-root", default=Path("outputs_pdca"), type=Path)
-    parser.add_argument("--checkpoint", default="illustriousPencilXL_v320.safetensors")
+    parser.add_argument("--checkpoint", default="novaOrangeXL_v120.safetensors")
     parser.add_argument("--checkpoint-sweep", action="store_true", help="Try all locally known anime checkpoints.")
     parser.add_argument("--controlnet", default="SDXL\\OpenPoseXL2.safetensors")
     parser.add_argument("--seed", default=130018, type=int)

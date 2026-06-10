@@ -55,7 +55,7 @@ uv run python -m natural_sprite_lab \
   --prompt "Create an 8-frame side-view walking animation, facing right. Interpret the reference as a character design and generate new full-body frames of the same character walking." \
   --backend comfy \
   --director fallback \
-  --comfy-checkpoint illustriousPencilXL_v320.safetensors \
+  --comfy-checkpoint novaOrangeXL_v120.safetensors \
   --width 768 \
   --height 768 \
   --steps 24 \

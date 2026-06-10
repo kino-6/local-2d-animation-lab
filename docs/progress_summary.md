@@ -51,7 +51,7 @@ uv run python -m natural_sprite_lab \
   --prompt "Create an 8-frame side-view walking animation, facing right. Interpret the reference as a character design and generate new full-body frames of the same character walking." \
   --backend comfy \
   --director fallback \
-  --comfy-checkpoint illustriousPencilXL_v320.safetensors \
+  --comfy-checkpoint novaOrangeXL_v120.safetensors \
   --width 768 \
   --height 768 \
   --steps 24 \
@@ -64,7 +64,14 @@ uv run python -m natural_sprite_lab \
 
 ## PDCA Results
 
-Checkpoint sweep found the best local setup:
+Checkpoint sweep found two useful baselines:
+
+Visual/default working setup:
+
+- checkpoint: `novaOrangeXL_v120.safetensors`
+- reason: clean full-body character output, low background clutter, game-asset-friendly line quality
+
+Highest heuristic score in the local evaluator:
 
 - checkpoint: `illustriousPencilXL_v320.safetensors`
 - ControlNet: `SDXL\OpenPoseXL2.safetensors`
@@ -74,7 +81,8 @@ Checkpoint sweep found the best local setup:
 
 Representative local outputs:
 
-- Walk checkpoint sweep: `outputs_checkpoint_sweep/anima_00013/walk/illustriousPencilXL_v320_balanced/contact_sheet.png`
+- NovaOrange walk candidate: `outputs_checkpoint_sweep/anima_00013/walk/novaOrangeXL_v120_balanced/contact_sheet.png`
+- Highest-score walk candidate: `outputs_checkpoint_sweep/anima_00013/walk/illustriousPencilXL_v320_balanced/contact_sheet.png`
 - Multi-asset walk: `outputs_multi_asset_pdca/anima_00013/walk/walk_strong_pose/contact_sheet.png`
 - Multi-asset idle: `outputs_multi_asset_pdca/anima_00013/idle/idle_strong_pose/contact_sheet.png`
 - Multi-asset attack: `outputs_multi_asset_pdca/anima_00013/attack/attack_strong_pose/contact_sheet.png`

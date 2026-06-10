@@ -33,7 +33,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run local PDCA generation for multiple 2D character assets.")
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--output-root", default=Path("outputs_multi_asset_pdca"), type=Path)
-    parser.add_argument("--checkpoint", default="illustriousPencilXL_v320.safetensors")
+    parser.add_argument("--checkpoint", default="novaOrangeXL_v120.safetensors")
     parser.add_argument("--controlnet", default="SDXL\\OpenPoseXL2.safetensors")
     parser.add_argument("--seed", default=130018, type=int)
     parser.add_argument("--width", default=768, type=int)

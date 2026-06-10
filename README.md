@@ -95,14 +95,14 @@ python -m natural_sprite_lab \
   --director ollama \
   --director-timeout 60 \
   --comfy-url http://127.0.0.1:8188 \
-  --comfy-checkpoint illustriousPencilXL_v320.safetensors \
+  --comfy-checkpoint novaOrangeXL_v120.safetensors \
   --controlnet "SDXL\OpenPoseXL2.safetensors" \
   --controlnet-strength 0.75 \
   --seed 130018 \
   --seed-step 0
 ```
 
-The ComfyUI prototype uses the reference image through the director-generated `CharacterProfile` and per-frame prompt pack. OpenPose ControlNet constrains the generated motion, while `--seed-step 0` keeps identity more stable across frames. Stronger identity consistency requires a dedicated reference-guided workflow such as IP-Adapter or a character LoRA.
+The ComfyUI prototype uses the reference image through the director-generated `CharacterProfile` and per-frame prompt pack. OpenPose ControlNet constrains the generated motion, while `--seed-step 0` keeps identity more stable across frames. `novaOrangeXL_v120.safetensors` is the current default because its outputs are visually clean and game-asset friendly; checkpoint sweeps can still compare it against Illustrious, Pony, and other local models. Stronger identity consistency requires a dedicated reference-guided workflow such as IP-Adapter or a character LoRA.
 
 Each run also writes `evaluation_report.json` with local heuristics for foreground count, frame-to-frame center/scale stability, color consistency, and motion variation. The summary is embedded in `manifest.json`.
 
