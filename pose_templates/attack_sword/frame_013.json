@@ -1,0 +1,65 @@
+{
+  "action": "attack",
+  "variant": "sword",
+  "frame_index": 13,
+  "phase": "ready",
+  "keypoints": {
+    "nose": [
+      0.5,
+      0.2
+    ],
+    "neck": [
+      0.5,
+      0.31
+    ],
+    "right_shoulder": [
+      0.58,
+      0.35
+    ],
+    "right_elbow": [
+      0.5685912011863569,
+      0.42786950074147306
+    ],
+    "right_wrist": [
+      0.5800346020761246,
+      0.48216510133465157
+    ],
+    "left_shoulder": [
+      0.42,
+      0.35
+    ],
+    "left_elbow": [
+      0.36,
+      0.48
+    ],
+    "left_wrist": [
+      0.31429560059317846,
+      0.5542956005931784
+    ],
+    "right_hip": [
+      0.55,
+      0.57
+    ],
+    "right_knee": [
+      0.6,
+      0.74
+    ],
+    "right_ankle": [
+      0.63,
+      0.89
+    ],
+    "left_hip": [
+      0.45,
+      0.57
+    ],
+    "left_knee": [
+      0.4,
+      0.74
+    ],
+    "left_ankle": [
+      0.37,
+      0.89
+    ]
+  },
+  "notes": "attack_sword ready"
+}

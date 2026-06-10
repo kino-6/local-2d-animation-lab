@@ -1,0 +1,34 @@
+{
+  "walk": {
+    "frames": 120,
+    "ok": true
+  },
+  "idle": {
+    "frames": 120,
+    "ok": true
+  },
+  "attack_sword": {
+    "frames": 120,
+    "ok": true
+  },
+  "attack_axe": {
+    "frames": 120,
+    "ok": true
+  },
+  "attack_bow": {
+    "frames": 120,
+    "ok": true
+  },
+  "hit_light": {
+    "frames": 120,
+    "ok": true
+  },
+  "hit_heavy": {
+    "frames": 120,
+    "ok": true
+  },
+  "hit_knockback": {
+    "frames": 120,
+    "ok": true
+  }
+}

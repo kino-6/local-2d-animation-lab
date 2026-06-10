@@ -79,6 +79,26 @@ def test_director_builds_character_profile_and_prompt_pack(tmp_path: Path) -> No
     assert "prompt_pack" in spec_text
 
 
+def test_director_resamples_frame_plan_to_120_frames(tmp_path: Path) -> None:
+    source = tmp_path / "hero.png"
+    Image.new("RGBA", (128, 128), (210, 120, 80, 255)).save(source)
+
+    outputs = run_pipeline(
+        source_image=source,
+        prompt="Create a 120-frame quick sword slash attack animation preserving this character design.",
+        backend=DummyBackend(),
+        output_root=tmp_path / "outputs",
+        run_id="directed_120_run",
+        director=WalkCycleDirector(use_ollama=False),
+    )
+
+    spec = json.loads(outputs.spec_path.read_text(encoding="utf-8"))
+    assert spec["frame_count"] == 120
+    assert len(spec["frame_plan"]) == 120
+    assert len(spec["prompt_pack"]) == 120
+    assert spec["frame_plan"][0]["source_keyframe_count"] == 8
+
+
 def test_attack_pipeline_writes_effect_layers(tmp_path: Path) -> None:
     source = tmp_path / "hero.png"
     Image.new("RGBA", (96, 128), (210, 120, 80, 255)).save(source)

@@ -1,0 +1,65 @@
+{
+  "action": "walk",
+  "variant": "walk",
+  "frame_index": 77,
+  "phase": "passing",
+  "keypoints": {
+    "nose": [
+      0.5,
+      0.2
+    ],
+    "neck": [
+      0.5,
+      0.31
+    ],
+    "right_shoulder": [
+      0.58,
+      0.35
+    ],
+    "right_elbow": [
+      0.64,
+      0.48
+    ],
+    "right_wrist": [
+      0.6161586218175809,
+      0.6
+    ],
+    "left_shoulder": [
+      0.42,
+      0.35
+    ],
+    "left_elbow": [
+      0.36,
+      0.48
+    ],
+    "left_wrist": [
+      0.38384137818241915,
+      0.6
+    ],
+    "right_hip": [
+      0.55,
+      0.57
+    ],
+    "right_knee": [
+      0.6558612059096167,
+      0.74
+    ],
+    "right_ankle": [
+      0.7257620672736287,
+      0.8500991386359881
+    ],
+    "left_hip": [
+      0.45,
+      0.57
+    ],
+    "left_knee": [
+      0.3441387940903833,
+      0.74
+    ],
+    "left_ankle": [
+      0.27423793272637126,
+      0.89
+    ]
+  },
+  "notes": "walk passing"
+}

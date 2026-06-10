@@ -14,6 +14,7 @@ from PIL import Image, ImageDraw
 
 from natural_sprite_lab.backends.base import AnimationBackend
 from natural_sprite_lab.models import AnimationSpec, GeneratedFrames
+from natural_sprite_lab.pose_templates import infer_template_name, load_pose_sequence, render_pose_frame
 from natural_sprite_lab.utils.paths import frame_filename
 
 
@@ -37,6 +38,8 @@ class ComfyBackend(AnimationBackend):
         controlnet_strength: float = 0.8,
         seed_step: int = 1,
         timeout_seconds: float = 240.0,
+        pose_template_root: Path | None = None,
+        pose_template_name: str | None = None,
     ) -> None:
         self.server_url = server_url.rstrip("/")
         self.checkpoint = checkpoint
@@ -51,6 +54,8 @@ class ComfyBackend(AnimationBackend):
         self.controlnet_strength = controlnet_strength
         self.seed_step = seed_step
         self.timeout_seconds = timeout_seconds
+        self.pose_template_root = pose_template_root
+        self.pose_template_name = pose_template_name
         self.client_id = str(uuid.uuid4())
 
     def generate_frames(
@@ -67,12 +72,16 @@ class ComfyBackend(AnimationBackend):
         frame_paths: list[Path] = []
         prompt_ids: list[str] = []
         pose_images: list[str] = []
+        pose_template_name = self.pose_template_name or infer_template_name(spec)
+        pose_template_frames = _load_pose_template_frames(self.pose_template_root, pose_template_name)
+        pose_output_dir = frames_dir.parent / "controlnet_pose"
+        workflow_dir = frames_dir.parent / "comfy_workflows"
 
         for index in range(spec.frame_count):
             item = prompt_pack[index % len(prompt_pack)]
             pose_image_name = None
             if controlnet:
-                pose_image_name = self._upload_pose_image(spec, index)
+                pose_image_name = self._upload_pose_image(spec, index, pose_template_frames, pose_output_dir)
                 pose_images.append(pose_image_name)
             workflow = self._workflow(
                 checkpoint=checkpoint,
@@ -82,6 +91,11 @@ class ComfyBackend(AnimationBackend):
                 prefix=f"natural_sprite_lab_{spec.character_id}_{spec.action.value}_{index:02d}",
                 controlnet=controlnet,
                 pose_image_name=pose_image_name,
+            )
+            workflow_dir.mkdir(parents=True, exist_ok=True)
+            (workflow_dir / f"frame_{index:02d}.json").write_text(
+                json.dumps(workflow, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
             )
             prompt_id = self._queue_prompt(workflow)
             prompt_ids.append(prompt_id)
@@ -99,6 +113,11 @@ class ComfyBackend(AnimationBackend):
                 "checkpoint": checkpoint,
                 "controlnet": controlnet,
                 "controlnet_strength": self.controlnet_strength,
+                "pose_template_root": str(self.pose_template_root) if self.pose_template_root else None,
+                "pose_template_name": pose_template_name if pose_template_frames else None,
+                "pose_template_frame_count": len(pose_template_frames),
+                "controlnet_pose_dir": str(pose_output_dir) if controlnet else None,
+                "workflow_dir": str(workflow_dir),
                 "seed": self.seed,
                 "seed_step": self.seed_step,
                 "prompt_ids": prompt_ids,
@@ -221,8 +240,20 @@ class ComfyBackend(AnimationBackend):
         request = urllib.request.Request(f"{self.server_url}/view?{query}", method="GET")
         return self._open(request, timeout=30)
 
-    def _upload_pose_image(self, spec: AnimationSpec, index: int) -> str:
-        image = _make_pose_image(spec, index, self.width, self.height)
+    def _upload_pose_image(
+        self,
+        spec: AnimationSpec,
+        index: int,
+        pose_template_frames: list[dict[str, Any]],
+        pose_output_dir: Path,
+    ) -> str:
+        if pose_template_frames:
+            image = render_pose_frame(pose_template_frames[index % len(pose_template_frames)], self.width, self.height)
+        else:
+            image = _make_pose_image(spec, index, self.width, self.height)
+        pose_output_dir.mkdir(parents=True, exist_ok=True)
+        local_path = pose_output_dir / f"frame_{index:02d}.png"
+        image.save(local_path)
         buffer = BytesIO()
         image.save(buffer, format="PNG")
         filename = f"natural_sprite_lab_pose_{self.client_id}_{index:02d}.png"
@@ -261,6 +292,15 @@ def _fallback_prompt_pack(spec: AnimationSpec) -> list[dict[str, Any]]:
         }
         for index in range(spec.frame_count)
     ]
+
+
+def _load_pose_template_frames(pose_template_root: Path | None, name: str) -> list[dict[str, Any]]:
+    if pose_template_root is None:
+        return []
+    try:
+        return load_pose_sequence(pose_template_root, name)
+    except (FileNotFoundError, ValueError):
+        return []
 
 
 def _make_pose_image(spec: AnimationSpec, index: int, width: int, height: int) -> Image.Image:

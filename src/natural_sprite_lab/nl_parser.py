@@ -74,7 +74,7 @@ def _parse_frame_count(text: str, default: int) -> int:
     if not match:
         return default
     frame_count = int(match.group(1))
-    return min(max(frame_count, 1), 64)
+    return min(max(frame_count, 1), 240)
 
 
 def _parse_output_formats(text: str) -> list[OutputFormat]:

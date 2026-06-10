@@ -40,13 +40,14 @@ class WalkCycleDirector:
         plan = _merge_plan(fallback, llm_plan)
         if self.use_ollama and not llm_plan and self.last_error:
             plan["director_metadata"]["ollama_error"] = self.last_error
+        frame_plan = _resample_frame_plan(plan["frame_plan"], spec.frame_count)
         return replace(
             spec,
             identity_features=plan["identity_features"],
             negative_prompts=plan["negative_prompts"],
-            frame_plan=plan["frame_plan"][: spec.frame_count],
+            frame_plan=frame_plan,
             character_profile=plan["character_profile"],
-            prompt_pack=plan["prompt_pack"][: spec.frame_count],
+            prompt_pack=_make_prompt_pack(plan["character_profile"], frame_plan, prompt),
             director_metadata=plan["director_metadata"],
         )
 
@@ -131,6 +132,7 @@ def _fallback_plan(image_report: dict[str, Any], prompt: str, spec: AnimationSpe
             "large amber eyes",
             "small pink hair clip on one side",
             "white sailor-style school uniform with dark collar",
+            "navy blue sailor uniform accents, navy blue jacket or dark sailor collar",
             "red necktie",
             "dark pleated skirt, navy socks, brown loafers",
             "cheerful open-mouth expression",
@@ -141,6 +143,7 @@ def _fallback_plan(image_report: dict[str, Any], prompt: str, spec: AnimationSpe
         "generation_intent": "Generate new full-body frames that match this reference character design.",
     }
     frame_plan = _annotate_frame_plan(spec.action, prompt, _frame_plan_for_action(spec.action, prompt))
+    sampled_frame_plan = _resample_frame_plan(frame_plan, spec.frame_count)
     return {
         "character_profile": character_profile,
         "identity_features": [
@@ -157,8 +160,8 @@ def _fallback_plan(image_report: dict[str, Any], prompt: str, spec: AnimationSpe
             "costume color changes",
             "foot sliding without contact poses",
         ],
-        "frame_plan": frame_plan[: spec.frame_count],
-        "prompt_pack": _make_prompt_pack(character_profile, frame_plan[: spec.frame_count], prompt),
+        "frame_plan": sampled_frame_plan,
+        "prompt_pack": _make_prompt_pack(character_profile, sampled_frame_plan, prompt),
         "director_metadata": {
             "director": "fallback_walk_cycle_director",
             "ollama_used": False,
@@ -284,6 +287,25 @@ def _frame_plan_for_action(action: Action, prompt: str = "") -> list[dict[str, A
     ]
 
 
+def _resample_frame_plan(frame_plan: list[dict[str, Any]], frame_count: int) -> list[dict[str, Any]]:
+    if not frame_plan or frame_count <= 0:
+        return []
+    if frame_count == len(frame_plan):
+        return [dict(frame, output_frame=index, source_keyframe=index) for index, frame in enumerate(frame_plan)]
+    sampled: list[dict[str, Any]] = []
+    source_max = len(frame_plan) - 1
+    output_max = max(1, frame_count - 1)
+    for index in range(frame_count):
+        source_index = round(index * source_max / output_max)
+        frame = dict(frame_plan[source_index])
+        frame["output_frame"] = index
+        frame["source_keyframe"] = source_index
+        frame["source_keyframe_count"] = len(frame_plan)
+        frame["phase_t"] = round(index / output_max, 4)
+        sampled.append(frame)
+    return sampled
+
+
 def _annotate_frame_plan(action: Action, prompt: str, frame_plan: list[dict[str, Any]]) -> list[dict[str, Any]]:
     variant = _action_variant(action, prompt)
     return [_annotate_frame(action, variant, frame) for frame in frame_plan]
@@ -398,7 +420,8 @@ def _make_prompt_pack(
         "low quality, blurry, bad anatomy, extra arms, extra legs, missing limbs, duplicate character, "
         "wrong outfit, changed hair color, pink hair, changed eye color, cropped feet, text, watermark, logo, "
         "multiple panels, sprite sheet, contact sheet, comic layout, UI frame, dialogue box, close-up, bust shot, "
-        "rope, swing set, playground, holding rope, cane, staff, prop, multiple girls, two girls, group, barefoot, "
+        "red dress, red uniform, kimono, costume swap, rope, swing set, playground, holding rope, cane, staff, prop, "
+        "multiple girls, two girls, group, barefoot, "
         "pose reference sheet, turnaround sheet, multiple poses in one image"
     )
     prompts = []

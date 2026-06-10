@@ -28,21 +28,21 @@ DEFAULT_ASSET_RECIPES: tuple[AssetRecipe, ...] = (
     AssetRecipe(
         name="walk",
         prompt=(
-            "Create an 8-frame side-view walking animation, facing right. Interpret the reference as a "
+            "Create a 120-frame side-view walking animation, facing right. Interpret the reference as a "
             "character design and generate new full-body frames of the same character walking."
         ),
     ),
     AssetRecipe(
         name="idle",
         prompt=(
-            "Create an 8-frame calm idle breathing animation, facing right. Interpret the reference as a "
+            "Create a 120-frame calm idle breathing animation, facing right. Interpret the reference as a "
             "character design and generate new full-body frames of the same character standing naturally."
         ),
     ),
     AssetRecipe(
         name="attack_sword",
         prompt=(
-            "Create an 8-frame quick sword slash attack animation, facing right. Interpret the reference as a "
+            "Create a 120-frame quick sword slash attack animation, facing right. Interpret the reference as a "
             "character design. Generate one new full-body game animation frame per output image, showing the "
             "same character using a sword slash attack."
         ),
@@ -50,7 +50,7 @@ DEFAULT_ASSET_RECIPES: tuple[AssetRecipe, ...] = (
     AssetRecipe(
         name="attack_axe",
         prompt=(
-            "Create an 8-frame heavy axe swing attack animation, facing right. Interpret the reference as a "
+            "Create a 120-frame heavy axe swing attack animation, facing right. Interpret the reference as a "
             "character design. Generate one new full-body game animation frame per output image, showing the "
             "same character holding a large axe and performing a heavy overhead chop."
         ),
@@ -58,7 +58,7 @@ DEFAULT_ASSET_RECIPES: tuple[AssetRecipe, ...] = (
     AssetRecipe(
         name="attack_bow",
         prompt=(
-            "Create an 8-frame bow attack animation, facing right. Interpret the reference as a character "
+            "Create a 120-frame bow attack animation, facing right. Interpret the reference as a character "
             "design. Generate one new full-body game animation frame per output image, showing the same "
             "character drawing a bow, aiming, and releasing an arrow."
         ),
@@ -66,7 +66,7 @@ DEFAULT_ASSET_RECIPES: tuple[AssetRecipe, ...] = (
     AssetRecipe(
         name="hit_light",
         prompt=(
-            "Create an 8-frame light hit reaction animation, facing right. Interpret the reference as a "
+            "Create a 120-frame light hit reaction animation, facing right. Interpret the reference as a "
             "character design. Generate one new full-body game animation frame per output image, showing the "
             "same character making a small stagger from a weak hit."
         ),
@@ -74,7 +74,7 @@ DEFAULT_ASSET_RECIPES: tuple[AssetRecipe, ...] = (
     AssetRecipe(
         name="hit_heavy",
         prompt=(
-            "Create an 8-frame heavy damage reaction animation, facing right. Interpret the reference as a "
+            "Create a 120-frame heavy damage reaction animation, facing right. Interpret the reference as a "
             "character design. Generate one new full-body game animation frame per output image, showing the "
             "same character taking big damage with a strong recoil."
         ),
@@ -82,7 +82,7 @@ DEFAULT_ASSET_RECIPES: tuple[AssetRecipe, ...] = (
     AssetRecipe(
         name="hit_knockback",
         prompt=(
-            "Create an 8-frame knockback damage reaction animation, facing right. Interpret the reference as a "
+            "Create a 120-frame knockback damage reaction animation, facing right. Interpret the reference as a "
             "character design. Generate one new full-body game animation frame per output image, showing the "
             "same character being blown away backward by a powerful hit."
         ),

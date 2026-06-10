@@ -1,0 +1,65 @@
+{
+  "action": "hit",
+  "variant": "light",
+  "frame_index": 53,
+  "phase": "recoil",
+  "keypoints": {
+    "nose": [
+      0.5640000000000001,
+      0.2
+    ],
+    "neck": [
+      0.54,
+      0.31
+    ],
+    "right_shoulder": [
+      0.62,
+      0.35
+    ],
+    "right_elbow": [
+      0.68,
+      0.48
+    ],
+    "right_wrist": [
+      0.672,
+      0.6
+    ],
+    "left_shoulder": [
+      0.45999999999999996,
+      0.35
+    ],
+    "left_elbow": [
+      0.39999999999999997,
+      0.48
+    ],
+    "left_wrist": [
+      0.304,
+      0.6
+    ],
+    "right_hip": [
+      0.5900000000000001,
+      0.57
+    ],
+    "right_knee": [
+      0.64,
+      0.74
+    ],
+    "right_ankle": [
+      0.67,
+      0.89
+    ],
+    "left_hip": [
+      0.49,
+      0.57
+    ],
+    "left_knee": [
+      0.44,
+      0.74
+    ],
+    "left_ankle": [
+      0.41,
+      0.89
+    ]
+  },
+  "notes": "hit_light recoil"
+}

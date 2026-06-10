@@ -13,20 +13,19 @@ Walking animation is the baseline workflow because it is fundamental for 2D char
 
 ## Implemented Workflow
 
-Current local pipeline:
+Current main local pipeline:
 
 1. Parse the natural-language prompt into `AnimationSpec`.
 2. Interpret the reference image into `CharacterProfile`.
-3. Build an action-specific `frame_plan`.
+3. Build or select reusable OpenPose templates from `pose_templates/<action>/`.
 4. Build a per-frame `prompt_pack`.
 5. Generate frames through a backend:
-   - deterministic `DummyBackend`
-   - prototype `CutoutWalkBackend`
    - ComfyUI `ComfyBackend`
-   - deterministic `RiggedSpriteBackend` for animation-mechanics validation
-6. Optionally generate and upload OpenPose ControlNet pose maps.
+6. Upload rendered OpenPose ControlNet pose maps.
 7. Save game-asset outputs:
    - `frames/*.png`
+   - `controlnet_pose/*.png`
+   - `comfy_workflows/*.json`
    - `effects/*.png` for attack/hit action cues
    - `frames_with_effects/*.png` for composited preview frames
    - `spritesheet.png`
@@ -36,19 +35,23 @@ Current local pipeline:
    - `animation_spec.json`
    - `manifest.json`
    - `evaluation_report.json`
-8. Run local heuristic evaluation for consistency, foreground structure, and motion variation.
-9. Validate generated manifests in Godot as an E2E game-engine playback check.
+8. Run local heuristic evaluation for consistency, foreground structure, action readability, and motion variation.
+9. Record adopted/rejected candidates and retake reasons in PDCA logs.
+10. Validate generated manifests in Godot as an E2E game-engine playback check.
 
 ## Key Files
 
 - `src/natural_sprite_lab/planning.py`
 - `src/natural_sprite_lab/action_catalog.py`
 - `src/natural_sprite_lab/backends/comfy_backend.py`
+- `src/natural_sprite_lab/pose_templates.py`
 - `src/natural_sprite_lab/backends/rigged_sprite_backend.py`
 - `src/natural_sprite_lab/postprocess/action_effects.py`
 - `src/natural_sprite_lab/evaluation.py`
 - `scripts/pdca_rigged_assets.py`
 - `scripts/pdca_sfc_motion_assets.py`
+- `scripts/build_pose_templates.py`
+- `scripts/pdca_controlnet_assets.py`
 - `scripts/report_animation_viability.py`
 - `scripts/pdca_walk_cycle.py`
 - `scripts/pdca_multi_asset.py`
@@ -57,6 +60,7 @@ Current local pipeline:
 - `godot/tests/e2e_runner.gd`
 - `docs/local_skills/reference_walk_cycle_pdca.md`
 - `docs/local_skills/natural-sprite-asset-pdca/SKILL.md`
+- `docs/local_skills/natural-sprite-controlnet-pdca/SKILL.md`
 - `docs/local_workflows/natural_sprite_asset_improvement_plan.md`
 
 ## Best Known Walk Setup
@@ -77,6 +81,56 @@ uv run python -m natural_sprite_lab \
   --controlnet "SDXL\OpenPoseXL2.safetensors" \
   --controlnet-strength 0.75
 ```
+
+## Current Main Path
+
+The main path is now `novaOrangeXL + ControlNet(OpenPose)` with 120-frame outputs. Frame thinning is intentionally out of scope for this workflow and should live in a separate export skill.
+
+Build reusable pose templates:
+
+```bash
+uv run python scripts/build_pose_templates.py --output-root pose_templates --frame-count 120
+```
+
+Run the first proof workflow:
+
+```bash
+uv run python scripts/pdca_controlnet_assets.py \
+  --input assets/reference/Anima_00013_.png \
+  --action attack_sword \
+  --output-root outputs_controlnet_pdca \
+  --pose-template-root pose_templates \
+  --frame-count 120 \
+  --retakes 3
+```
+
+The first stable workflow does not require IP-Adapter because no IP-Adapter nodes were detected in the current local ComfyUI object registry. LoRA nodes are available and remain a later identity-lock option.
+
+## 2026-06-10 ControlNet Goal Results
+
+Completed a 120-frame `novaOrangeXL + ControlNet(OpenPose)` sweep for every current action variant:
+
+- `walk`
+- `idle`
+- `attack_sword`
+- `attack_axe`
+- `attack_bow`
+- `hit_light`
+- `hit_heavy`
+- `hit_knockback`
+
+All runs produced frames, contact sheet, preview GIF, spritesheet, manifest, evaluation report, ControlNet pose images, workflow JSON, and side-by-side pose-vs-generated sheets. All summaries passed Godot headless manifest playback validation at 120 frames and 768x768.
+
+The best proof remains `attack_sword`, especially `outputs_controlnet_pdca/anima_00013/attack/attack_sword_identity_lock/pose_vs_generated_contact_sheet.png`. It is usable as a workflow proof but still needs weapon continuity and foreground cleanup before player-facing asset use.
+
+Important rejected/provisional findings:
+
+- `attack_bow` is not acceptable from body OpenPose alone; the output often lacks bow/string/arrow despite the action request.
+- `walk` works E2E but can create duplicate/crowd-like failures in the full 120-frame sequence.
+- `hit_knockback` can produce extra face or character fragments.
+- `attack_axe` creates axe-like props but needs stronger active attack poses.
+
+Detailed findings: `docs/controlnet_pdca_findings.md`.
 
 ## PDCA Results
 
@@ -139,7 +193,7 @@ Rigged animation-mechanics PDCA:
 - adopted knockback prototype: `outputs_rigged_pdca/anima_00013/hit/hit_knockback_rigged/contact_sheet_with_effects.png`
 - Godot batch validation: all best rigged candidates loaded as 512x512 animations; attack and hit variants use composited effect frames.
 
-Agent review finding: these outputs are acceptable as a technical rig prototype, but not yet as player-facing final animation. The rigged path is now the practical workflow baseline because it preserves part continuity, loop behavior, prop readability, and hit/attack timing better than independent ComfyUI frame generation. The next step is replacing procedural parts with reference-derived or generated character parts while keeping the same rig and viability gates.
+Agent review finding: these outputs are acceptable as a historical technical rig prototype, but not as player-facing final animation. The rigged path remains diagnostic tooling for motion mechanics only; it is not the main generation path.
 
 SFC-style limited-animation PDCA:
 

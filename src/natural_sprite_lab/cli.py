@@ -25,6 +25,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--comfy-url", default="http://127.0.0.1:8188", help="ComfyUI server URL.")
     parser.add_argument("--comfy-checkpoint", default=None, help="ComfyUI checkpoint name.")
+    parser.add_argument(
+        "--workflow-preset",
+        default=None,
+        choices=["novaOrangeXL"],
+        help="Apply known local generation defaults.",
+    )
+    parser.add_argument("--pose-template-root", default=None, type=Path, help="OpenPose template root for ControlNet.")
+    parser.add_argument("--pose-template-name", default=None, help="Explicit OpenPose template action name.")
     parser.add_argument("--width", default=768, type=int, help="Generated frame width for ComfyUI.")
     parser.add_argument("--height", default=768, type=int, help="Generated frame height for ComfyUI.")
     parser.add_argument("--steps", default=24, type=int, help="ComfyUI sampler steps.")
@@ -76,6 +84,16 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
+    if args.workflow_preset == "novaOrangeXL":
+        args.comfy_checkpoint = args.comfy_checkpoint or "novaOrangeXL_v120.safetensors"
+        args.steps = 24 if args.steps == build_parser().get_default("steps") else args.steps
+        args.cfg = 6.0 if args.cfg == build_parser().get_default("cfg") else args.cfg
+        args.seed_step = 0 if args.seed_step == build_parser().get_default("seed_step") else args.seed_step
+        args.controlnet_strength = (
+            0.75
+            if args.controlnet_strength == build_parser().get_default("controlnet_strength")
+            else args.controlnet_strength
+        )
     if args.backend == "comfy":
         backend = ComfyBackend(
             server_url=args.comfy_url,
@@ -88,6 +106,8 @@ def main(argv: list[str] | None = None) -> None:
             seed_step=args.seed_step,
             controlnet=args.controlnet,
             controlnet_strength=args.controlnet_strength,
+            pose_template_root=args.pose_template_root,
+            pose_template_name=args.pose_template_name,
         )
     elif args.backend == "cutout-walk":
         backend = CutoutWalkBackend()

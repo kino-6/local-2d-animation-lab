@@ -35,3 +35,10 @@ def test_parse_defaults_are_mvp_friendly() -> None:
     assert spec.direction == Direction.RIGHT
     assert spec.frame_count == 8
     assert spec.background == Background.TRANSPARENT
+
+
+def test_parse_120_frame_controlnet_prompt() -> None:
+    spec = parse_prompt("Create a 120-frame quick sword slash attack animation, facing right.")
+
+    assert spec.action == Action.ATTACK
+    assert spec.frame_count == 120

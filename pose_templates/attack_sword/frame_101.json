@@ -1,0 +1,65 @@
+{
+  "action": "attack",
+  "variant": "sword",
+  "frame_index": 101,
+  "phase": "recover",
+  "keypoints": {
+    "nose": [
+      0.54,
+      0.2
+    ],
+    "neck": [
+      0.54,
+      0.31
+    ],
+    "right_shoulder": [
+      0.58,
+      0.35
+    ],
+    "right_elbow": [
+      0.6399999999999999,
+      0.36
+    ],
+    "right_wrist": [
+      0.681844316674038,
+      0.41000000000000003
+    ],
+    "left_shoulder": [
+      0.42,
+      0.35
+    ],
+    "left_elbow": [
+      0.36,
+      0.48
+    ],
+    "left_wrist": [
+      0.38,
+      0.49999999999999994
+    ],
+    "right_hip": [
+      0.55,
+      0.57
+    ],
+    "right_knee": [
+      0.6,
+      0.74
+    ],
+    "right_ankle": [
+      0.63,
+      0.89
+    ],
+    "left_hip": [
+      0.45,
+      0.57
+    ],
+    "left_knee": [
+      0.4,
+      0.74
+    ],
+    "left_ankle": [
+      0.37,
+      0.89
+    ]
+  },
+  "notes": "attack_sword recover"
+}

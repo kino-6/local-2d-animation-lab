@@ -1,6 +1,6 @@
 # natural-sprite-lab
 
-`natural-sprite-lab` is a local-first Python prototype for turning one full-body 2D character image plus a natural-language instruction into game-friendly animation assets.
+`natural-sprite-lab` is a local-first Python prototype for turning one full-body 2D character image plus a natural-language instruction into game-friendly 120-frame animation assets.
 
 ## Top-Level Rule
 
@@ -13,7 +13,7 @@ The reference image must be interpreted as a character design, not treated only 
 
 Walking animation is the first baseline workflow because it is fundamental for 2D character games. It is an example used to establish the Skill and workflow, not the final scope of the project. The same architecture should grow to support idle, attack, hit reaction, directional variants, and other game-ready character assets.
 
-The first MVP focuses on a single target: an 8-frame side-view walking animation. The output contract is more important than perfect image quality at this stage, so the default backend is a deterministic dummy backend that lets the whole pipeline be tested before a real image-generation system is plugged in.
+The current main path focuses on 120-frame action animation generated with `novaOrangeXL + ControlNet(OpenPose)`. Frame thinning or export to 8-12 frame sheets is intentionally a separate later workflow.
 
 ## Why Spec-Based
 
@@ -38,6 +38,8 @@ Current support:
 - Dummy backend that creates 8 transparent PNG frames
 - Prototype cutout backend that preserves source pixels with coarse walk-cycle transforms
 - Prototype ComfyUI backend that generates new frames from director prompt packs
+- Reusable OpenPose keypoint templates for ControlNet-driven action generation
+- 120-frame ControlNet PDCA workflow with adopted/rejected candidate logs
 - Prototype rigged-sprite backend that creates deterministic part-based frames for animation-mechanics validation
 - Action-specific variants for sword, axe, bow, light hit, heavy hit, and knockback
 - Transparent action effect layers for attack and hit readability
@@ -74,7 +76,7 @@ pip install -e ".[dev]"
 ```bash
 python -m natural_sprite_lab \
   --input assets/reference/hero.png \
-  --prompt "Create an 8-frame side-view walking animation, facing right, with transparent background."
+  --prompt "Create a 120-frame side-view walking animation, facing right, with transparent background."
 ```
 
 Prototype character-preserving cutout walk with a planning director:
@@ -82,7 +84,7 @@ Prototype character-preserving cutout walk with a planning director:
 ```bash
 python -m natural_sprite_lab \
   --input assets/reference/Anima_00013_.png \
-  --prompt "Create an 8-frame side-view walking animation, facing right, with transparent background. Preserve the character identity, outfit, hair, colors, and silhouette." \
+  --prompt "Create a 120-frame side-view walking animation, facing right, with transparent background. Preserve the character identity, outfit, hair, colors, and silhouette." \
   --backend cutout-walk \
   --director ollama
 ```
@@ -94,8 +96,10 @@ Prototype reference interpretation plus ComfyUI generation:
 ```bash
 python -m natural_sprite_lab \
   --input assets/reference/Anima_00013_.png \
-  --prompt "Create an 8-frame side-view walking animation, facing right. Interpret the reference as a character design and generate new full-body frames of the same character walking." \
+  --prompt "Create a 120-frame side-view walking animation, facing right. Interpret the reference as a character design and generate new full-body frames of the same character walking." \
   --backend comfy \
+  --workflow-preset novaOrangeXL \
+  --pose-template-root pose_templates \
   --director ollama \
   --director-timeout 60 \
   --comfy-url http://127.0.0.1:8188 \
@@ -106,9 +110,30 @@ python -m natural_sprite_lab \
   --seed-step 0
 ```
 
-The ComfyUI prototype uses the reference image through the director-generated `CharacterProfile` and per-frame prompt pack. OpenPose ControlNet constrains the generated motion, while `--seed-step 0` keeps identity more stable across frames. `novaOrangeXL_v120.safetensors` is the current default because its outputs are visually clean and game-asset friendly; checkpoint sweeps can still compare it against Illustrious, Pony, and other local models. Stronger identity consistency requires a dedicated reference-guided workflow such as IP-Adapter or a character LoRA.
+The ComfyUI prototype uses the reference image through the director-generated `CharacterProfile` and per-frame prompt pack. OpenPose ControlNet constrains the generated motion from reusable templates, while `--seed-step 0` keeps identity more stable across frames. `novaOrangeXL_v120.safetensors` is the current default because its outputs are visually clean and game-asset friendly; checkpoint sweeps can still compare it against Illustrious, Pony, and other local models. Stronger identity consistency requires a dedicated reference-guided workflow such as IP-Adapter or a character LoRA.
+
+Build reusable OpenPose templates:
+
+```bash
+uv run python scripts/build_pose_templates.py \
+  --output-root pose_templates \
+  --frame-count 120
+```
+
+Run the main ControlNet PDCA proof for sword attack:
+
+```bash
+uv run python scripts/pdca_controlnet_assets.py \
+  --input assets/reference/Anima_00013_.png \
+  --action attack_sword \
+  --output-root outputs_controlnet_pdca \
+  --pose-template-root pose_templates \
+  --frame-count 120 \
+  --retakes 3
+```
 
 Each run also writes `evaluation_report.json` with local heuristics for foreground count, frame-to-frame center/scale stability, color consistency, and motion variation. The summary is embedded in `manifest.json`.
+Current 120-frame ControlNet PDCA findings are documented in `docs/controlnet_pdca_findings.md`.
 
 Practical animation-mechanics prototype:
 
@@ -120,9 +145,9 @@ uv run python scripts/pdca_rigged_assets.py \
   --height 512
 ```
 
-The rigged-sprite route is the current adopted validation path for "does this read as animation?" because it keeps body parts, props, effects, frame timing, and loop behavior deterministic. It is not a final player-facing art solution. Its purpose is to establish the Skill/workflow contract before replacing procedural parts with reference-derived or generated body parts.
+The rigged-sprite route is now historical diagnostic tooling only. It is not the main generation path. The main path is reusable OpenPose templates plus `novaOrangeXL + ControlNet`.
 
-SFC-style limited-animation PDCA:
+Historical SFC-style limited-animation diagnostic:
 
 ```bash
 uv run python scripts/pdca_sfc_motion_assets.py \
@@ -132,7 +157,7 @@ uv run python scripts/pdca_sfc_motion_assets.py \
   --height 512
 ```
 
-This route plans motion internally at 120 source frames, holds nonessential body parts still, samples anticipation/impact/recovery frames for game output, and compares it against a fuller puppet-style rig. It is the preferred direction for reducing puppet-like motion while keeping deterministic local validation.
+This historical route plans motion internally at 120 source frames and compares limited motion with puppet-like motion. It remains useful for diagnostics, but not for final generated assets.
 
 Generate the viability report for the adopted prototype outputs:
 
@@ -158,7 +183,7 @@ uv run python scripts/pdca_walk_cycle.py \
 ```
 
 The PDCA criteria are documented in `docs/local_skills/reference_walk_cycle_pdca.md`.
-The broader asset-generation workflow is documented in `docs/local_skills/natural-sprite-asset-pdca/SKILL.md`, with the improvement roadmap in `docs/local_workflows/natural_sprite_asset_improvement_plan.md`.
+The broader asset-generation workflow is documented in `docs/local_skills/natural-sprite-asset-pdca/SKILL.md`; the current ControlNet main path is documented in `docs/local_skills/natural-sprite-controlnet-pdca/SKILL.md`, with the improvement roadmap in `docs/local_workflows/natural_sprite_asset_improvement_plan.md`.
 
 Multi-asset PDCA sweep for the same reference character:
 

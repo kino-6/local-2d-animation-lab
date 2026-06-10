@@ -33,18 +33,28 @@ def evaluate_animation(
     ]
 
     issues: list[str] = []
+    issue_codes: set[str] = set()
     if max(report["component_count"] for report in frame_reports) > 2:
         issues.append("possible multi-character or fragmented foreground")
+        issue_codes.add("multiple_or_fragmented_foreground")
     if pstdev(centers) > 0.16:
         issues.append("character center drifts too much between frames")
+        issue_codes.add("center_drift")
     if pstdev(heights) > 0.12:
         issues.append("character scale changes too much between frames")
+        issue_codes.add("scale_drift")
     if mean(color_distances or [0.0]) > 60:
         issues.append("character colors are inconsistent between frames")
+        issue_codes.add("color_drift")
     if max(areas) < 0.08:
         issues.append("foreground character is too small")
+        issue_codes.add("missing_or_tiny_foreground")
     if max(pose_deltas or [0.0]) < 0.04:
         issues.append("motion variation is weak")
+        issue_codes.add("weak_motion")
+    if max(report["edge_foreground_ratio"] for report in frame_reports) > 0.08:
+        issues.append("foreground touches canvas edges or background is contaminated")
+        issue_codes.add("background_contamination")
 
     score = 1.0
     score -= min(0.35, pstdev(centers) * 1.2)
@@ -54,16 +64,23 @@ def evaluate_animation(
     score += min(0.12, max(pose_deltas or [0.0]))
     semantic = _evaluate_semantics(frame_reports, spec, effect_frame_paths or [])
     viability = _evaluate_animation_viability(frame_paths, frame_reports, spec, backend_metadata or {})
+    template_match = _evaluate_pose_template_match(spec, backend_metadata or {})
     if semantic:
         score -= max(0.0, 1.0 - float(semantic["score"])) * 0.20
         issues.extend(str(issue) for issue in semantic["issues"])
+        issue_codes.update(str(code) for code in semantic.get("issue_codes", []))
     score -= max(0.0, 1.0 - float(viability["score"])) * 0.25
     issues.extend(str(issue) for issue in viability["issues"])
+    issue_codes.update(str(code) for code in viability.get("issue_codes", []))
+    score -= max(0.0, 1.0 - float(template_match["score"])) * 0.15
+    issues.extend(str(issue) for issue in template_match["issues"])
+    issue_codes.update(str(code) for code in template_match.get("issue_codes", []))
     score = max(0.0, min(1.0, score))
 
     return {
         "score": round(score, 3),
         "issues": issues,
+        "issue_codes": sorted(issue_codes),
         "summary": {
             "mean_foreground_area_ratio": round(mean(areas), 3),
             "center_x_stdev": round(pstdev(centers), 3),
@@ -73,6 +90,7 @@ def evaluate_animation(
         },
         "semantic": semantic,
         "animation_viability": viability,
+        "pose_template_match": template_match,
         "frames": frame_reports,
     }
 
@@ -90,6 +108,7 @@ def _evaluate_frame(path: Path) -> dict[str, Any]:
             "center_x_ratio": 0.5,
             "mean_rgb": [0, 0, 0],
             "component_count": 0,
+            "edge_foreground_ratio": 0.0,
         }
 
     left, top, right, bottom = bbox
@@ -106,6 +125,7 @@ def _evaluate_frame(path: Path) -> dict[str, Any]:
         "center_x_ratio": round(((left + right) / 2) / width, 4),
         "mean_rgb": [round(value) for value in stat.mean],
         "component_count": _component_count(mask, min_pixels=max(80, int(width * height * 0.002))),
+        "edge_foreground_ratio": round(_edge_foreground_ratio(mask), 4),
     }
 
 
@@ -143,6 +163,22 @@ def _component_count(mask: Image.Image, min_pixels: int) -> int:
             if size >= min_pixels:
                 count += 1
     return count
+
+
+def _edge_foreground_ratio(mask: Image.Image) -> float:
+    width, height = mask.size
+    pixels = mask.load()
+    border = max(2, min(width, height) // 32)
+    total = 0
+    edge = 0
+    for y in range(height):
+        for x in range(width):
+            if pixels[x, y] == 0:
+                continue
+            total += 1
+            if x < border or y < border or x >= width - border or y >= height - border:
+                edge += 1
+    return edge / total if total else 0.0
 
 
 def _flood(mask: Image.Image, start_x: int, start_y: int, seen: set[tuple[int, int]]) -> int:
@@ -183,20 +219,38 @@ def _evaluate_semantics(
     ]
     effect_non_empty = _effect_non_empty(effect_frame_paths)
     issues: list[str] = []
+    issue_codes: set[str] = set()
     if not active_frames:
         issues.append("semantic metadata has no active action frames")
+        issue_codes.add("pose_action_mismatch")
     if effect_frame_paths and not any(effect_non_empty):
         issues.append("semantic action cue layers are empty")
+        issue_codes.add("weapon_or_hit_cue_missing")
     if effect_frame_paths and active_frames:
         missing = [index for index in active_frames if index < len(effect_non_empty) and not effect_non_empty[index]]
         if missing:
             issues.append(f"semantic action cue missing on active frames: {missing}")
+            issue_codes.add("weapon_or_hit_cue_missing")
 
     pose_delta = _max_report_delta(frame_reports)
     if action == "hit" and pose_delta < 0.045:
         issues.append("hit semantic motion is too weak")
+        issue_codes.add("weak_hit_recoil")
     if action == "attack" and pose_delta < 0.035:
         issues.append("attack semantic motion is too weak")
+        issue_codes.add("weak_attack_motion")
+
+    variant = frame_plan[0].get("action_variant", action)
+    if action == "attack" and variant in {"sword", "axe"} and not active_frames:
+        issues.append(f"{variant} attack has no active weapon phase")
+        issue_codes.add("weapon_phase_missing")
+    if action == "attack" and variant == "bow":
+        if not active_frames:
+            issues.append("bow attack has no draw or release phase")
+            issue_codes.add("bow_phase_missing")
+        if pose_delta < 0.045:
+            issues.append("bow draw or release motion is weak")
+            issue_codes.add("bow_string_arrow_breakage_likely")
 
     score = 1.0
     score -= 0.22 * len(issues)
@@ -207,8 +261,9 @@ def _evaluate_semantics(
     return {
         "score": round(score, 3),
         "issues": issues,
+        "issue_codes": sorted(issue_codes),
         "action": action,
-        "variant": frame_plan[0].get("action_variant", action),
+        "variant": variant,
         "active_frames": active_frames,
         "effect_non_empty": effect_non_empty,
     }
@@ -255,19 +310,27 @@ def _evaluate_animation_viability(
     motion_economy = _motion_economy(backend_metadata)
 
     issues: list[str] = []
+    issue_codes: set[str] = set()
     if len(frame_paths) < 4:
         issues.append("animation has too few frames for viability review")
+        issue_codes.add("too_few_frames")
     if max_pose_delta < 0.035 and action != "idle":
         issues.append("animation motion amplitude is too low")
+        issue_codes.add("weak_motion")
     if center_stdev > 0.20:
         issues.append("animation root motion drifts too much")
+        issue_codes.add("center_drift")
     if height_stdev > 0.14:
         issues.append("animation silhouette height is unstable")
+        issue_codes.add("scale_drift")
     if action in {"walk", "idle"} and loop_delta > 0.12:
         issues.append("loop closure is weak")
+        issue_codes.add("weak_loop_closure")
     if not rigged and mean(frame_deltas or [0.0]) > 0.16:
         issues.append("frame-to-frame changes look like independent redraws")
+        issue_codes.add("frame_jitter")
     issues.extend(motion_economy["issues"])
+    issue_codes.update(str(code) for code in motion_economy.get("issue_codes", []))
 
     score = 1.0
     score -= min(0.25, center_stdev)
@@ -283,6 +346,7 @@ def _evaluate_animation_viability(
     return {
         "score": round(score, 3),
         "issues": issues,
+        "issue_codes": sorted(issue_codes),
         "summary": {
             "mean_frame_delta": round(mean(frame_deltas or [0.0]), 4),
             "max_frame_delta": round(max(frame_deltas or [0.0]), 4),
@@ -310,12 +374,16 @@ def _motion_economy(backend_metadata: dict[str, Any]) -> dict[str, Any]:
     mean_active = mean(active_counts or [0.0])
 
     issues: list[str] = []
+    issue_codes: set[str] = set()
     if style == "sfc" and source_count < 60:
         issues.append("SFC-style motion should be planned from at least 60 source frames")
+        issue_codes.add("insufficient_source_frames")
     if style == "sfc" and mean_active > 4.0:
         issues.append("too many body parts are marked active for SFC-style limited animation")
+        issue_codes.add("too_many_active_parts")
     if sampled_indices and sampled_indices != sorted(sampled_indices):
         issues.append("sampled source frames are not monotonic")
+        issue_codes.add("non_monotonic_sampling")
 
     score = 1.0
     if style != "sfc":
@@ -333,7 +401,46 @@ def _motion_economy(backend_metadata: dict[str, Any]) -> dict[str, Any]:
         "sampled_indices": sampled_indices,
         "mean_active_part_count": round(mean_active, 3),
         "issues": issues,
+        "issue_codes": sorted(issue_codes),
     }
+
+
+def _evaluate_pose_template_match(spec: Any | None, backend_metadata: dict[str, Any]) -> dict[str, Any]:
+    if spec is None:
+        return {"score": 1.0, "issues": [], "issue_codes": []}
+
+    expected = _expected_template_name(spec)
+    actual = str(backend_metadata.get("pose_template_name", "") or "")
+    issues: list[str] = []
+    issue_codes: set[str] = set()
+    if actual and expected and actual != expected:
+        issues.append(f"pose template mismatch: expected {expected}, got {actual}")
+        issue_codes.add("pose_action_mismatch")
+
+    score = 0.72 if issue_codes else 1.0
+    return {
+        "score": score,
+        "issues": issues,
+        "issue_codes": sorted(issue_codes),
+        "expected": expected,
+        "actual": actual,
+    }
+
+
+def _expected_template_name(spec: Any) -> str:
+    action = getattr(getattr(spec, "action", ""), "value", getattr(spec, "action", ""))
+    frame_plan = list(getattr(spec, "frame_plan", []) or [])
+    if action in {"walk", "idle"}:
+        return action
+    if frame_plan:
+        variant = str(frame_plan[0].get("action_variant", action))
+        if action == "attack":
+            return f"attack_{variant}" if variant in {"sword", "axe", "bow"} else "attack_sword"
+        if action == "hit":
+            if variant in {"light", "heavy", "knockback"}:
+                return f"hit_{variant}"
+            return "hit_light"
+    return action
 
 
 def _frame_alpha_deltas(frame_paths: list[Path]) -> list[float]:

@@ -1,0 +1,65 @@
+{
+  "action": "attack",
+  "variant": "axe",
+  "frame_index": 8,
+  "phase": "ready",
+  "keypoints": {
+    "nose": [
+      0.5,
+      0.2
+    ],
+    "neck": [
+      0.5,
+      0.31
+    ],
+    "right_shoulder": [
+      0.58,
+      0.35
+    ],
+    "right_elbow": [
+      0.5883638161146811,
+      0.44022738507167575
+    ],
+    "right_wrist": [
+      0.6146366782006921,
+      0.5044092931290164
+    ],
+    "left_shoulder": [
+      0.42,
+      0.35
+    ],
+    "left_elbow": [
+      0.36,
+      0.48
+    ],
+    "left_wrist": [
+      0.3241819080573406,
+      0.5641819080573406
+    ],
+    "right_hip": [
+      0.55,
+      0.57
+    ],
+    "right_knee": [
+      0.6,
+      0.74
+    ],
+    "right_ankle": [
+      0.63,
+      0.89
+    ],
+    "left_hip": [
+      0.45,
+      0.57
+    ],
+    "left_knee": [
+      0.4,
+      0.74
+    ],
+    "left_ankle": [
+      0.37,
+      0.89
+    ]
+  },
+  "notes": "attack_axe ready"
+}

@@ -129,9 +129,11 @@ def _manifest(
             "path": str(evaluation_path),
             "score": evaluation.get("score"),
             "issues": evaluation.get("issues", []),
+            "issue_codes": evaluation.get("issue_codes", []),
             "summary": evaluation.get("summary", {}),
             "semantic": evaluation.get("semantic", {}),
             "animation_viability": evaluation.get("animation_viability", {}),
+            "pose_template_match": evaluation.get("pose_template_match", {}),
         },
         "game_engine_metadata": _game_engine_metadata(spec, generated, evaluation),
     }
