@@ -41,6 +41,7 @@ Current local pipeline:
 ## Key Files
 
 - `src/natural_sprite_lab/planning.py`
+- `src/natural_sprite_lab/action_catalog.py`
 - `src/natural_sprite_lab/backends/comfy_backend.py`
 - `src/natural_sprite_lab/postprocess/action_effects.py`
 - `src/natural_sprite_lab/evaluation.py`

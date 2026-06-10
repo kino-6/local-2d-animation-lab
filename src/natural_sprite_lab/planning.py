@@ -11,6 +11,8 @@ from typing import Any
 
 from PIL import Image, ImageStat
 
+from natural_sprite_lab.action_catalog import detect_attack_variant
+from natural_sprite_lab.action_catalog import detect_hit_variant
 from natural_sprite_lab.models import Action
 from natural_sprite_lab.models import AnimationSpec
 
@@ -190,8 +192,8 @@ def _frame(
 
 
 def _frame_plan_for_action(action: Action, prompt: str = "") -> list[dict[str, Any]]:
-    attack_variant = _attack_variant(prompt)
-    hit_variant = _hit_variant(prompt)
+    attack_variant = detect_attack_variant(prompt)
+    hit_variant = detect_hit_variant(prompt)
     if action == Action.IDLE:
         return [
             _frame("idle_neutral", "both", 0, 0, 0, "relaxed standing pose, both feet planted"),
@@ -279,24 +281,6 @@ def _frame_plan_for_action(action: Action, prompt: str = "") -> list[dict[str, A
         _frame("passing_left", "left", 2, 4, -8, "right foot passes under the hip"),
         _frame("up_left", "left", -7, 18, -18, "body rises as the right foot swings forward"),
     ]
-
-
-def _attack_variant(prompt: str) -> str:
-    text = prompt.lower()
-    if any(token in text for token in ("bow", "arrow", "archer", "弓", "矢")):
-        return "bow"
-    if any(token in text for token in ("axe", "hatchet", "斧")):
-        return "axe"
-    return "sword"
-
-
-def _hit_variant(prompt: str) -> str:
-    text = prompt.lower()
-    if any(token in text for token in ("knockback", "blown away", "launch", "吹き飛ばし", "吹き飛ぶ")):
-        return "knockback"
-    if any(token in text for token in ("heavy", "big damage", "large damage", "大ダメージ", "強攻撃")):
-        return "heavy"
-    return "light"
 
 
 def _merge_plan(fallback: dict[str, Any], llm_plan: dict[str, Any] | None) -> dict[str, Any]:

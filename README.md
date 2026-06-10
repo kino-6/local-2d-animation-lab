@@ -179,6 +179,7 @@ Each run contains:
 ```text
 src/natural_sprite_lab/
   cli.py
+  action_catalog.py
   models.py
   nl_parser.py
   pipeline.py

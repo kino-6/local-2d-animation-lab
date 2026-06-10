@@ -4,45 +4,11 @@ import argparse
 import json
 from pathlib import Path
 
+from natural_sprite_lab.action_catalog import DEFAULT_ASSET_RECIPES
+from natural_sprite_lab.action_catalog import DEFAULT_PDCA_CONFIGS
 from natural_sprite_lab.backends import ComfyBackend
 from natural_sprite_lab.pipeline import run_pipeline
 from natural_sprite_lab.planning import WalkCycleDirector
-
-
-ASSETS = [
-    {
-        "name": "walk",
-        "prompt": "Create an 8-frame side-view walking animation, facing right. Interpret the reference as a character design and generate new full-body frames of the same character walking.",
-    },
-    {
-        "name": "idle",
-        "prompt": "Create an 8-frame calm idle breathing animation, facing right. Interpret the reference as a character design and generate new full-body frames of the same character standing naturally.",
-    },
-    {
-        "name": "attack_sword",
-        "prompt": "Create an 8-frame quick sword slash attack animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character using a sword slash attack.",
-    },
-    {
-        "name": "attack_axe",
-        "prompt": "Create an 8-frame heavy axe swing attack animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character holding a large axe and performing a heavy overhead chop.",
-    },
-    {
-        "name": "attack_bow",
-        "prompt": "Create an 8-frame bow attack animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character drawing a bow, aiming, and releasing an arrow.",
-    },
-    {
-        "name": "hit_light",
-        "prompt": "Create an 8-frame light hit reaction animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character making a small stagger from a weak hit.",
-    },
-    {
-        "name": "hit_heavy",
-        "prompt": "Create an 8-frame heavy damage reaction animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character taking big damage with a strong recoil.",
-    },
-    {
-        "name": "hit_knockback",
-        "prompt": "Create an 8-frame knockback damage reaction animation, facing right. Interpret the reference as a character design. Generate one new full-body game animation frame per output image, showing the same character being blown away backward by a powerful hit.",
-    },
-]
 
 
 def main() -> None:
@@ -56,37 +22,34 @@ def main() -> None:
     parser.add_argument("--height", default=768, type=int)
     args = parser.parse_args()
 
-    configs = [
-        {"name": "balanced", "steps": 24, "cfg": 6.0, "controlnet_strength": 0.75, "seed_step": 0},
-        {"name": "strong_pose", "steps": 24, "cfg": 6.0, "controlnet_strength": 0.9, "seed_step": 0},
-    ]
+    configs = DEFAULT_PDCA_CONFIGS
     all_results = []
-    for asset in ASSETS:
+    for asset in DEFAULT_ASSET_RECIPES:
         asset_results = []
         for config in configs:
             backend = ComfyBackend(
                 checkpoint=args.checkpoint,
                 width=args.width,
                 height=args.height,
-                steps=config["steps"],
-                cfg=config["cfg"],
+                steps=config.steps,
+                cfg=config.cfg,
                 seed=args.seed,
-                seed_step=config["seed_step"],
+                seed_step=config.seed_step,
                 controlnet=args.controlnet,
-                controlnet_strength=config["controlnet_strength"],
+                controlnet_strength=config.controlnet_strength,
             )
             outputs = run_pipeline(
                 source_image=args.input,
-                prompt=asset["prompt"],
+                prompt=asset.prompt,
                 backend=backend,
                 output_root=args.output_root,
-                run_id=f"{asset['name']}_{config['name']}",
+                run_id=f"{asset.name}_{config.name}",
                 director=WalkCycleDirector(use_ollama=False),
             )
             evaluation = json.loads((outputs.run_dir / "evaluation_report.json").read_text(encoding="utf-8"))
             result = {
-                "asset": asset["name"],
-                "config": config,
+                "asset": asset.name,
+                "config": config.to_dict(),
                 "score": evaluation["score"],
                 "issues": evaluation["issues"],
                 "run_dir": str(outputs.run_dir),
@@ -96,14 +59,14 @@ def main() -> None:
             all_results.append(result)
 
         best = max(asset_results, key=lambda result: result["score"])
-        print(f"{asset['name']}: best={best['config']['name']} score={best['score']} {best['contact_sheet']}")
+        print(f"{asset.name}: best={best['config']['name']} score={best['score']} {best['contact_sheet']}")
 
     best_by_asset = {
-        asset["name"]: max(
-            [result for result in all_results if result["asset"] == asset["name"]],
+        asset.name: max(
+            [result for result in all_results if result["asset"] == asset.name],
             key=lambda result: result["score"],
         )
-        for asset in ASSETS
+        for asset in DEFAULT_ASSET_RECIPES
     }
     summary = {"best_by_asset": best_by_asset, "results": all_results}
     args.output_root.mkdir(parents=True, exist_ok=True)
