@@ -1,3 +1,5 @@
+assets/user
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -211,6 +213,9 @@ outputs/*
 !outputs/.gitkeep
 outputs_smoke/
 outputs_*/
+review_packages/
+source_probe_packages/
+assets/source_motion/
 
 # Godot local import/cache files
 godot/.godot/

@@ -9,6 +9,7 @@ def test_default_pdca_catalog_has_expected_assets() -> None:
 
     assert names == [
         "walk",
+        "run",
         "idle",
         "attack_sword",
         "attack_axe",

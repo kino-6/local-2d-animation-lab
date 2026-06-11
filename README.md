@@ -73,6 +73,19 @@ pip install -e ".[dev]"
 
 ## Example CLI
 
+Keep this README limited to stable entry points. Specific PDCA attempts, failed settings, and generated output paths belong in `docs/` reports and local Skills, not in this file.
+
+Stable command entry points:
+
+- Build reusable controls: `scripts/build_pose_templates.py`
+- Import extracted motion-source poses: `scripts/import_motion_source_pose.py`
+- Run SDXL/OpenPose PDCA: `scripts/pdca_controlnet_assets.py`
+- Select usable Wan spans: `scripts/select_best_span.py`
+- Export compact evidence: `scripts/export_review_package.py`
+- Validate selected outputs in Godot: `scripts/godot_validate_summary.py`
+- Gate local artifacts before adoption: `scripts/repair_frame_artifacts.py`
+- Prepare a clean Wan start frame: `scripts/prepare_wan_start_frame.py`
+
 ```bash
 python -m natural_sprite_lab \
   --input assets/reference/hero.png \

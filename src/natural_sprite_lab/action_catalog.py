@@ -33,6 +33,14 @@ DEFAULT_ASSET_RECIPES: tuple[AssetRecipe, ...] = (
         ),
     ),
     AssetRecipe(
+        name="run",
+        prompt=(
+            "Create a 120-frame side-view running animation, facing right. Interpret the reference as a "
+            "character design and generate new full-body frames of the same character running with a clear "
+            "stride, airborne phases, and arms pumping opposite to the legs."
+        ),
+    ),
+    AssetRecipe(
         name="idle",
         prompt=(
             "Create a 120-frame calm idle breathing animation, facing right. Interpret the reference as a "

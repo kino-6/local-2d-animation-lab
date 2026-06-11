@@ -1,0 +1,32 @@
+{
+  "weapon": "sword",
+  "frame_index": 39,
+  "phase": "anticipation",
+  "anchors": {
+    "main_hand": [
+      0.5794776739586436,
+      0.46123149819051734
+    ],
+    "blade_tip": [
+      0.7126516754971944,
+      0.14839817944999373
+    ],
+    "pommel": [
+      0.5559763795694875,
+      0.5164373779682568
+    ]
+  },
+  "lines": [
+    {
+      "start": "pommel",
+      "end": "blade_tip",
+      "width": 7,
+      "color": [
+        0,
+        240,
+        255
+      ]
+    }
+  ],
+  "arcs": []
+}

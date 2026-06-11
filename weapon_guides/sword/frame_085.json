@@ -1,0 +1,51 @@
+{
+  "weapon": "sword",
+  "frame_index": 85,
+  "phase": "follow_through",
+  "anchors": {
+    "main_hand": [
+      0.4122564879036359,
+      0.4710991626417474
+    ],
+    "blade_tip": [
+      0.3028758533660226,
+      0.793024428484845
+    ],
+    "pommel": [
+      0.43155895282203827,
+      0.41428882161061253
+    ]
+  },
+  "lines": [
+    {
+      "start": "pommel",
+      "end": "blade_tip",
+      "width": 7,
+      "color": [
+        0,
+        240,
+        255
+      ]
+    }
+  ],
+  "arcs": [
+    {
+      "center": [
+        0.52,
+        0.48
+      ],
+      "radius": [
+        0.26,
+        0.24
+      ],
+      "start_degrees": -130,
+      "end_degrees": 90,
+      "width": 5,
+      "color": [
+        0,
+        150,
+        255
+      ]
+    }
+  ]
+}

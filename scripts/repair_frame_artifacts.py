@@ -16,6 +16,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageStat
 
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
+from natural_sprite_lab.quality import analyze_frame_quality
 
 
 POSITIVE_PROMPT = (
@@ -71,10 +72,12 @@ def main() -> None:
     run_dir = args.output_root / time.strftime(f"{label}_%Y%m%d_%H%M%S")
     source_dir = run_dir / "source_frames"
     masks_dir = run_dir / "masks"
+    person_masks_dir = run_dir / "person_masks"
+    background_masks_dir = run_dir / "background_cleanup_masks"
     overlays_dir = run_dir / "overlays"
     repaired_dir = run_dir / "frames"
     workflow_dir = run_dir / "workflow"
-    for path in (source_dir, masks_dir, overlays_dir, repaired_dir, workflow_dir):
+    for path in (source_dir, masks_dir, person_masks_dir, background_masks_dir, overlays_dir, repaired_dir, workflow_dir):
         path.mkdir(parents=True, exist_ok=True)
 
     report: dict[str, Any] = {
@@ -114,21 +117,43 @@ def main() -> None:
     try:
         source_outputs: list[Path] = []
         mask_outputs: list[Path] = []
+        person_mask_outputs: list[Path] = []
+        background_mask_outputs: list[Path] = []
         overlay_outputs: list[Path] = []
         repaired_outputs: list[Path] = []
 
+        previous_prepared: Path | None = None
         for index, source in enumerate(frame_paths):
             prepared = _prepare_source(source, source_dir / f"source_{index:03d}.png", args.width, args.height)
             analysis = _analyze_frame(prepared, args)
+            quality = analyze_frame_quality(prepared, index=index, previous_path=previous_prepared)
+            previous_prepared = prepared
+            for issue_code in quality.issue_codes:
+                if issue_code not in analysis["issue_codes"]:
+                    analysis["issue_codes"].append(issue_code)
+            if quality.hard_failure:
+                analysis["gate"] = "retake_required"
             mask_path = masks_dir / f"mask_{index:03d}.png"
+            person_mask_path = person_masks_dir / f"person_mask_{index:03d}.png"
+            background_mask_path = background_masks_dir / f"background_cleanup_mask_{index:03d}.png"
             overlay_path = overlays_dir / f"overlay_{index:03d}.png"
             analysis["repair_mask"].save(mask_path)
+            analysis["person_mask"].save(person_mask_path)
+            analysis["background_cleanup_mask"].save(background_mask_path)
             _make_overlay(prepared, analysis["repair_mask"], analysis, overlay_path)
 
             frame_report = {
                 key: value
                 for key, value in analysis.items()
-                if key not in {"repair_mask", "foreground_mask", "strong_mask", "protected_mask"}
+                if key
+                not in {
+                    "repair_mask",
+                    "foreground_mask",
+                    "strong_mask",
+                    "protected_mask",
+                    "person_mask",
+                    "background_cleanup_mask",
+                }
             }
             frame_report.update(
                 {
@@ -136,7 +161,10 @@ def main() -> None:
                     "source": str(source),
                     "prepared_source": str(prepared),
                     "repair_mask": str(mask_path),
+                    "person_mask": str(person_mask_path),
+                    "background_cleanup_mask": str(background_mask_path),
                     "overlay": str(overlay_path),
+                    "quality_metrics": quality.to_dict(),
                 }
             )
 
@@ -175,12 +203,24 @@ def main() -> None:
 
             source_outputs.append(prepared)
             mask_outputs.append(mask_path)
+            person_mask_outputs.append(person_mask_path)
+            background_mask_outputs.append(background_mask_path)
             overlay_outputs.append(overlay_path)
             repaired_outputs.append(repaired_path)
             report["frame_reports"].append(frame_report)
 
         source_contact = make_contact_sheet(source_outputs, run_dir / "source_contact_sheet.png", columns=min(6, len(source_outputs)))
         mask_contact = make_contact_sheet(mask_outputs, run_dir / "mask_contact_sheet.png", columns=min(6, len(mask_outputs)))
+        person_mask_contact = make_contact_sheet(
+            person_mask_outputs,
+            run_dir / "person_mask_contact_sheet.png",
+            columns=min(6, len(person_mask_outputs)),
+        )
+        background_mask_contact = make_contact_sheet(
+            background_mask_outputs,
+            run_dir / "background_cleanup_mask_contact_sheet.png",
+            columns=min(6, len(background_mask_outputs)),
+        )
         overlay_contact = make_contact_sheet(overlay_outputs, run_dir / "overlay_contact_sheet.png", columns=min(6, len(overlay_outputs)))
         repaired_contact = make_contact_sheet(repaired_outputs, run_dir / "contact_sheet.png", columns=min(6, len(repaired_outputs)))
         comparison = _make_comparison_sheet(source_outputs, mask_outputs, repaired_outputs, run_dir / "comparison_sheet.png")
@@ -193,6 +233,8 @@ def main() -> None:
                 "preview_gif": str(preview),
                 "source_contact_sheet": str(source_contact),
                 "mask_contact_sheet": str(mask_contact),
+                "person_mask_contact_sheet": str(person_mask_contact),
+                "background_cleanup_mask_contact_sheet": str(background_mask_contact),
                 "overlay_contact_sheet": str(overlay_contact),
                 "contact_sheet": str(repaired_contact),
                 "comparison_sheet": str(comparison),
@@ -308,7 +350,10 @@ def _analyze_frame(path: Path, args: argparse.Namespace) -> dict[str, Any]:
     repair_mask = ImageChops.lighter(repair_mask, small_component_mask)
     repair_mask = _remove_low_mask_values(repair_mask, 128)
     repair_mask = _grow_mask(repair_mask, args.mask_grow)
+    repair_mask = ImageChops.subtract(repair_mask, protected)
     repair_mask = repair_mask.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.MaxFilter(3))
+    background_cleanup_mask = ImageChops.subtract(weak_mask, protected)
+    background_cleanup_mask = _remove_low_mask_values(background_cleanup_mask, 128)
 
     bbox = strong_mask.getbbox()
     lower_blob_count = _count_lower_body_blobs(strong_mask, bbox)
@@ -317,6 +362,8 @@ def _analyze_frame(path: Path, args: argparse.Namespace) -> dict[str, Any]:
     issue_codes: list[str] = []
     if mask_coverage >= args.min_mask_coverage:
         issue_codes.append("masked_ghost_or_small_artifact")
+    if mask_coverage > args.max_mask_coverage:
+        issue_codes.append("repair_mask_too_large")
     if len(components) >= 5 and mask_coverage >= args.min_mask_coverage:
         issue_codes.append("strong_duplicate_silhouette_risk")
     if lower_blob_count > 2:
@@ -329,6 +376,8 @@ def _analyze_frame(path: Path, args: argparse.Namespace) -> dict[str, Any]:
         "weapon_missing",
         "weapon_fragmented",
         "weapon_not_elongated",
+        "weapon_detached",
+        "repair_mask_too_large",
     }
     gate = "repair_candidate"
     if any(code in hard_issue_codes for code in issue_codes):
@@ -340,6 +389,8 @@ def _analyze_frame(path: Path, args: argparse.Namespace) -> dict[str, Any]:
         "foreground_mask": weak_mask,
         "strong_mask": strong_mask,
         "protected_mask": protected,
+        "person_mask": protected,
+        "background_cleanup_mask": background_cleanup_mask,
         "repair_mask": repair_mask,
         "foreground_bbox": list(bbox) if bbox else None,
         "strong_component_count": len(components),
@@ -433,6 +484,7 @@ def _count_lower_body_blobs(mask: Image.Image, bbox: tuple[int, int, int, int] |
         return 0
     left, top, right, bottom = bbox
     lower_top = round(top + (bottom - top) * 0.58)
+    foot_zone_top = round(top + (bottom - top) * 0.74)
     lower = Image.new("L", mask.size, 0)
     lower.paste(mask.crop((left, lower_top, right, bottom)), (left, lower_top))
     components = _connected_components(lower, min_pixels=80)
@@ -440,6 +492,8 @@ def _count_lower_body_blobs(mask: Image.Image, bbox: tuple[int, int, int, int] |
     for component in components:
         x0, y0, x1, y1 = component["bbox"]
         if y1 < lower_top:
+            continue
+        if y1 < foot_zone_top:
             continue
         if (x1 - x0) >= 8 and (y1 - y0) >= 8:
             foot_like.append(component)
@@ -461,13 +515,16 @@ def _weapon_report(image: Image.Image, strong_mask: Image.Image, weapon: str) ->
         issue_codes.append("weapon_fragmented")
     if aspect < 2.2 and weapon in {"sword", "bow"}:
         issue_codes.append("weapon_not_elongated")
+    strong_overlap = _overlap_pixels(mask, strong_mask)
+    if strong_overlap < max(20, largest["pixels"] * 0.015):
+        issue_codes.append("weapon_detached")
     return {
         "issue_codes": issue_codes,
         "component_count": len(components),
         "largest_bbox": list(largest["bbox"]),
         "largest_pixels": largest["pixels"],
         "largest_aspect": round(aspect, 3),
-        "strong_overlap_pixels": _overlap_pixels(mask, strong_mask),
+        "strong_overlap_pixels": strong_overlap,
     }
 
 
@@ -565,9 +622,11 @@ def _summarize_reports(reports: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _recommendation(gates: dict[str, int], issue_counts: dict[str, int], repaired: int) -> str:
+    if gates.get("retake_required"):
+        return "retake_or_retrim_span_before_refine"
     if issue_counts.get("weapon_fragmented") or issue_counts.get("weapon_missing"):
         return "retake_with_weapon_control_mask"
-    if issue_counts.get("double_foot_or_duplicate_leg_risk"):
+    if issue_counts.get("double_foot_or_duplicate_leg_risk") or issue_counts.get("repair_mask_too_large"):
         return "retake_or_retrim_span_before_refine"
     if repaired > 0:
         return "review_comparison_sheet_for_adoption"

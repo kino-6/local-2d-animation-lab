@@ -51,10 +51,11 @@ class PoseFrame:
     frame_index: int
     phase: str
     keypoints: dict[str, list[float]]
+    confidence: dict[str, float] | None = None
     notes: str = ""
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data: dict[str, Any] = {
             "action": self.action,
             "variant": self.variant,
             "frame_index": self.frame_index,
@@ -62,6 +63,9 @@ class PoseFrame:
             "keypoints": self.keypoints,
             "notes": self.notes,
         }
+        if self.confidence is not None:
+            data["confidence"] = self.confidence
+        return data
 
 
 def template_name(action: str, variant: str | None = None) -> str:
@@ -100,6 +104,18 @@ def validate_pose_frame(data: dict[str, Any]) -> list[str]:
             issues.append(f"non-numeric keypoint: {name}")
         elif not 0.0 <= float(x) <= 1.0 or not 0.0 <= float(y) <= 1.0:
             issues.append(f"out-of-range keypoint: {name}")
+    confidence = data.get("confidence")
+    if confidence is not None:
+        if not isinstance(confidence, dict):
+            issues.append("confidence must be an object")
+        else:
+            for name, value in confidence.items():
+                if name not in KEYPOINTS:
+                    issues.append(f"unknown confidence keypoint: {name}")
+                elif not isinstance(value, int | float):
+                    issues.append(f"non-numeric confidence: {name}")
+                elif not 0.0 <= float(value) <= 1.0:
+                    issues.append(f"out-of-range confidence: {name}")
     return issues
 
 
@@ -125,22 +141,234 @@ def _frame_path_index(path: Path) -> int:
         return -1
 
 
-def render_pose_frame(frame: dict[str, Any], width: int, height: int) -> Image.Image:
-    image = Image.new("RGB", (width, height), (0, 0, 0))
+def render_pose_frame(frame: dict[str, Any], width: int, height: int, style: str = "controlnet") -> Image.Image:
+    if style == "controlnet":
+        background = (0, 0, 0)
+        line_width = 6
+        radius = 5
+        colors = {bone: color for bone, _, color in BONES}
+    elif style == "controlnet_thin":
+        background = (0, 0, 0)
+        line_width = 3
+        radius = 3
+        colors = {bone: color for bone, _, color in BONES}
+    elif style == "wan_line":
+        background = (255, 255, 255)
+        line_width = 4
+        radius = 4
+        colors = {
+            "nose": (70, 70, 70),
+            "neck": (70, 70, 70),
+            "right_shoulder": (80, 110, 180),
+            "right_elbow": (80, 110, 180),
+            "left_shoulder": (170, 90, 80),
+            "left_elbow": (170, 90, 80),
+            "right_hip": (55, 95, 190),
+            "right_knee": (55, 95, 190),
+            "left_hip": (185, 90, 45),
+            "left_knee": (185, 90, 45),
+        }
+    elif style in {"wan_lower", "wan_confidence_lower", "wan_balanced"}:
+        background = (255, 255, 255)
+        line_width = 4 if style == "wan_balanced" else 5
+        radius = 3 if style == "wan_balanced" else 4
+        colors = {
+            "nose": (130, 130, 130) if style == "wan_balanced" else (160, 160, 160),
+            "neck": (130, 130, 130) if style == "wan_balanced" else (160, 160, 160),
+            "right_shoulder": (125, 125, 125) if style == "wan_balanced" else (150, 150, 150),
+            "right_elbow": (125, 125, 125) if style == "wan_balanced" else (150, 150, 150),
+            "left_shoulder": (125, 125, 125) if style == "wan_balanced" else (150, 150, 150),
+            "left_elbow": (125, 125, 125) if style == "wan_balanced" else (150, 150, 150),
+            "right_hip": (40, 80, 210),
+            "right_knee": (40, 80, 210),
+            "left_hip": (210, 85, 35),
+            "left_knee": (210, 85, 35),
+        }
+    elif style in {"vace_depth_proxy", "vace_side_proxy"}:
+        background = (255, 255, 255)
+        line_width = 4
+        radius = 3
+        colors = {}
+    else:
+        raise ValueError(f"Unknown pose render style: {style}")
+    image = Image.new("RGB", (width, height), background)
     draw = ImageDraw.Draw(image)
     points = {
         name: (int(float(point[0]) * width), int(float(point[1]) * height))
         for name, point in frame["keypoints"].items()
     }
-    for start, end, color in BONES:
-        _draw_bone(draw, points[start], points[end], color)
+    confidence = {
+        name: max(0.0, min(1.0, float(value)))
+        for name, value in (frame.get("confidence") or {}).items()
+    }
+    if style == "vace_depth_proxy":
+        _draw_vace_depth_proxy(draw, points, width, height)
+        return image
+    if style == "vace_side_proxy":
+        _draw_vace_side_proxy(draw, points, width, height)
+        return image
+    for start, end, default_color in BONES:
+        color = default_color if style == "controlnet" else colors.get(start, (110, 110, 110))
+        confidence_weight = min(confidence.get(start, 1.0), confidence.get(end, 1.0))
+        if style in {"wan_confidence_lower", "wan_balanced"}:
+            blend_weight = confidence_weight
+            if style == "wan_balanced":
+                blend_weight = 0.5 + confidence_weight * 0.5
+            color = _blend_color((245, 245, 245), color, blend_weight)
+            bone_width = max(1, round(line_width * (0.35 + confidence_weight * 0.65)))
+            bone_radius = max(1, round(radius * (0.45 + confidence_weight * 0.55)))
+        else:
+            bone_width = line_width
+            bone_radius = radius
+        _draw_bone(draw, points[start], points[end], color, width=bone_width, radius=bone_radius)
     return image
+
+
+def _draw_vace_depth_proxy(
+    draw: ImageDraw.ImageDraw,
+    points: dict[str, tuple[int, int]],
+    width: int,
+    height: int,
+) -> None:
+    scale = min(width, height)
+    body = (120, 120, 120)
+    near = (72, 72, 72)
+    far = (172, 172, 172)
+    soft = (210, 210, 210)
+
+    left_shoulder = points["left_shoulder"]
+    right_shoulder = points["right_shoulder"]
+    left_hip = points["left_hip"]
+    right_hip = points["right_hip"]
+    draw.polygon([left_shoulder, right_shoulder, right_hip, left_hip], fill=body)
+
+    head_radius = max(4, round(scale * 0.035))
+    nose = points["nose"]
+    draw.ellipse(
+        (
+            nose[0] - head_radius,
+            nose[1] - head_radius,
+            nose[0] + head_radius,
+            nose[1] + head_radius,
+        ),
+        fill=(140, 140, 140),
+    )
+
+    limb_width = max(5, round(scale * 0.035))
+    arm_width = max(3, round(scale * 0.022))
+    for start, mid, end, color, line_width in (
+        ("right_hip", "right_knee", "right_ankle", near, limb_width),
+        ("left_hip", "left_knee", "left_ankle", far, limb_width),
+        ("right_shoulder", "right_elbow", "right_wrist", soft, arm_width),
+        ("left_shoulder", "left_elbow", "left_wrist", soft, arm_width),
+    ):
+        _draw_depth_limb(draw, points[start], points[mid], points[end], color, line_width)
+
+
+def _draw_vace_side_proxy(
+    draw: ImageDraw.ImageDraw,
+    points: dict[str, tuple[int, int]],
+    width: int,
+    height: int,
+) -> None:
+    scale = min(width, height)
+    center_x = round(
+        (
+            points["neck"][0]
+            + points["left_hip"][0]
+            + points["right_hip"][0]
+            + points["left_shoulder"][0]
+            + points["right_shoulder"][0]
+        )
+        / 5
+    )
+    neck_y = points["neck"][1]
+    hip_y = round((points["left_hip"][1] + points["right_hip"][1]) / 2)
+    shoulder_y = round((points["left_shoulder"][1] + points["right_shoulder"][1]) / 2)
+    body_width = max(8, round(scale * 0.045))
+    head_radius = max(5, round(scale * 0.036))
+
+    draw.rounded_rectangle(
+        (
+            center_x - body_width,
+            shoulder_y,
+            center_x + body_width,
+            hip_y + round(scale * 0.035),
+        ),
+        radius=max(3, round(body_width * 0.6)),
+        fill=(118, 118, 118),
+    )
+    head_center = (center_x + round(scale * 0.012), points["nose"][1])
+    draw.ellipse(
+        (
+            head_center[0] - head_radius,
+            head_center[1] - head_radius,
+            head_center[0] + head_radius,
+            head_center[1] + head_radius,
+        ),
+        fill=(138, 138, 138),
+    )
+    draw.rectangle(
+        (
+            center_x - round(body_width * 0.55),
+            neck_y - round(scale * 0.01),
+            center_x + round(body_width * 0.55),
+            shoulder_y + round(scale * 0.025),
+        ),
+        fill=(146, 146, 146),
+    )
+
+    limb_width = max(5, round(scale * 0.028))
+    arm_width = max(3, round(scale * 0.018))
+    right_forward = points["right_ankle"][0] >= points["left_ankle"][0]
+    leg_specs = (
+        ("right_hip", "right_knee", "right_ankle", (74, 74, 74) if right_forward else (168, 168, 168)),
+        ("left_hip", "left_knee", "left_ankle", (168, 168, 168) if right_forward else (74, 74, 74)),
+    )
+    for hip, knee, ankle, color in leg_specs:
+        start = (center_x, points[hip][1])
+        mid = (points[knee][0], points[knee][1])
+        end = (points[ankle][0], points[ankle][1])
+        _draw_depth_limb(draw, start, mid, end, color, limb_width)
+        foot = round(scale * 0.035)
+        direction = 1 if end[0] >= center_x else -1
+        draw.line((end[0], end[1], end[0] + direction * foot, end[1] + round(scale * 0.008)), fill=color, width=limb_width)
+
+    for shoulder, elbow, wrist in (
+        ("right_shoulder", "right_elbow", "right_wrist"),
+        ("left_shoulder", "left_elbow", "left_wrist"),
+    ):
+        start = (center_x, points[shoulder][1])
+        _draw_depth_limb(draw, start, points[elbow], points[wrist], (196, 196, 196), arm_width)
+
+
+def _draw_depth_limb(
+    draw: ImageDraw.ImageDraw,
+    start: tuple[int, int],
+    mid: tuple[int, int],
+    end: tuple[int, int],
+    color: tuple[int, int, int],
+    width: int,
+) -> None:
+    draw.line([start, mid, end], fill=color, width=width, joint="curve")
+    radius = max(2, round(width * 0.48))
+    for x, y in (start, mid, end):
+        draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=color)
+
+
+def _blend_color(
+    background: tuple[int, int, int],
+    foreground: tuple[int, int, int],
+    amount: float,
+) -> tuple[int, int, int]:
+    amount = max(0.0, min(1.0, amount))
+    return tuple(round(background[index] * (1.0 - amount) + foreground[index] * amount) for index in range(3))
 
 
 def write_default_templates(root: Path, frame_count: int = 120, width: int = 512, height: int = 512) -> dict[str, Any]:
     root.mkdir(parents=True, exist_ok=True)
     written: dict[str, Any] = {}
-    for name in ("walk", "idle", "attack_sword", "attack_axe", "attack_bow", "hit_light", "hit_heavy", "hit_knockback"):
+    for name in ("walk", "run", "idle", "attack_sword", "attack_axe", "attack_bow", "hit_light", "hit_heavy", "hit_knockback"):
         action_dir = root / name
         render_dir = action_dir / "controlnet"
         action_dir.mkdir(parents=True, exist_ok=True)
@@ -173,6 +401,8 @@ def _pose_for(name: str, index: int, count: int) -> PoseFrame:
     base = _base_points()
     if name == "walk":
         _walk_points(base, phase_t)
+    elif name == "run":
+        _run_points(base, phase_t)
     elif name == "idle":
         _idle_points(base, phase_t)
     elif name.startswith("attack_"):
@@ -191,6 +421,8 @@ def _split_name(name: str) -> tuple[str, str]:
 
 
 def _phase_for(name: str, t: float) -> str:
+    if name == "run":
+        return ["contact", "drive", "flight", "recover"][min(3, int(t * 4))]
     if name in {"walk", "idle"}:
         return ["contact", "down", "passing", "up"][min(3, int(t * 4))]
     if name.startswith("attack_"):
@@ -248,6 +480,32 @@ def _walk_points(points: dict[str, list[float]], t: float) -> None:
     points["right_wrist"][0] -= counter * 0.08
 
 
+def _run_points(points: dict[str, list[float]], t: float) -> None:
+    import math
+
+    phase = math.sin(t * math.tau)
+    counter = math.sin(t * math.tau + math.pi)
+    lift = max(0.0, math.sin(t * math.tau * 2.0)) * 0.035
+    lean = 0.045
+    for name in ("nose", "neck", "right_shoulder", "left_shoulder", "right_hip", "left_hip"):
+        points[name][0] += lean
+        points[name][1] -= lift
+    points["left_knee"][0] += phase * 0.12
+    points["left_knee"][1] -= max(0.0, phase) * 0.045
+    points["left_ankle"][0] += phase * 0.20
+    points["left_ankle"][1] -= max(0.0, phase) * 0.10 + lift
+    points["right_knee"][0] += counter * 0.12
+    points["right_knee"][1] -= max(0.0, counter) * 0.045
+    points["right_ankle"][0] += counter * 0.20
+    points["right_ankle"][1] -= max(0.0, counter) * 0.10 + lift
+    points["left_elbow"][0] -= phase * 0.10
+    points["left_wrist"][0] -= phase * 0.16
+    points["left_wrist"][1] += phase * 0.04
+    points["right_elbow"][0] -= counter * 0.10
+    points["right_wrist"][0] -= counter * 0.16
+    points["right_wrist"][1] += counter * 0.04
+
+
 def _idle_points(points: dict[str, list[float]], t: float) -> None:
     import math
 
@@ -289,8 +547,15 @@ def _hit_points(points: dict[str, list[float]], t: float, variant: str) -> None:
     points["right_wrist"][0] -= offset * 1.2
 
 
-def _draw_bone(draw: ImageDraw.ImageDraw, start: tuple[int, int], end: tuple[int, int], color: tuple[int, int, int]) -> None:
-    draw.line([start, end], fill=color, width=6)
-    radius = 5
+def _draw_bone(
+    draw: ImageDraw.ImageDraw,
+    start: tuple[int, int],
+    end: tuple[int, int],
+    color: tuple[int, int, int],
+    *,
+    width: int = 6,
+    radius: int = 5,
+) -> None:
+    draw.line([start, end], fill=color, width=width)
     draw.ellipse((start[0] - radius, start[1] - radius, start[0] + radius, start[1] + radius), fill=color)
     draw.ellipse((end[0] - radius, end[1] - radius, end[0] + radius, end[1] + radius), fill=color)

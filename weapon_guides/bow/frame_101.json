@@ -1,0 +1,75 @@
+{
+  "weapon": "bow",
+  "frame_index": 101,
+  "phase": "recover",
+  "anchors": {
+    "bow_top": [
+      0.43,
+      0.22999999999999998
+    ],
+    "bow_bottom": [
+      0.43,
+      0.63
+    ],
+    "draw_hand": [
+      0.4719731092436975,
+      0.43
+    ],
+    "arrow_tip": [
+      0.82,
+      0.43
+    ]
+  },
+  "lines": [
+    {
+      "start": "bow_top",
+      "end": "draw_hand",
+      "width": 3,
+      "color": [
+        230,
+        230,
+        230
+      ]
+    },
+    {
+      "start": "bow_bottom",
+      "end": "draw_hand",
+      "width": 3,
+      "color": [
+        230,
+        230,
+        230
+      ]
+    },
+    {
+      "start": "draw_hand",
+      "end": "arrow_tip",
+      "width": 4,
+      "color": [
+        255,
+        255,
+        120
+      ]
+    }
+  ],
+  "arcs": [
+    {
+      "center": [
+        0.43,
+        0.43
+      ],
+      "radius": [
+        0.08,
+        0.22
+      ],
+      "start_degrees": -95,
+      "end_degrees": 95,
+      "width": 7,
+      "color": [
+        160,
+        90,
+        40
+      ]
+    }
+  ]
+}

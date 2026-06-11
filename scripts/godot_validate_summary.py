@@ -10,18 +10,35 @@ from typing import Any
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate best PDCA assets in Godot from a summary JSON.")
-    parser.add_argument("--summary", required=True, type=Path)
+    parser.add_argument("--summary", type=Path)
+    parser.add_argument("--manifest", type=Path)
     parser.add_argument("--godot", default=shutil.which("godot") or "godot")
     parser.add_argument("--godot-project", default=Path("godot"), type=Path)
     parser.add_argument("--raw-frames", action="store_true")
     args = parser.parse_args()
+    if args.summary is None and args.manifest is None:
+        parser.error("one of --summary or --manifest is required")
 
-    results = validate_summary(
-        summary_path=args.summary,
-        godot=args.godot,
-        godot_project=args.godot_project,
-        prefer_composited=not args.raw_frames,
-    )
+    if args.manifest is not None:
+        results = {
+            "manifest": str(args.manifest),
+            "results": [
+                validate_manifest(
+                    manifest_path=args.manifest,
+                    godot=args.godot,
+                    godot_project=args.godot_project,
+                    prefer_composited=not args.raw_frames,
+                )
+            ],
+        }
+    else:
+        assert args.summary is not None
+        results = validate_summary(
+            summary_path=args.summary,
+            godot=args.godot,
+            godot_project=args.godot_project,
+            prefer_composited=not args.raw_frames,
+        )
     print(json.dumps(results, indent=2, ensure_ascii=False))
     if not all(result.get("ok", False) for result in results["results"]):
         raise SystemExit(1)
@@ -48,6 +65,20 @@ def validate_summary(
         result["manifest"] = str(manifest)
         results.append(result)
     return {"summary": str(summary_path), "results": results}
+
+
+def validate_manifest(
+    manifest_path: Path,
+    godot: str,
+    godot_project: Path,
+    prefer_composited: bool = True,
+) -> dict[str, Any]:
+    return _run_godot(
+        manifest=manifest_path.resolve(),
+        godot=godot,
+        godot_project=godot_project,
+        prefer_composited=prefer_composited,
+    )
 
 
 def _run_godot(manifest: Path, godot: str, godot_project: Path, prefer_composited: bool) -> dict[str, Any]:

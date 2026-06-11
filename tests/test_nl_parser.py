@@ -37,6 +37,13 @@ def test_parse_defaults_are_mvp_friendly() -> None:
     assert spec.background == Background.TRANSPARENT
 
 
+def test_parse_run_prompt_as_run_action() -> None:
+    spec = parse_prompt("Create a 120-frame side-view running animation, facing right.")
+
+    assert spec.action == Action.RUN
+    assert spec.frame_count == 120
+
+
 def test_parse_120_frame_controlnet_prompt() -> None:
     spec = parse_prompt("Create a 120-frame quick sword slash attack animation, facing right.")
 

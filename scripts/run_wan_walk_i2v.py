@@ -11,11 +11,12 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any
 
-from PIL import Image
+from PIL import Image, ImageFilter
 
 from natural_sprite_lab.pose_templates import load_pose_sequence, render_pose_frame
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
+from natural_sprite_lab.weapon_guides import render_weapon_guide, weapon_guide_for
 
 
 POSITIVE_PROMPT = (
@@ -54,13 +55,49 @@ def main() -> None:
     )
     parser.add_argument(
         "--mode",
-        choices=("i2v", "first_last", "fun_i2v", "fun_first_last", "fun_control", "animate_pose"),
+        choices=(
+            "i2v",
+            "first_last",
+            "fun_i2v",
+            "fun_first_last",
+            "fun_control",
+            "wan22_fun_control",
+            "animate_pose",
+            "vace",
+        ),
         default="i2v",
     )
     parser.add_argument("--output-root", default=Path("outputs_wan_walk_i2v"), type=Path)
     parser.add_argument("--pose-root", default=Path("pose_templates"), type=Path)
     parser.add_argument("--pose-template", default="walk")
     parser.add_argument("--pose-phase", default=0, type=int)
+    parser.add_argument(
+        "--pose-sample-span",
+        default=None,
+        type=int,
+        help="Optional number of template frames to sample across for this Wan clip. Defaults to the full template.",
+    )
+    parser.add_argument(
+        "--pose-render-style",
+        choices=(
+            "controlnet",
+            "controlnet_thin",
+            "wan_line",
+            "wan_lower",
+            "wan_confidence_lower",
+            "wan_balanced",
+            "vace_depth_proxy",
+            "vace_side_proxy",
+        ),
+        default="controlnet",
+    )
+    parser.add_argument("--character-mask", default=None, type=Path)
+    parser.add_argument("--auto-character-mask", action="store_true")
+    parser.add_argument("--character-mask-threshold", default=42, type=int)
+    parser.add_argument("--character-mask-grow", default=11, type=int)
+    parser.add_argument("--character-mask-blur", default=3, type=int)
+    parser.add_argument("--invert-character-mask", action="store_true")
+    parser.add_argument("--weapon-guide", choices=("none", "sword", "axe", "bow"), default="none")
     parser.add_argument("--run-label", default=None)
     parser.add_argument("--width", default=512, type=int)
     parser.add_argument("--height", default=512, type=int)
@@ -73,6 +110,7 @@ def main() -> None:
     parser.add_argument("--seed", default=424242, type=int)
     parser.add_argument("--shift", default=8.0, type=float)
     parser.add_argument("--continue-motion-max-frames", default=5, type=int)
+    parser.add_argument("--vace-strength", default=1.0, type=float)
     parser.add_argument("--unet", default="wan2.1_i2v_480p_14B_fp16.safetensors")
     parser.add_argument("--weight-dtype", default="fp8_e4m3fn")
     parser.add_argument("--vae", default="wan_2.1_vae.safetensors")
@@ -94,6 +132,21 @@ def main() -> None:
 
     start_image = _prepare_image(args.start_image, run_dir / "start_image.png", args.width, args.height)
     image_name = _upload_image(args.comfy_url.rstrip("/"), start_image)
+    character_mask = None
+    character_mask_name = None
+    if args.character_mask is not None or args.auto_character_mask:
+        mask_source = args.character_mask if args.character_mask is not None else start_image
+        character_mask = _prepare_character_mask(
+            mask_source,
+            run_dir / "character_mask.png",
+            args.width,
+            args.height,
+            threshold=args.character_mask_threshold,
+            grow=args.character_mask_grow,
+            blur_radius=args.character_mask_blur,
+            invert=args.invert_character_mask,
+        )
+        character_mask_name = _upload_image(args.comfy_url.rstrip("/"), character_mask)
     end_image = None
     end_image_name = None
     if args.mode in {"first_last", "fun_first_last"}:
@@ -110,10 +163,16 @@ def main() -> None:
         workflow = _fun_workflow(args, image_name, end_image_name)
     elif args.mode == "fun_control":
         control_names = _make_and_upload_control_video(args, run_dir / "control_video")
-        workflow = _fun_control_workflow(args, image_name, control_names)
+        workflow = _fun_control_workflow(args, image_name, control_names, class_type="WanFunControlToVideo")
+    elif args.mode == "wan22_fun_control":
+        control_names = _make_and_upload_control_video(args, run_dir / "control_video")
+        workflow = _fun_control_workflow(args, image_name, control_names, class_type="Wan22FunControlToVideo")
     elif args.mode == "animate_pose":
         control_names = _make_and_upload_control_video(args, run_dir / "control_video")
-        workflow = _animate_pose_workflow(args, image_name, control_names)
+        workflow = _animate_pose_workflow(args, image_name, control_names, character_mask_name)
+    elif args.mode == "vace":
+        control_names = _make_and_upload_control_video(args, run_dir / "control_video")
+        workflow = _vace_workflow(args, image_name, control_names)
     workflow_path = workflow_dir / "wan_walk_i2v_api.json"
     workflow_path.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -137,6 +196,7 @@ def main() -> None:
             "seed": args.seed,
             "shift": args.shift,
             "continue_motion_max_frames": args.continue_motion_max_frames,
+            "vace_strength": args.vace_strength,
             "unet": args.unet,
             "weight_dtype": args.weight_dtype,
             "vae": args.vae,
@@ -147,6 +207,15 @@ def main() -> None:
             "pose_root": str(args.pose_root),
             "pose_template": args.pose_template,
             "pose_phase": args.pose_phase,
+            "pose_sample_span": args.pose_sample_span,
+            "pose_render_style": args.pose_render_style,
+            "weapon_guide": args.weapon_guide,
+            "character_mask": str(character_mask) if character_mask else None,
+            "auto_character_mask": args.auto_character_mask,
+            "character_mask_threshold": args.character_mask_threshold,
+            "character_mask_grow": args.character_mask_grow,
+            "character_mask_blur": args.character_mask_blur,
+            "invert_character_mask": args.invert_character_mask,
             "run_label": run_label,
             "post_trim_start": args.post_trim_start,
             "post_trim_end": args.post_trim_end,
@@ -334,12 +403,16 @@ def _fun_workflow(args: argparse.Namespace, start_image_name: str, end_image_nam
     return workflow
 
 
-def _fun_control_workflow(args: argparse.Namespace, start_image_name: str, control_image_names: list[str]) -> dict[str, Any]:
+def _fun_control_workflow(
+    args: argparse.Namespace,
+    start_image_name: str,
+    control_image_names: list[str],
+    *,
+    class_type: str,
+) -> dict[str, Any]:
     workflow = _workflow(args, start_image_name)
     final_control_ref = _add_control_video_nodes(workflow, control_image_names, args.width, args.height)
-    workflow["11"] = {
-        "class_type": "WanFunControlToVideo",
-        "inputs": {
+    inputs: dict[str, Any] = {
             "positive": ["4", 0],
             "negative": ["5", 0],
             "vae": ["6", 0],
@@ -347,11 +420,14 @@ def _fun_control_workflow(args: argparse.Namespace, start_image_name: str, contr
             "height": args.height,
             "length": args.length,
             "batch_size": 1,
-            "clip_vision_output": ["10", 0],
-            "start_image": ["8", 0],
             "control_video": final_control_ref,
-        },
     }
+    if class_type == "Wan22FunControlToVideo":
+        inputs["ref_image"] = ["8", 0]
+    else:
+        inputs["clip_vision_output"] = ["10", 0]
+        inputs["start_image"] = ["8", 0]
+    workflow["11"] = {"class_type": class_type, "inputs": inputs}
     return workflow
 
 
@@ -359,9 +435,11 @@ def _animate_pose_workflow(
     args: argparse.Namespace,
     reference_image_name: str,
     pose_image_names: list[str],
+    character_mask_name: str | None = None,
 ) -> dict[str, Any]:
     workflow = _workflow(args, reference_image_name)
     final_pose_ref = _add_control_video_nodes(workflow, pose_image_names, args.width, args.height)
+    mask_ref = _add_mask_node(workflow, character_mask_name, args.width, args.height) if character_mask_name else None
     workflow["11"] = {
         "class_type": "WanAnimateToVideo",
         "inputs": {
@@ -379,12 +457,54 @@ def _animate_pose_workflow(
             "pose_video": final_pose_ref,
         },
     }
+    if mask_ref is not None:
+        workflow["11"]["inputs"]["character_mask"] = mask_ref
     workflow["19"] = {
         "class_type": "TrimVideoLatent",
         "inputs": {"samples": ["12", 0], "trim_amount": ["11", 3]},
     }
     workflow["13"]["inputs"]["samples"] = ["19", 0]
     return workflow
+
+
+def _vace_workflow(
+    args: argparse.Namespace,
+    reference_image_name: str,
+    control_image_names: list[str],
+) -> dict[str, Any]:
+    workflow = _workflow(args, reference_image_name)
+    final_control_ref = _add_control_video_nodes(workflow, control_image_names, args.width, args.height)
+    workflow["11"] = {
+        "class_type": "WanVaceToVideo",
+        "inputs": {
+            "positive": ["4", 0],
+            "negative": ["5", 0],
+            "vae": ["6", 0],
+            "width": args.width,
+            "height": args.height,
+            "length": args.length,
+            "batch_size": 1,
+            "strength": args.vace_strength,
+            "reference_image": ["8", 0],
+            "control_video": final_control_ref,
+        },
+    }
+    workflow["19"] = {
+        "class_type": "TrimVideoLatent",
+        "inputs": {"samples": ["12", 0], "trim_amount": ["11", 3]},
+    }
+    workflow["13"]["inputs"]["samples"] = ["19", 0]
+    return workflow
+
+
+def _add_mask_node(
+    workflow: dict[str, Any],
+    mask_image_name: str,
+    width: int,
+    height: int,
+) -> list[Any]:
+    workflow["200"] = {"class_type": "LoadImageMask", "inputs": {"image": mask_image_name, "channel": "red"}}
+    return ["200", 0]
 
 
 def _add_control_video_nodes(
@@ -442,19 +562,117 @@ def _prepare_image(source: Path, output: Path, width: int, height: int) -> Path:
     return output
 
 
+def _prepare_character_mask(
+    source: Path,
+    output: Path,
+    width: int,
+    height: int,
+    *,
+    threshold: int,
+    grow: int,
+    blur_radius: int,
+    invert: bool = False,
+) -> Path:
+    if not source.exists():
+        raise FileNotFoundError(source)
+    image = Image.open(source).convert("RGBA")
+    background = Image.new("RGBA", image.size, (255, 255, 255, 255))
+    background.alpha_composite(image)
+    flattened = background.convert("RGB")
+    scale = min(width / flattened.width, height / flattened.height)
+    resized = flattened.resize(
+        (max(1, round(flattened.width * scale)), max(1, round(flattened.height * scale))),
+        Image.Resampling.LANCZOS,
+    )
+    canvas = Image.new("RGB", (width, height), (255, 255, 255))
+    left = (width - resized.width) // 2
+    top = (height - resized.height) // 2
+    canvas.paste(resized, (left, top))
+    bg = _estimate_background(canvas)
+    mask = Image.new("L", canvas.size, 0)
+    pixels = canvas.load()
+    mask_pixels = mask.load()
+    for y in range(canvas.height):
+        for x in range(canvas.width):
+            red, green, blue = pixels[x, y]
+            distance = abs(red - bg[0]) + abs(green - bg[1]) + abs(blue - bg[2])
+            if distance >= threshold:
+                mask_pixels[x, y] = 255
+    if grow > 0:
+        mask = mask.filter(ImageFilter.MaxFilter(grow * 2 + 1))
+    if blur_radius > 0:
+        mask = mask.filter(ImageFilter.GaussianBlur(blur_radius))
+    if invert:
+        from PIL import ImageChops
+
+        mask = ImageChops.invert(mask)
+    mask.save(output)
+    return output
+
+
+def _estimate_background(image: Image.Image) -> tuple[int, int, int]:
+    points = [
+        (0, 0),
+        (image.width - 1, 0),
+        (0, image.height - 1),
+        (image.width - 1, image.height - 1),
+        (image.width // 2, 0),
+        (image.width // 2, image.height - 1),
+    ]
+    pixels = image.load()
+    samples = [pixels[x, y] for x, y in points]
+    return tuple(sum(sample[channel] for sample in samples) // len(samples) for channel in range(3))
+
+
 def _make_and_upload_control_video(args: argparse.Namespace, output_dir: Path) -> list[str]:
     output_dir.mkdir(parents=True, exist_ok=True)
     pose_frames = load_pose_sequence(args.pose_root, args.pose_template)
     if not pose_frames:
         raise ValueError(f"No pose frames found: {args.pose_root / (args.pose_template + '.json')}")
     names: list[str] = []
-    for index in range(args.length):
-        source_index = (args.pose_phase + round(index * (len(pose_frames) - 1) / max(1, args.length - 1))) % len(pose_frames)
-        image = render_pose_frame(pose_frames[source_index], args.width, args.height)
-        path = output_dir / f"pose_{index:03d}.png"
+    for source_index in _pose_source_indices(
+        pose_count=len(pose_frames),
+        length=args.length,
+        phase=args.pose_phase,
+        sample_span=args.pose_sample_span,
+    ):
+        image = _render_control_frame(args, pose_frames[source_index], source_index, len(pose_frames))
+        path = output_dir / f"pose_{len(names):03d}.png"
         image.save(path)
         names.append(_upload_image(args.comfy_url.rstrip("/"), path))
     return names
+
+
+def _render_control_frame(
+    args: argparse.Namespace,
+    pose_frame: dict[str, Any],
+    source_index: int,
+    pose_count: int,
+) -> Image.Image:
+    image = render_pose_frame(pose_frame, args.width, args.height, style=args.pose_render_style)
+    if getattr(args, "weapon_guide", "none") == "none":
+        return image
+    guide = weapon_guide_for(args.weapon_guide, source_index, pose_count)
+    guide_image = render_weapon_guide(guide, args.width, args.height).convert("RGB")
+    mask = guide_image.convert("L").point(lambda value: 255 if value > 10 else 0)
+    image = image.copy()
+    image.paste(guide_image, (0, 0), mask)
+    return image
+
+
+def _pose_source_indices(
+    *,
+    pose_count: int,
+    length: int,
+    phase: int,
+    sample_span: int | None,
+) -> list[int]:
+    if pose_count <= 0:
+        raise ValueError("pose_count must be positive")
+    if length <= 0:
+        raise ValueError("length must be positive")
+    span = pose_count - 1 if sample_span is None else max(0, min(sample_span, pose_count - 1))
+    return [(phase + round(index * span / max(1, length - 1))) % pose_count for index in range(length)]
 
 
 
