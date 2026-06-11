@@ -1,0 +1,14 @@
+{
+  "sword": {
+    "frames": 120,
+    "ok": true
+  },
+  "axe": {
+    "frames": 120,
+    "ok": true
+  },
+  "bow": {
+    "frames": 120,
+    "ok": true
+  }
+}

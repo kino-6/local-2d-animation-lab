@@ -1,0 +1,61 @@
+{
+  "weapon": "axe",
+  "frame_index": 72,
+  "phase": "follow_through",
+  "anchors": {
+    "grip": [
+      0.4470819057090724,
+      0.5
+    ],
+    "head": [
+      0.615966497352313,
+      0.7479475644274326
+    ],
+    "butt": [
+      0.37952806905177616,
+      0.40082097422902696
+    ]
+  },
+  "lines": [
+    {
+      "start": "butt",
+      "end": "head",
+      "width": 7,
+      "color": [
+        180,
+        120,
+        40
+      ]
+    },
+    {
+      "start": "head",
+      "end": "grip",
+      "width": 11,
+      "color": [
+        190,
+        220,
+        230
+      ]
+    }
+  ],
+  "arcs": [
+    {
+      "center": [
+        0.54,
+        0.54
+      ],
+      "radius": [
+        0.24,
+        0.3
+      ],
+      "start_degrees": -115,
+      "end_degrees": 80,
+      "width": 6,
+      "color": [
+        255,
+        230,
+        120
+      ]
+    }
+  ]
+}

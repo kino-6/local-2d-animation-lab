@@ -8,6 +8,7 @@ from typing import Any
 
 class Action(StrEnum):
     WALK = "walk"
+    RUN = "run"
     IDLE = "idle"
     ATTACK = "attack"
     HIT = "hit"

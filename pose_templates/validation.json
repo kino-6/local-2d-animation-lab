@@ -3,6 +3,10 @@
     "frames": 120,
     "ok": true
   },
+  "run": {
+    "frames": 120,
+    "ok": true
+  },
   "idle": {
     "frames": 120,
     "ok": true

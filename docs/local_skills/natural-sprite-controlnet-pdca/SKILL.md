@@ -54,8 +54,176 @@ Template frames must include:
 Shared phases:
 
 - Walk: `contact`, `down`, `passing`, `up`
+- Run: `contact`, `drive`, `flight`, `recover`
 - Attack: `ready`, `anticipation`, `active`, `follow_through`, `recover`
 - Hit: `neutral`, `impact`, `recoil`, `peak`, `recover`
+
+Weapon actions also have reusable guide assets under `weapon_guides/<weapon>/`. Build them with:
+
+```bash
+uv run python scripts/build_weapon_guides.py --output-root weapon_guides --frame-count 120
+```
+
+Current guides encode:
+
+- sword: hand anchor, blade line, slash arc
+- axe: grip anchor, shaft line, head region, heavy swing arc
+- bow: bow curve, string lines, arrow line, draw hand
+
+These are control assets for the next weapon PDCA. Body OpenPose alone is not enough for weapon continuity.
+
+When hand-authored templates still produce broken motion, switch to a motion-capture style control source before doing more prompt or seed search:
+
+- Extract DWPose/OpenPose keypoints from a clean source action video.
+- Align the extracted keypoints to the target character's full-body start-frame scale, hip height, shoulder width, and foot-contact baseline.
+- Keep source-video confidence as a control signal where available. Stronger/confident lower-body and contact keypoints should render brighter or clearer than uncertain limbs.
+- Convert the aligned keypoints into the same `pose_templates/<action>/frame_000.json` through `frame_119.json` format so the rest of the local pipeline remains unchanged.
+- Use text prompts for framing, identity, and clean-background stability; do not ask text to invent the motion that should come from pose.
+
+External rationale: current successful dance-style systems such as MusePose, Animate Anyone, and MimicMotion rely on reference-image preservation plus dense pose guidance, often with DWPose extraction, pose alignment, confidence-aware pose guidance, and temporal modeling. They are not primarily prompt-only animation systems.
+
+Import an extracted motion source into the local template format:
+
+```bash
+uv run python scripts/import_motion_source_pose.py \
+  --source extracted_openpose/run_source_json \
+  --output-root pose_templates \
+  --action run \
+  --frame-count 120 \
+  --target-template-root pose_templates \
+  --target-template-name run \
+  --render-style wan_confidence_lower \
+  --source-start-index 2 \
+  --min-frame-mean-confidence 0.4
+```
+
+Supported inputs are:
+
+- a directory of OpenPose BODY_25 JSON files with `people[].pose_keypoints_2d`;
+- a JSON file with `frames[]`;
+- existing local template-style `keypoints`, optionally with per-keypoint confidence.
+
+The script writes `frame_000.json` through `frame_119.json`, `controlnet/*.png`, `contact_sheet.png`, and `motion_source_report.json`.
+
+For real source videos, inspect per-frame confidence before import. Drop weak startup frames or low-confidence detections with `--source-start-index`, `--source-end-index`, and `--min-frame-mean-confidence`; weak pose frames render faint controls and can poison Wan motion.
+
+Local ComfyUI pose extraction setup:
+
+- SDPose checkpoint: `C:/LocalWork/StabilityMatrix/Data/Packages/ComfyUI/models/checkpoints/sdpose_wholebody_fp16.safetensors`
+- JSON saver source: `comfy_custom_nodes/natural_sprite_pose_json_saver/__init__.py`
+- Installed node path: `C:/LocalWork/StabilityMatrix/Data/Packages/ComfyUI/custom_nodes/natural_sprite_pose_json_saver/__init__.py`
+
+After restarting ComfyUI, verify `NaturalSpriteSavePoseKeypointsJSON` appears in `/object_info`. Then use:
+
+```bash
+uv run python scripts/run_sdpose_json_probe.py --check-only
+```
+
+```text
+LoadVideo
+-> GetVideoComponents
+-> CheckpointLoaderSimple(sdpose_wholebody_fp16)
+-> VAELoader(sdxl_vae)
+-> SDPoseKeypointExtractor
+-> NaturalSpriteSavePoseKeypointsJSON
+```
+
+Feed the saved JSON into `scripts/import_motion_source_pose.py`.
+
+For video sources, use the dedicated probe script:
+
+```bash
+uv run python scripts/run_sdpose_video_json_probe.py \
+  --video path/to/clean_walk_or_run_source.mp4 \
+  --run-label clean_run_source
+```
+
+Use `--check-only` first. Do not queue the extraction while ComfyUI has active or pending jobs unless that is intentional:
+
+```bash
+uv run python scripts/run_sdpose_video_json_probe.py \
+  --video path/to/clean_walk_or_run_source.mp4 \
+  --check-only
+```
+
+Source-video prep findings:
+
+- Prefer a full-body crop that makes the actor larger without clipping feet, hands, or head. A wider crop that preserves the full body is better than a tight crop that cuts the actor.
+- Reject source clips that show only legs or feet. They may look like walking footage, but they cannot provide the upper-body and arm keypoints needed for reusable character action control.
+- In the Mixkit walk-source trial, `crop=480:360:0:0` improved SDPose mean confidence compared with full-width padding, while `crop=360:360:0:0` clipped the actor and was rejected.
+- Package each new source candidate before repeating generation. Use `scripts/export_source_probe_package.py` to bundle the source contact sheet, SDPose report, imported control contact sheet, span/gate reports, comparison sheet, and an explicit `accept`, `diagnostic_only`, or `reject` decision.
+- Reject candidates that cannot keep at least 8 high-confidence, full-body pose frames after filtering. A lower-confidence import is allowed only as a diagnostic to prove whether the source is worth improving.
+- Mixkit 35419 was rejected after this diagnostic path: the high-confidence import kept only 4 frames, the lower-confidence import kept 8 frames at mean confidence `0.37371`, and the Animate probe failed with `hard_failures: 5/8` plus gate `retake_required: 6/8`.
+- When external source-video families stall, build a local synthetic side-view source to isolate pose-control noise from Wan generation failures:
+
+```bash
+uv run python scripts/build_synthetic_sideview_motion_source.py \
+  --output-root outputs_motion_source_video_pdca \
+  --template-name run_synthetic_sideview_walk_v1 \
+  --action run \
+  --variant synthetic_sideview_walk_v1 \
+  --frame-count 120 \
+  --render-style wan_confidence_lower
+```
+
+- Synthetic side-view v1 reduced selected-span structural hard failures to `0/8`, but the corrected artifact gate still rejected it with `retake_required: 3/8` because the output became dark and broad repair masks appeared. Treat this as diagnostic evidence, not an adopted asset.
+- Stronger `wan_lower` control on the same synthetic source worsened the span to `hard_failures: 7/8`; stronger all-body pose lines are not automatically better.
+- `wan_balanced` was added as an intermediate pose render style. It improved some appearance/background symptoms but reintroduced duplicate-leg and duplicate-silhouette failures; a 33-frame trial still failed with `retake_required: 4/8`.
+- A bright appearance prompt with the original weak synthetic control made the character more readable but caused blue-gray background contamination and broad masks. Deterministic white cleanup produced white holes and still failed `retake_required: 8/8`.
+- A small Wan `character_mask` trial with synthetic v1 also failed (`foreground_too_small: 8`, `retake_required: 8/8`). Do not use the current `character_mask` path as the next subject-preservation fix.
+- `scripts/normalize_connected_background.py` can normalize simple border-connected backgrounds to white without using artifact masks. It did not rescue the bright-prompt synthetic output; gate stayed `retake_required: 8/8` because the contamination was entangled with the character silhouette.
+- `scripts/person_cutout_background.py` can keep the largest detected subject component and white out the rest. It also did not rescue the bright-prompt synthetic output; the gray shadow/background mass stayed connected to the character and gate remained `retake_required: 8/8`.
+- Next synthetic/local-control attempts should use generation-side subject/background separation rather than stronger pose lines, brighter text prompts, broad background masks, simple connected-background cleanup, largest-component cutout, or the current Wan `character_mask`.
+- Auto character mask degraded the current `WanAnimateToVideo` path by fading the character and changing outfit identity. Do not make it the default until a later workflow proves otherwise.
+- Stronger white-background prompting can reduce background color drift, but it does not repair leg afterimages or duplicate silhouettes. Structural ghosting must return to generation control, span selection, or a different video workflow.
+
+VACE subject/motion split findings:
+
+- `WanVaceToVideo` with `wan2.1_vace_1.3B_fp16.safetensors` is the current preferred local subject/motion split experiment when `WanAnimateToVideo` and FunControl stall.
+- Use `scripts/run_wan_walk_i2v.py --mode vace --unet wan2.1_vace_1.3B_fp16.safetensors --weight-dtype default`.
+- Start from the v4 edge-stride synthetic side-view motion settings before trying new proxy controls: `stride=0.083`, `lift=0.038`, `body_bob=0.012`, `--pose-render-style wan_balanced`.
+- Keep `--vace-strength 1.0` as the current baseline. Raising it to `1.35` increased motion but collapsed the character into proxy-like/front-view structures in the tested run.
+- Do not treat `vace_depth_proxy` or `vace_side_proxy` as adopted controls for this character/action. They are diagnostics; VACE copied their simplified structure into the output instead of only using them as motion guidance.
+- For small 512x512 full-body sprites, evaluate walk motion with foreground-normalized motion, not only canvas-wide pixel delta:
+
+```bash
+uv run python scripts/select_best_span.py \
+  --frames-dir outputs_birefnet_foreground/<run>/frames \
+  --foreground-mask-dir outputs_birefnet_foreground/<run>/foreground_masks \
+  --span-length 16 \
+  --motion-metric foreground \
+  --min-mean-motion-delta 4.0
+```
+
+- The current best local walk evidence is the 121-frame VACE v4 edge-stride identity-prompt `wan_balanced` branch. Its full 121-frame package is `review_packages/synthetic_sideview_walk_v4_identity_prompt_seed717220_vace_len121_full_source_review_20260611_182900`.
+- Full-source walk gate: artifact `retake_required: 0/121`, Godot validation `ok: true`.
+- Selected-span evidence remains useful for comparison: foreground motion `4.993`, `hard_failures: 0/16`, artifact `retake_required: 0/16`.
+- Use the same successful seed (`717220`) when comparing identity prompt changes; a different seed improved the head but reduced foreground motion to `3.213`.
+- Include identity constraints that suppress the previous white headgear artifact: `uncovered brown bob hair`, `pink hair clip`, `navy sailor school uniform`, `red necktie`, plus negatives `hat`, `cap`, `hood`, `head scarf`, `white headgear`, `helmet`.
+- Treat this walk route as the current local workflow reference, while still requiring visual review before calling a new character/action adopted.
+- Do not reject normal skirt plus two-foot walk frames as double-foot failures. Lower-body blob gates should count only foot-zone components; skirt/hem components that do not reach the foot zone are not duplicate feet.
+
+Source probe package example:
+
+```bash
+uv run python scripts/export_source_probe_package.py \
+  --source-label clean_walk_source_candidate \
+  --source-video assets/source_motion/clean_walk_source.mp4 \
+  --source-contact-sheet assets/source_motion/clean_walk_source_probe.jpg \
+  --sdpose-report outputs_sdpose_video_json_probe/clean_walk_source/sdpose_video_json_probe_report.json \
+  --motion-source-report outputs_motion_source_video_pdca/run_clean_walk_source/motion_source_report.json \
+  --control-contact-sheet outputs_motion_source_video_pdca/run_clean_walk_source/contact_sheet.png \
+  --decision diagnostic_only \
+  --reason "Source has visible full-body side-view walking but needs generation proof."
+```
+
+Weapon guide handoff decision:
+
+- Use weapon guides as line-art image sequences first.
+- For Wan/video generation, pass the rendered line-art sequence as an extra local control video when the workflow supports it.
+- For still-frame ControlNet start-frame generation, use the guide as a staged line-art/reference control image or mask-sidecar, not as a replacement for the body OpenPose template.
+- Keep weapon masks in reports for validation and inpaint protection, but do not rely on masks alone to invent the weapon.
+- Do not use a staged weapon-bearing reference frame as the only weapon control; it can help the first frame, but it does not guarantee continuity through the action.
 
 ## Generation Procedure
 
@@ -77,7 +245,7 @@ uv run python scripts/pdca_controlnet_assets.py \
   --retakes 3
 ```
 
-Common actions are `walk`, `idle`, `attack_sword`, `attack_axe`, `attack_bow`, `hit_light`, `hit_heavy`, and `hit_knockback`.
+Common actions are `walk`, `run`, `idle`, `attack_sword`, `attack_axe`, `attack_bow`, `hit_light`, `hit_heavy`, and `hit_knockback`.
 
 3. Validate the adopted manifest in Godot:
 
@@ -85,6 +253,232 @@ Common actions are `walk`, `idle`, `attack_sword`, `attack_axe`, `attack_bow`, `
 uv run python scripts/godot_validate_summary.py \
   --summary outputs_controlnet_pdca/attack_sword_controlnet_summary.json
 ```
+
+For Wan/video outputs, select the best contiguous span before Image2Image:
+
+```bash
+uv run python scripts/select_best_span.py \
+  --frames-dir outputs_wan_action_repro/example/frames \
+  --output-root outputs_span_selection \
+  --run-label run_best_span \
+  --span-length 8
+```
+
+Review `span_selection_report.json`, `span_contact_sheet.png`, and `span_preview.gif`. The report includes per-frame foreground visibility, background contamination, duplicate silhouette area, lower-body blob count, dark-frame ratio, motion continuity, and retake recommendations.
+
+Current quality-gate thresholds:
+
+- `foreground_coverage < 0.025`: subject too small
+- `foreground_coverage > 0.35`: subject too large or merged with artifacts
+- `duplicate_silhouette_area > 0.020`: duplicate body/afterimage risk
+- `lower_body_blob_count > 2`: duplicate leg or foot risk
+- `dark_ratio > 0.18`: dark-frame/background failure
+- `background_contamination_ratio > 0.08`: background cleanup or retake needed
+- `upper_body_center_shift > 0.18`: identity/camera stability risk
+
+Export a compact review package for selected frames:
+
+```bash
+uv run python scripts/export_review_package.py \
+  --frames-dir outputs_span_selection/run_best_span/selected_frames \
+  --output-root review_packages \
+  --run-label run_review \
+  --action run \
+  --character-id anima_00013 \
+  --source-report outputs_span_selection/run_best_span/span_selection_report.json \
+  --validate-godot
+```
+
+The package writes `preview.gif`, `contact_sheet.png`, `manifest.json`, `review_summary.md`, and `godot_validation.json` when `--validate-godot` is used.
+
+## Wan Video Workflow
+
+Use this when a still-frame ControlNet run is too inconsistent frame-to-frame, especially for walk/run.
+
+Stable local sequence:
+
+```text
+reference image
+-> generate or extract one clean full-body side-view start frame
+-> reject the start frame if it has multiple foreground components
+-> WanAnimateToVideo with action pose video
+-> automatic best-span selection
+-> low-denoise novaOrangeXL Image2Image only after the span is structurally plausible
+-> artifact gate with person masks
+-> compact review package with Godot validation
+```
+
+Do not pass a bust-up reference directly to Wan. Wan tends to preserve the start-image framing, so a close-up input stays close-up instead of becoming a full-body game asset.
+
+Prepare a single-character Wan start frame from a still-frame candidate:
+
+```bash
+uv run python scripts/prepare_wan_start_frame.py \
+  --input-frame outputs_next_phase_pdca_controlnet/anima_00013/run/run_strong_pose/frames/anima_00013_run_r02_000.png \
+  --output-root outputs_next_phase_startframe \
+  --run-label auto_cleaned_run_strong_pose \
+  --width 1024 \
+  --height 1024
+```
+
+Review `start_frame_report.json` and `start_frame_debug_sheet.png`. `extra_foreground_components_removed` is acceptable only when the cleaned output visibly keeps the intended main character. `missing_foreground` or a large secondary component means retake the still frame before Wan.
+
+Current run command shape:
+
+```bash
+uv run python scripts/run_wan_walk_i2v.py \
+  --mode animate_pose \
+  --start-image outputs_next_phase_startframe/cleaned_run_strong_pose_start.png \
+  --pose-template run \
+  --pose-render-style wan_lower \
+  --pose-sample-span 119 \
+  --run-label run_from_cleaned_single_start_probe \
+  --output-root outputs_next_phase_pdca \
+  --length 17 \
+  --steps 6 \
+  --cfg 3.0 \
+  --seed 717173 \
+  --post-trim-start 0
+```
+
+Recommended run settings from the 2026-06-11 PDCA:
+
+- SDXL start frame: generate at `1024x1024`.
+- Wan video probe: keep `512x512` until a better portrait workflow is proven.
+- Wan run pose rendering: prefer `--pose-render-style wan_lower` over the default black-background ControlNet renderer.
+- Wan pose sampling: default behavior samples the full 120-frame pose template across the requested clip. `--pose-sample-span` can limit that range for experiments, but the 2026-06-11 `pose-sample-span=32` source-video run reduced motion delta while causing identity fading. Do not default to a narrow span without a passing quality gate.
+- Wan `character_mask`: supported by `scripts/run_wan_walk_i2v.py`, but keep it off by default. The 2026-06-11 mask probes worsened run quality in this setup.
+- Wan `continue_motion_max_frames=1` is a promising but not adopted setting for the current best walk source. One trial reached span score `0.83364` and gate `retake_required: 1/8` with small masks, but a seed repeat failed with `hard_failures: 6/8`. Use it as a controlled comparison setting, not as a default.
+- Wan action prompts: keep text broad and stability-focused. Let the pose template carry action-specific motion. In the run PDCA, explicitly over-specifying separated legs made duplicate/ghost silhouettes worse, while the broader walk-cycle prompt plus `run` pose template produced the best span.
+- Image2Image finish: denoise `0.20` to `0.30`, seed fixed with `--seed-step 0`.
+- Block Image2Image and inpaint as adoption paths when the gate reports `duplicate_silhouette_area_high`, `double_foot_or_duplicate_leg_risk`, or `lower_body_blob_count_high`.
+
+BiRefNet foreground separation findings from the 2026-06-11 PDCA:
+
+- ComfyUI native BiRefNet can be used locally when `birefnet.safetensors` is installed under `ComfyUI/models/background_removal/`.
+- Use it when the main failure is background drift, blue-gray haze, or character-connected background contamination that simple border cleanup cannot isolate.
+
+```bash
+uv run python scripts/birefnet_foreground_masks.py \
+  --frames-dir outputs_span_selection/run_synthetic_sideview_walk_v1_bright_prompt_cont1_span_20260611_143816/selected_frames \
+  --output-root outputs_birefnet_foreground \
+  --run-label synthetic_sideview_walk_v1_bright_prompt_birefnet \
+  --background white \
+  --mask-grow 1 \
+  --mask-blur 1 \
+  --fps 8
+```
+
+- Follow with the normal artifact gate:
+
+```bash
+uv run python scripts/repair_frame_artifacts.py \
+  --frames-dir outputs_birefnet_foreground/synthetic_sideview_walk_v1_bright_prompt_birefnet_YYYYMMDD_HHMMSS/frames \
+  --output-root outputs_artifact_repair \
+  --run-label synthetic_sideview_walk_v1_bright_prompt_birefnet_gate \
+  --mask-only \
+  --fps 8
+```
+
+- Positive result to remember: the synthetic bright-prompt walk span improved from broad background failure to `no_repair_needed: 8/8` after BiRefNet white compositing, with `mask_ok: 8/8`.
+- Negative result to remember: the Mixkit clean-source baseline still retained leg/arm afterimages because those artifacts were inside the foreground mask. BiRefNet does not repair body-internal duplicate limbs.
+- Do not adopt purely from `no_repair_needed`. Review playback/contact sheets for motion readability. A visually clean but low-travel 8-frame span is a candidate, not a 120-frame game asset.
+- Feed BiRefNet mask stability and motion readability into span selection before refinement:
+
+```bash
+uv run python scripts/select_best_span.py \
+  --frames-dir outputs_birefnet_foreground/synthetic_sideview_walk_v1_bright_prompt_birefnet_YYYYMMDD_HHMMSS/frames \
+  --foreground-mask-dir outputs_birefnet_foreground/synthetic_sideview_walk_v1_bright_prompt_birefnet_YYYYMMDD_HHMMSS/foreground_masks \
+  --min-mean-motion-delta 4.0 \
+  --max-mean-foreground-mask-delta 0.12
+```
+
+- The first BiRefNet candidate had hard failures `0/8` but was flagged with `mean_motion_delta_too_low`; this is the correct outcome for a clean but weak-motion span.
+- The 121-frame bright-prompt trial solved the low-motion issue but still failed visual adoption. The best 16-frame span had `mean_motion_delta: 7.484`, `hard_failures: 0/16`, and Godot `ok: true`, but visual review showed mesh-like legs and bag-like lower-body silhouettes.
+- `scripts/birefnet_foreground_masks.py` now reports foreground-structure gates. Treat `review_sparse_foreground_bbox` and `review_lower_body_silhouette_wide` as manual-review blockers before refinement.
+- Important: if broken legs or afterimages are inside the BiRefNet foreground mask, BiRefNet has done its job and the failure must go back to generation control. Do not refine or inpaint that candidate as if it were only a background problem.
+- Lower-stride synthetic control is the current best research direction:
+
+```bash
+uv run python scripts/build_synthetic_sideview_motion_source.py \
+  --output-root outputs_motion_source_video_pdca \
+  --template-name run_synthetic_sideview_walk_v2_lower_stride \
+  --action run \
+  --variant synthetic_sideview_walk_v2_lower_stride \
+  --frame-count 120 \
+  --render-style wan_confidence_lower \
+  --stride 0.075 \
+  --lift 0.035 \
+  --body-bob 0.012
+```
+
+- Do not pair this lower-stride source with weak `wan_confidence_lower` and expect a change; the 2026-06-11 v1/v2 long runs were byte-identical under the same seed/settings.
+- Pairing the lower-stride source with `wan_balanced` produced the current best synthetic/local control branch:
+  - Review package: `review_packages/synthetic_sideview_walk_v2_lower_stride_wan_balanced_review_20260611_154913`
+  - Mean motion delta: `4.919`
+  - Artifact gate: `no_repair_needed: 16/16`
+  - BiRefNet structure gate: `mask_ok: 9`, `review_sparse_foreground_bbox: 7`
+  - Godot validation: `ok: true`
+- Treat it as `needs_manual_review`, not `adoptable`. It improves leg readability but still has sparse lower-body silhouettes and small residual foot/hand artifacts.
+- Do not use the BiRefNet start-frame mask as `WanAnimateToVideo` `character_mask` in this workflow. The diagnostic branch:
+  - Output: `outputs_next_phase_pdca/run_synthetic_sideview_walk_v2_lower_stride_wan_balanced_birefnet_char_mask_len33_20260611_155309`
+  - Review package: `review_packages/synthetic_sideview_walk_v2_wan_balanced_birefnet_char_mask_reject_review_20260611_155811`
+  - Result: blurry silhouette-like frames, brown/yellow background drift, and `mean_motion_delta_too_low`.
+- Use BiRefNet masks after generation for background separation and review gates; do not treat them as a proven generation-time subject/motion split.
+- Next preferred integration is to strengthen lower-body structure without reintroducing duplicate silhouettes, or add a generation-time subject/motion split stronger than current WanAnimate pose input. Then apply the same BiRefNet, motion-readability, structure-review, artifact, and Godot gates.
+
+FunControl recovery findings from the 2026-06-11 PDCA:
+
+- Audit local Wan node/model capability before switching routes:
+
+```bash
+uv run python scripts/audit_comfy_wan_nodes.py --comfy-url http://127.0.0.1:8188
+```
+
+- Do not judge `WanFunControlToVideo` or `Wan22FunControlToVideo` without a Fun-Control diffusion model. With only the normal `wan2.1_i2v_480p_14B_fp16.safetensors`, FunControl routes reproduced pose/control lines rather than a usable character.
+- The first local FunControl model installed for comparison was `Wan2.1-Fun-1.3B-Control.safetensors` under ComfyUI `models/diffusion_models`.
+- Best FunControl probe so far:
+
+```bash
+uv run python scripts/run_wan_walk_i2v.py \
+  --mode fun_control \
+  --unet Wan2.1-Fun-1.3B-Control.safetensors \
+  --pose-render-style controlnet \
+  --pose-template run_mixkit_walk_source_filtered \
+  --pose-root outputs_motion_source_video_pdca \
+  --length 17 \
+  --steps 8 \
+  --cfg 3.0 \
+  --seed 717193
+```
+
+- Result: `review_packages/run_motion_source_mixkit_walk_fun_control_1p3b_controlnet_review_20260611_131553` passed Godot loading, but the artifact gate still reported `retake_required: 5/8`. Treat this as research evidence, not adoption output.
+- In this run, `controlnet` pose rendering beat `wan_confidence_lower` and `wan_line` for FunControl. `pose-sample-span=32` looked cleaner in isolated frames but still failed the gate.
+- `controlnet_thin` was tested to reduce control-video carryover. It worsened the selected span and should not replace normal `controlnet` for this source.
+- `--min-ankle-x-separation 0.06` was tested to remove leg-crossing source frames. It did not reduce retakes for the current Mixkit walk source.
+- `Wan2.1-Fun-14B-Control.safetensors` was installed and tested. It did not beat the 1.3B `controlnet` candidate for the current source; gate stayed at `retake_required: 5/8`.
+- Lower-stride synthetic source was also tested with FunControl 1.3B:
+  - `controlnet` output: `review_packages/synthetic_sideview_walk_v2_fun_control_1p3b_controlnet_reject_review_20260611_160739`
+  - `wan_balanced` output: `review_packages/synthetic_sideview_walk_v2_fun_control_1p3b_wan_balanced_reject_review_20260611_161208`
+  - Result: both rejected. `controlnet` looked attractive as still frames but had `retake_required: 16/16` and `mean_motion_delta_too_low`; `wan_balanced` reduced artifact counts but became front-facing/static.
+- Do not prefer FunControl only because the contact sheet has clean still frames. Walk adoption requires motion readability, not just frame beauty.
+- Current implication: for walking, the next meaningful improvement is likely a cleaner full-body side-view source video with less lower-body occlusion/crossing, or a workflow with stronger subject/motion separation. Do not keep spending cycles on prompt-only tuning, more steps, or weaker control lines for this source.
+
+Clean-source walk 0-retake evidence:
+
+- Rechecked package: `review_packages/mixkit_walk_cont1_birefnet_0retake_manual_review_20260611_161805`
+- Artifact gate after BiRefNet: `retake_required: 0/8`
+- Motion gate: mean motion delta `6.001`
+- Godot validation: `ok: true`
+- Status: `manual_review`, not `adoptable`
+- Reason: foreground-internal leg/arm afterimages remain visible in the contact sheet. BiRefNet removed background drift, but it cannot repair artifacts already inside the foreground silhouette.
+- Do not promote a candidate to adoption solely because artifact `retake_required` is zero. Check BiRefNet structure gates and contact sheets.
+
+Dedicated reports:
+
+- `docs/wan_i2v_walk_findings.md`
+- `docs/run_template_vs_walk_template_report.md`
+- `docs/next_phase_run_generation_pdca_report.md`
 
 ## Breakage Evaluation
 
@@ -118,7 +512,20 @@ uv run python scripts/repair_frame_artifacts.py \
 
 Use `--mask-only` first when tuning thresholds. Review `comparison_sheet.png`, `overlay_contact_sheet.png`, and `artifact_repair_report.json`.
 
-Repair is allowed only for small masked artifacts such as pale ghost specks, background streaks, or detached tiny fragments. Do not use inpaint to hide structural failures.
+Repair is allowed only for small masked artifacts such as pale ghost specks, background streaks, or detached tiny fragments. Do not use inpaint to hide structural failures. If the mask resembles a limb-shaped silhouette, leg, hand, weapon, or large shadow, review before repair; the 2026-06-11 run reproduction showed low-denoise inpaint can add a worse gray duplicate silhouette.
+
+`scripts/apply_mask_cleanup.py` can deterministically paint mask pixels white for debugging or tiny background specks. It is not an adoption path for broad masks: the Mixkit walk trial turned broad cleanup masks into visible white holes and still failed duplicate-leg gates.
+
+The artifact gate writes:
+
+- `person_masks/*.png`
+- `background_cleanup_masks/*.png`
+- `masks/*.png`
+- `person_mask_contact_sheet.png`
+- `background_cleanup_mask_contact_sheet.png`
+- `mask_contact_sheet.png`
+
+The repair mask must not overlap the protected person mask. If a cleanup would touch the main character body, treat it as a retake or a more explicit foreground segmentation problem.
 
 Treat these issue codes as retake/retrim blockers:
 
@@ -127,7 +534,10 @@ Treat these issue codes as retake/retrim blockers:
 - `weapon_missing`
 - `weapon_fragmented`
 - `weapon_not_elongated`
+- `weapon_detached`
 - `repair_mask_too_large`
+
+Broad repair masks are blockers even in `--mask-only` quality-gate runs. If `repair_mask_too_large` appears, the recommendation should be `retake_or_retrim_span_before_refine`; do not interpret a broad mask-only result as a polishable frame.
 
 For sword, axe, and bow outputs, pass `--weapon sword`, `--weapon axe`, or `--weapon bow`. If the weapon gate fails, return to weapon-specific generation control instead of polishing the broken frame.
 

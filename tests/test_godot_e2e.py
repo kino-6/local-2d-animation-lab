@@ -98,6 +98,34 @@ def test_pdca_summary_best_asset_loads_in_godot(tmp_path: Path) -> None:
     assert result["results"][0]["asset"] == "hit_light"
 
 
+def test_direct_manifest_validation_loads_review_package_manifest(tmp_path: Path) -> None:
+    godot = shutil.which("godot")
+    if not godot:
+        pytest.skip("Godot CLI is not installed")
+
+    source = tmp_path / "hero.png"
+    Image.new("RGBA", (96, 128), (210, 120, 80, 255)).save(source)
+    outputs = run_pipeline(
+        source_image=source,
+        prompt="Create an 8-frame running animation facing right.",
+        backend=DummyBackend(),
+        output_root=tmp_path / "outputs",
+        run_id="godot_direct_manifest_run",
+        director=WalkCycleDirector(use_ollama=False),
+    )
+
+    repo_root = Path(__file__).resolve().parents[1]
+    module_path = repo_root / "scripts" / "godot_validate_summary.py"
+    spec = importlib.util.spec_from_file_location("godot_validate_summary", module_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    result = module.validate_manifest(outputs.manifest_path, godot=godot, godot_project=repo_root / "godot")
+
+    assert result["ok"] is True
+    assert result["frame_count"] == 8
+
+
 def _last_json_line(output: str) -> dict[str, object]:
     for line in reversed(output.splitlines()):
         line = line.strip()

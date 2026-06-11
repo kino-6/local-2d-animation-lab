@@ -209,6 +209,17 @@ def _frame_plan_for_action(action: Action, prompt: str = "") -> list[dict[str, A
             _frame("idle_neutral_3", "both", 0, 0, 0, "relaxed standing pose, hands steady"),
             _frame("idle_sway_right", "both", 1, 2, -2, "tiny weight shift to the right foot"),
         ]
+    if action == Action.RUN:
+        return [
+            _frame("run_contact_right", "right", -2, 26, -24, "right foot contacts forward, torso leans into the run"),
+            _frame("run_drive_right", "right", -5, 16, -30, "right leg drives off, left knee lifts forward"),
+            _frame("run_flight_right", "none", -12, -18, 28, "brief airborne phase, legs scissor clearly"),
+            _frame("run_recover_right", "left", -4, -28, 18, "left foot reaches for the next contact"),
+            _frame("run_contact_left", "left", -2, -26, 24, "left foot contacts forward, torso stays low"),
+            _frame("run_drive_left", "left", -5, -16, 30, "left leg drives off, right knee lifts forward"),
+            _frame("run_flight_left", "none", -12, 18, -28, "brief airborne phase mirrored, arms pumping"),
+            _frame("run_recover_left", "right", -4, 28, -18, "right foot reaches for the next contact"),
+        ]
     if action == Action.ATTACK:
         if attack_variant == "bow":
             return [
@@ -456,6 +467,8 @@ def _action_phrase(label: str) -> str:
         return "attack animation pose"
     if label.startswith("hit"):
         return "hit reaction animation pose"
+    if label.startswith("run"):
+        return "running animation pose"
     return "walk-cycle pose"
 
 

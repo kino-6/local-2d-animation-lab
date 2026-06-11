@@ -19,7 +19,8 @@ ACTION_PATTERNS: list[tuple[Action, tuple[str, ...]]] = [
     (Action.ATTACK, ("attack", "slash", "strike", "battle")),
     (Action.IDLE, ("idle", "breathing", "breathe")),
     (Action.HIT, ("hit", "damage", "hurt", "reaction")),
-    (Action.WALK, ("walk", "walking", "side-view walking", "run", "running")),
+    (Action.RUN, ("run", "running", "sprint", "sprinting")),
+    (Action.WALK, ("walk", "walking", "side-view walking")),
 ]
 
 DIRECTION_PATTERNS: list[tuple[Direction, tuple[str, ...]]] = [

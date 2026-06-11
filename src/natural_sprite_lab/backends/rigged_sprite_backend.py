@@ -121,7 +121,7 @@ def _motion_frames(
 def _sample_indices(source_count: int, output_count: int, action: Action) -> list[int]:
     if output_count <= 1:
         return [0]
-    if action in {Action.WALK, Action.IDLE}:
+    if action in {Action.WALK, Action.RUN, Action.IDLE}:
         return [round(index * (source_count - 1) / (output_count - 1)) for index in range(output_count)]
 
     # SFC-style attacks/hits spend frames on anticipation, impact, and recovery instead of uniform time.
