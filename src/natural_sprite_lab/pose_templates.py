@@ -168,10 +168,10 @@ def render_pose_frame(frame: dict[str, Any], width: int, height: int, style: str
             "left_hip": (185, 90, 45),
             "left_knee": (185, 90, 45),
         }
-    elif style in {"wan_lower", "wan_confidence_lower", "wan_balanced"}:
+    elif style in {"wan_lower", "wan_confidence_lower", "wan_balanced", "wan_walk_lower"}:
         background = (255, 255, 255)
-        line_width = 4 if style == "wan_balanced" else 5
-        radius = 3 if style == "wan_balanced" else 4
+        line_width = 4 if style in {"wan_balanced", "wan_walk_lower"} else 5
+        radius = 3 if style in {"wan_balanced", "wan_walk_lower"} else 4
         colors = {
             "nose": (130, 130, 130) if style == "wan_balanced" else (160, 160, 160),
             "neck": (130, 130, 130) if style == "wan_balanced" else (160, 160, 160),
@@ -184,7 +184,7 @@ def render_pose_frame(frame: dict[str, Any], width: int, height: int, style: str
             "left_hip": (210, 85, 35),
             "left_knee": (210, 85, 35),
         }
-    elif style in {"vace_depth_proxy", "vace_side_proxy"}:
+    elif style in {"vace_depth_proxy", "vace_side_proxy", "vace_walk_silhouette", "vace_walk_lower_hint"}:
         background = (255, 255, 255)
         line_width = 4
         radius = 3
@@ -207,13 +207,26 @@ def render_pose_frame(frame: dict[str, Any], width: int, height: int, style: str
     if style == "vace_side_proxy":
         _draw_vace_side_proxy(draw, points, width, height)
         return image
+    if style == "vace_walk_silhouette":
+        _draw_vace_walk_silhouette(draw, points, width, height)
+        return image
+    if style == "vace_walk_lower_hint":
+        _draw_vace_walk_lower_hint(draw, points, width, height)
+        return image
     for start, end, default_color in BONES:
         color = default_color if style == "controlnet" else colors.get(start, (110, 110, 110))
         confidence_weight = min(confidence.get(start, 1.0), confidence.get(end, 1.0))
-        if style in {"wan_confidence_lower", "wan_balanced"}:
+        if style == "wan_walk_lower" and not _is_walk_lower_control_bone(start, end):
+            confidence_weight = min(confidence_weight, 0.08)
+            color = (248, 248, 248)
+            bone_width = 1
+            bone_radius = 1
+        elif style in {"wan_confidence_lower", "wan_balanced", "wan_walk_lower"}:
             blend_weight = confidence_weight
             if style == "wan_balanced":
                 blend_weight = 0.5 + confidence_weight * 0.5
+            if style == "wan_walk_lower":
+                blend_weight = 0.75 + confidence_weight * 0.25
             color = _blend_color((245, 245, 245), color, blend_weight)
             bone_width = max(1, round(line_width * (0.35 + confidence_weight * 0.65)))
             bone_radius = max(1, round(radius * (0.45 + confidence_weight * 0.55)))
@@ -222,6 +235,17 @@ def render_pose_frame(frame: dict[str, Any], width: int, height: int, style: str
             bone_radius = radius
         _draw_bone(draw, points[start], points[end], color, width=bone_width, radius=bone_radius)
     return image
+
+
+def _is_walk_lower_control_bone(start: str, end: str) -> bool:
+    return start in {"neck", "right_hip", "right_knee", "left_hip", "left_knee"} and end in {
+        "right_hip",
+        "right_knee",
+        "right_ankle",
+        "left_hip",
+        "left_knee",
+        "left_ankle",
+    }
 
 
 def _draw_vace_depth_proxy(
@@ -340,6 +364,143 @@ def _draw_vace_side_proxy(
     ):
         start = (center_x, points[shoulder][1])
         _draw_depth_limb(draw, start, points[elbow], points[wrist], (196, 196, 196), arm_width)
+
+
+def _draw_vace_walk_silhouette(
+    draw: ImageDraw.ImageDraw,
+    points: dict[str, tuple[int, int]],
+    width: int,
+    height: int,
+) -> None:
+    scale = min(width, height)
+    center_x = round(
+        (
+            points["neck"][0]
+            + points["left_hip"][0]
+            + points["right_hip"][0]
+            + points["left_shoulder"][0]
+            + points["right_shoulder"][0]
+        )
+        / 5
+    )
+    shoulder_y = round((points["left_shoulder"][1] + points["right_shoulder"][1]) / 2)
+    hip_y = round((points["left_hip"][1] + points["right_hip"][1]) / 2)
+    torso_width = max(9, round(scale * 0.052))
+    head_radius = max(6, round(scale * 0.040))
+    right_forward = points["right_ankle"][0] >= points["left_ankle"][0]
+
+    head_center = (center_x + round(scale * 0.015), points["nose"][1])
+    draw.ellipse(
+        (
+            head_center[0] - head_radius,
+            head_center[1] - head_radius,
+            head_center[0] + head_radius,
+            head_center[1] + head_radius,
+        ),
+        fill=(174, 174, 174),
+    )
+    draw.rounded_rectangle(
+        (
+            center_x - torso_width,
+            shoulder_y,
+            center_x + torso_width,
+            hip_y + round(scale * 0.042),
+        ),
+        radius=max(4, round(torso_width * 0.7)),
+        fill=(150, 150, 150),
+    )
+
+    limb_width = max(6, round(scale * 0.032))
+    far_width = max(4, round(limb_width * 0.74))
+    leg_specs = (
+        ("right_hip", "right_knee", "right_ankle", right_forward),
+        ("left_hip", "left_knee", "left_ankle", not right_forward),
+    )
+    for hip, knee, ankle, is_near in leg_specs:
+        color = (82, 82, 82) if is_near else (190, 190, 190)
+        leg_width = limb_width if is_near else far_width
+        start = (center_x, points[hip][1])
+        end = points[ankle]
+        _draw_depth_limb(draw, start, points[knee], end, color, leg_width)
+        foot_len = round(scale * (0.052 if is_near else 0.042))
+        foot_height = max(2, round(scale * 0.010))
+        direction = 1 if end[0] >= center_x else -1
+        draw.rounded_rectangle(
+            (
+                min(end[0], end[0] + direction * foot_len),
+                end[1] - foot_height,
+                max(end[0], end[0] + direction * foot_len),
+                end[1] + foot_height,
+            ),
+            radius=foot_height,
+            fill=color,
+        )
+        contact_y = min(height - 1, end[1] + round(scale * 0.020))
+        contact_color = (128, 128, 128) if is_near else (220, 220, 220)
+        draw.line(
+            (
+                end[0] - round(foot_len * 0.55),
+                contact_y,
+                end[0] + round(foot_len * 0.85),
+                contact_y,
+            ),
+            fill=contact_color,
+            width=max(1, round(scale * 0.006)),
+        )
+
+    arm_width = max(3, round(scale * 0.016))
+    for shoulder, elbow, wrist in (
+        ("right_shoulder", "right_elbow", "right_wrist"),
+        ("left_shoulder", "left_elbow", "left_wrist"),
+    ):
+        start = (center_x, points[shoulder][1])
+        _draw_depth_limb(draw, start, points[elbow], points[wrist], (214, 214, 214), arm_width)
+
+
+def _draw_vace_walk_lower_hint(
+    draw: ImageDraw.ImageDraw,
+    points: dict[str, tuple[int, int]],
+    width: int,
+    height: int,
+) -> None:
+    scale = min(width, height)
+    center_x = round((points["left_hip"][0] + points["right_hip"][0] + points["neck"][0]) / 3)
+    hip_y = round((points["left_hip"][1] + points["right_hip"][1]) / 2)
+    right_forward = points["right_ankle"][0] >= points["left_ankle"][0]
+    limb_width = max(4, round(scale * 0.020))
+    pelvis_width = max(5, round(scale * 0.030))
+    draw.rounded_rectangle(
+        (
+            center_x - pelvis_width,
+            hip_y - round(scale * 0.012),
+            center_x + pelvis_width,
+            hip_y + round(scale * 0.018),
+        ),
+        radius=max(2, round(scale * 0.010)),
+        fill=(232, 232, 232),
+    )
+    for hip, knee, ankle, is_near in (
+        ("right_hip", "right_knee", "right_ankle", right_forward),
+        ("left_hip", "left_knee", "left_ankle", not right_forward),
+    ):
+        color = (206, 206, 206) if is_near else (236, 236, 236)
+        width_px = limb_width if is_near else max(2, round(limb_width * 0.65))
+        start = (center_x, points[hip][1])
+        end = points[ankle]
+        _draw_depth_limb(draw, start, points[knee], end, color, width_px)
+        foot_len = round(scale * (0.046 if is_near else 0.034))
+        direction = 1 if end[0] >= center_x else -1
+        contact_y = min(height - 1, end[1] + round(scale * 0.016))
+        draw.line(
+            (
+                end[0] - round(foot_len * 0.35),
+                contact_y,
+                end[0] + direction * foot_len,
+                contact_y,
+            ),
+            fill=(222, 222, 222) if is_near else (242, 242, 242),
+            width=max(1, round(scale * 0.004)),
+        )
 
 
 def _draw_depth_limb(

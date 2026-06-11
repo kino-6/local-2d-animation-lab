@@ -13,6 +13,7 @@ _MODULE = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_MODULE)
 
 _analyze_frame = _MODULE._analyze_frame
+_candidate_status = _MODULE._candidate_status
 _mask_coverage = _MODULE._mask_coverage
 _overlap_pixels = _MODULE._overlap_pixels
 _recommendation = _MODULE._recommendation
@@ -26,6 +27,7 @@ def _args() -> Namespace:
         mask_grow=7,
         min_mask_coverage=0.0004,
         max_mask_coverage=0.18,
+        analysis_max_size=512,
         weapon="none",
     )
 
@@ -98,6 +100,26 @@ def test_normal_skirt_and_two_feet_are_not_double_foot_retake(tmp_path: Path) ->
     assert analysis["gate"] != "retake_required"
 
 
+def test_visual_review_labels_report_guides_and_foot_artifacts(tmp_path: Path) -> None:
+    frame = tmp_path / "guide_and_shadow.png"
+    image = Image.new("RGB", (256, 256), (255, 255, 255))
+    draw = ImageDraw.Draw(image)
+    draw.ellipse((112, 26, 144, 58), fill=(58, 38, 28))
+    draw.rectangle((104, 58, 152, 132), fill=(20, 40, 95))
+    draw.rectangle((110, 132, 124, 214), fill=(245, 205, 190))
+    draw.rectangle((136, 132, 150, 214), fill=(245, 205, 190))
+    draw.ellipse((96, 206, 128, 226), fill=(28, 24, 28))
+    draw.ellipse((134, 206, 166, 226), fill=(28, 24, 28))
+    draw.line((196, 58, 228, 96), fill=(230, 40, 30), width=2)
+    draw.ellipse((170, 218, 222, 236), fill=(218, 206, 196))
+    image.save(frame)
+
+    analysis = _analyze_frame(frame, _args())
+
+    assert "visible_guide_line_leakage_review" in analysis["review_labels"]
+    assert "foot_shadow_or_contact_artifact_review" in analysis["review_labels"]
+
+
 def test_retake_gate_drives_retake_recommendation() -> None:
     recommendation = _recommendation(
         {"retake_required": 1, "repair_candidate": 7},
@@ -106,3 +128,13 @@ def test_retake_gate_drives_retake_recommendation() -> None:
     )
 
     assert recommendation == "retake_or_retrim_span_before_refine"
+
+
+def test_candidate_status_stays_selected_proof_when_review_labels_remain() -> None:
+    status = _candidate_status(
+        {"no_repair_needed": 120},
+        {},
+        {"foot_shadow_or_contact_artifact_review": 12},
+    )
+
+    assert status == "selected_proof_only"

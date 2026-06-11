@@ -17,6 +17,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageStat
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
 from natural_sprite_lab.quality import analyze_frame_quality
+from natural_sprite_lab.quality import prepare_analysis_frame
 
 
 POSITIVE_PROMPT = (
@@ -57,6 +58,12 @@ def main() -> None:
     parser.add_argument("--mask-grow", default=7, type=int)
     parser.add_argument("--min-mask-coverage", default=0.0004, type=float)
     parser.add_argument("--max-mask-coverage", default=0.18, type=float)
+    parser.add_argument(
+        "--analysis-max-size",
+        default=512,
+        type=int,
+        help="Downscale frames for artifact analysis only. Set 0 to analyze at full resolution.",
+    )
     parser.add_argument("--weapon", choices=("none", "sword", "axe", "bow"), default="none")
     parser.add_argument("--mask-only", action="store_true")
     parser.add_argument("--positive", default=POSITIVE_PROMPT)
@@ -104,6 +111,7 @@ def main() -> None:
             "mask_grow": args.mask_grow,
             "min_mask_coverage": args.min_mask_coverage,
             "max_mask_coverage": args.max_mask_coverage,
+            "analysis_max_size": args.analysis_max_size,
             "weapon": args.weapon,
             "mask_only": args.mask_only,
             "positive": args.positive,
@@ -126,7 +134,21 @@ def main() -> None:
         for index, source in enumerate(frame_paths):
             prepared = _prepare_source(source, source_dir / f"source_{index:03d}.png", args.width, args.height)
             analysis = _analyze_frame(prepared, args)
-            quality = analyze_frame_quality(prepared, index=index, previous_path=previous_prepared)
+            quality_source = prepare_analysis_frame(
+                prepared,
+                run_dir / "analysis_frames" / f"analysis_{index:03d}.png",
+                args.analysis_max_size,
+            )
+            previous_quality_source = (
+                prepare_analysis_frame(
+                    previous_prepared,
+                    run_dir / "analysis_frames" / f"analysis_prev_{index:03d}.png",
+                    args.analysis_max_size,
+                )
+                if previous_prepared
+                else None
+            )
+            quality = analyze_frame_quality(quality_source, index=index, previous_path=previous_quality_source)
             previous_prepared = prepared
             for issue_code in quality.issue_codes:
                 if issue_code not in analysis["issue_codes"]:
@@ -331,7 +353,10 @@ def _prepare_source(source: Path, output: Path, width: int, height: int) -> Path
 
 
 def _analyze_frame(path: Path, args: argparse.Namespace) -> dict[str, Any]:
-    image = Image.open(path).convert("RGB")
+    source_image = Image.open(path).convert("RGB")
+    image = _resize_for_analysis(source_image, args.analysis_max_size)
+    scale_x = source_image.width / image.width
+    scale_y = source_image.height / image.height
     weak_mask = _foreground_by_background_distance(image, args.weak_threshold)
     strong_mask = _foreground_by_background_distance(image, args.strong_threshold)
     components = _connected_components(strong_mask, min_pixels=48)
@@ -369,6 +394,7 @@ def _analyze_frame(path: Path, args: argparse.Namespace) -> dict[str, Any]:
     if lower_blob_count > 2:
         issue_codes.append("double_foot_or_duplicate_leg_risk")
     issue_codes.extend(weapon_report["issue_codes"])
+    review_labels = _visual_review_labels(image, protected, repair_mask, bbox, args.min_mask_coverage)
 
     hard_issue_codes = {
         "double_foot_or_duplicate_leg_risk",
@@ -385,23 +411,58 @@ def _analyze_frame(path: Path, args: argparse.Namespace) -> dict[str, Any]:
     elif mask_coverage < args.min_mask_coverage:
         gate = "no_repair_needed"
 
+    output_size = source_image.size
     return {
-        "foreground_mask": weak_mask,
-        "strong_mask": strong_mask,
-        "protected_mask": protected,
-        "person_mask": protected,
-        "background_cleanup_mask": background_cleanup_mask,
-        "repair_mask": repair_mask,
-        "foreground_bbox": list(bbox) if bbox else None,
+        "foreground_mask": _restore_mask_size(weak_mask, output_size),
+        "strong_mask": _restore_mask_size(strong_mask, output_size),
+        "protected_mask": _restore_mask_size(protected, output_size),
+        "person_mask": _restore_mask_size(protected, output_size),
+        "background_cleanup_mask": _restore_mask_size(background_cleanup_mask, output_size),
+        "repair_mask": _restore_mask_size(repair_mask, output_size),
+        "foreground_bbox": _scale_bbox(bbox, scale_x, scale_y) if bbox else None,
         "strong_component_count": len(components),
-        "main_component_pixels": main_component["pixels"] if main_component else 0,
+        "main_component_pixels": round(main_component["pixels"] * scale_x * scale_y) if main_component else 0,
         "lower_body_blob_count": lower_blob_count,
         "mask_coverage": round(mask_coverage, 5),
-        "mask_pixels": _mask_pixels(repair_mask),
+        "mask_pixels": round(_mask_pixels(repair_mask) * scale_x * scale_y),
         "weapon": weapon_report,
         "issue_codes": issue_codes,
+        "review_labels": review_labels,
         "gate": gate,
     }
+
+
+def _resize_for_analysis(image: Image.Image, max_size: int) -> Image.Image:
+    if max_size <= 0:
+        return image.copy()
+    longest = max(image.size)
+    if longest <= max_size:
+        return image.copy()
+    scale = max_size / longest
+    return image.resize(
+        (max(1, round(image.width * scale)), max(1, round(image.height * scale))),
+        Image.Resampling.BICUBIC,
+    )
+
+
+def _restore_mask_size(mask: Image.Image, size: tuple[int, int]) -> Image.Image:
+    if mask.size == size:
+        return mask
+    return mask.resize(size, Image.Resampling.NEAREST)
+
+
+def _scale_bbox(
+    bbox: tuple[int, int, int, int],
+    scale_x: float,
+    scale_y: float,
+) -> list[int]:
+    left, top, right, bottom = bbox
+    return [
+        round(left * scale_x),
+        round(top * scale_y),
+        round(right * scale_x),
+        round(bottom * scale_y),
+    ]
 
 
 def _foreground_by_background_distance(image: Image.Image, threshold: int) -> Image.Image:
@@ -498,6 +559,76 @@ def _count_lower_body_blobs(mask: Image.Image, bbox: tuple[int, int, int, int] |
         if (x1 - x0) >= 8 and (y1 - y0) >= 8:
             foot_like.append(component)
     return len(foot_like)
+
+
+def _visual_review_labels(
+    image: Image.Image,
+    protected_mask: Image.Image,
+    repair_mask: Image.Image,
+    bbox: tuple[int, int, int, int] | None,
+    min_mask_coverage: float,
+) -> list[str]:
+    labels: list[str] = []
+    if _guide_line_leakage_coverage(image, protected_mask) >= 0.00003:
+        labels.append("visible_guide_line_leakage_review")
+    if bbox is not None:
+        if _lower_zone_coverage(repair_mask, bbox) >= min_mask_coverage:
+            labels.append("foot_shadow_or_contact_artifact_review")
+        if _skin_afterimage_coverage(image, protected_mask, bbox) >= 0.00008:
+            labels.append("skin_colored_afterimage_near_legs_review")
+        left, top, right, bottom = bbox
+        if (bottom - top) / max(1, image.height) < 0.34:
+            labels.append("face_detail_readability_at_game_scale_review")
+    return labels
+
+
+def _guide_line_leakage_coverage(image: Image.Image, protected_mask: Image.Image) -> float:
+    pixels = image.load()
+    protected = _grow_mask(protected_mask, 4).load()
+    count = 0
+    for y in range(image.height):
+        for x in range(image.width):
+            if protected[x, y] > 0:
+                continue
+            red, green, blue = pixels[x, y]
+            saturated_red = red > 175 and green < 130 and blue < 130
+            saturated_green = green > 155 and red < 140 and blue < 150
+            saturated_blue = blue > 165 and red < 150 and green < 170
+            if saturated_red or saturated_green or saturated_blue:
+                count += 1
+    return count / max(1, image.width * image.height)
+
+
+def _lower_zone_coverage(mask: Image.Image, bbox: tuple[int, int, int, int]) -> float:
+    left, top, right, bottom = bbox
+    lower_top = round(top + (bottom - top) * 0.70)
+    if lower_top >= bottom:
+        return 0.0
+    lower = mask.crop((left, lower_top, right, bottom))
+    return _mask_coverage(lower)
+
+
+def _skin_afterimage_coverage(
+    image: Image.Image,
+    protected_mask: Image.Image,
+    bbox: tuple[int, int, int, int],
+) -> float:
+    left, top, right, bottom = bbox
+    lower_top = round(top + (bottom - top) * 0.55)
+    protected = _grow_mask(protected_mask, 3).load()
+    pixels = image.load()
+    count = 0
+    total = 0
+    for y in range(lower_top, bottom):
+        for x in range(left, right):
+            if protected[x, y] > 0:
+                continue
+            total += 1
+            red, green, blue = pixels[x, y]
+            skin_like = red > 170 and green > 115 and blue > 90 and red > green + 8 and green > blue - 5
+            if skin_like:
+                count += 1
+    return count / max(1, total)
 
 
 def _weapon_report(image: Image.Image, strong_mask: Image.Image, weapon: str) -> dict[str, Any]:
@@ -605,20 +736,50 @@ def _overlap_pixels(left: Image.Image, right: Image.Image) -> int:
 
 def _summarize_reports(reports: list[dict[str, Any]]) -> dict[str, Any]:
     issue_counts: dict[str, int] = {}
+    review_label_counts: dict[str, int] = {}
     gates: dict[str, int] = {}
     for report in reports:
         gates[report["gate"]] = gates.get(report["gate"], 0) + 1
         for code in report["issue_codes"]:
             issue_counts[code] = issue_counts.get(code, 0) + 1
+        for label in report.get("review_labels", []):
+            review_label_counts[label] = review_label_counts.get(label, 0) + 1
     mean_mask = sum(report["mask_coverage"] for report in reports) / len(reports)
     repaired = sum(1 for report in reports if report["repair_mode"] == "comfy_masked_inpaint")
     return {
         "gate_counts": gates,
         "issue_counts": issue_counts,
+        "review_label_counts": review_label_counts,
         "mean_mask_coverage": round(mean_mask, 5),
         "inpainted_frames": repaired,
+        "candidate_status": _candidate_status(gates, issue_counts, review_label_counts),
         "recommendation": _recommendation(gates, issue_counts, repaired),
     }
+
+
+def _candidate_status(
+    gates: dict[str, int],
+    issue_counts: dict[str, int],
+    review_label_counts: dict[str, int],
+) -> str:
+    if gates.get("retake_required"):
+        return "rejected"
+    structural_issue_codes = {
+        "strong_duplicate_silhouette_risk",
+        "double_foot_or_duplicate_leg_risk",
+        "repair_mask_too_large",
+        "weapon_missing",
+        "weapon_fragmented",
+        "weapon_not_elongated",
+        "weapon_detached",
+    }
+    if any(issue_counts.get(code) for code in structural_issue_codes):
+        return "rejected"
+    if review_label_counts:
+        return "selected_proof_only"
+    if gates.get("repair_candidate"):
+        return "diagnostic"
+    return "adopted_full_source"
 
 
 def _recommendation(gates: dict[str, int], issue_counts: dict[str, int], repaired: int) -> str:

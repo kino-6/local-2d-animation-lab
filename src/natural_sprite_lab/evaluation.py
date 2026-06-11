@@ -19,7 +19,6 @@ def evaluate_animation(
         return {"score": 0.0, "issues": ["no frames"], "frames": []}
 
     areas = [report["foreground_area_ratio"] for report in frame_reports]
-    widths = [report["bbox_width_ratio"] for report in frame_reports]
     heights = [report["bbox_height_ratio"] for report in frame_reports]
     centers = [report["center_x_ratio"] for report in frame_reports]
     color_distances = [

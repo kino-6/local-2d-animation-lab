@@ -82,7 +82,6 @@ def test_foreground_motion_delta_normalizes_small_subject_motion(tmp_path: Path)
     _draw_tiny_subject(first, offset=0)
     _draw_tiny_subject(second, offset=8)
 
-    first_quality = analyze_frame_quality(first, index=0)
     second_quality = analyze_frame_quality(second, index=1, previous_path=first)
 
     assert foreground_normalized_delta(first, second) > second_quality.motion_delta_prev

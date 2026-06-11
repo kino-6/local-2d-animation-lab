@@ -86,8 +86,11 @@ def main() -> None:
             "wan_lower",
             "wan_confidence_lower",
             "wan_balanced",
+            "wan_walk_lower",
             "vace_depth_proxy",
             "vace_side_proxy",
+            "vace_walk_silhouette",
+            "vace_walk_lower_hint",
         ),
         default="controlnet",
     )

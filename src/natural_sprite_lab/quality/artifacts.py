@@ -127,6 +127,22 @@ def analyze_frame_quality(
     )
 
 
+def prepare_analysis_frame(source: Path, output: Path, max_size: int) -> Path:
+    if max_size <= 0:
+        return source
+    image = Image.open(source).convert("RGB")
+    longest = max(image.size)
+    if longest <= max_size:
+        return source
+    scale = max_size / longest
+    output.parent.mkdir(parents=True, exist_ok=True)
+    image.resize(
+        (max(1, round(image.width * scale)), max(1, round(image.height * scale))),
+        Image.Resampling.BICUBIC,
+    ).save(output)
+    return output
+
+
 def select_best_span(
     qualities: list[FrameQuality],
     span_length: int,

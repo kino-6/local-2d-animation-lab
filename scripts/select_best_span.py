@@ -11,7 +11,11 @@ from PIL import Image, ImageChops, ImageStat
 
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
-from natural_sprite_lab.quality import analyze_frame_quality, recommendation_table, select_best_span
+from natural_sprite_lab.quality import SpanSelection
+from natural_sprite_lab.quality import analyze_frame_quality
+from natural_sprite_lab.quality import prepare_analysis_frame
+from natural_sprite_lab.quality import recommendation_table
+from natural_sprite_lab.quality import select_best_span
 
 
 def main() -> None:
@@ -26,6 +30,12 @@ def main() -> None:
     parser.add_argument("--min-mean-motion-delta", default=0.0, type=float)
     parser.add_argument("--max-mean-foreground-mask-delta", default=None, type=float)
     parser.add_argument("--motion-metric", choices=("global", "foreground", "max"), default="global")
+    parser.add_argument(
+        "--analysis-max-size",
+        default=512,
+        type=int,
+        help="Downscale temporary analysis frames only. Set 0 to analyze original resolution.",
+    )
     args = parser.parse_args()
 
     frame_paths = sorted(args.frames_dir.glob("*.png"), key=_frame_index)
@@ -38,10 +48,13 @@ def main() -> None:
     selected_dir.mkdir(parents=True, exist_ok=True)
 
     qualities = []
+    analysis_dir = run_dir / "analysis_frames"
     previous = None
     for index, path in enumerate(frame_paths):
-        qualities.append(analyze_frame_quality(path, index=index, previous_path=previous))
-        previous = path
+        analysis_path = prepare_analysis_frame(path, analysis_dir / f"analysis_{index:03d}.png", args.analysis_max_size)
+        quality = analyze_frame_quality(analysis_path, index=index, previous_path=previous)
+        qualities.append(replace(quality, path=str(path)))
+        previous = analysis_path
     foreground_mask_deltas = []
     if args.foreground_mask_dir:
         mask_paths = sorted(args.foreground_mask_dir.glob("*.png"), key=_frame_index)
@@ -83,8 +96,10 @@ def main() -> None:
             "min_mean_motion_delta": args.min_mean_motion_delta,
             "max_mean_foreground_mask_delta": args.max_mean_foreground_mask_delta,
             "motion_metric": args.motion_metric,
+            "analysis_max_size": args.analysis_max_size,
         },
         "selection": selection.to_dict(),
+        "selection_review_labels": _selection_review_labels(selection),
         "retake_recommendations": recommendation_table(qualities),
         "selected_frames_dir": str(selected_dir),
         "span_contact_sheet": str(contact_sheet),
@@ -115,6 +130,18 @@ def _frame_index(path: Path) -> int:
 def _safe_label(value: str) -> str:
     safe = "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in value.strip())
     return safe or "best_span"
+
+
+def _selection_review_labels(selection: SpanSelection) -> list[str]:
+    labels: list[str] = []
+    penalties = set(selection.selection_penalties)
+    if "mean_motion_delta_too_low" in penalties:
+        labels.append("weak_motion_or_foot_sliding_review")
+    if "foreground_mask_temporal_delta_high" in penalties:
+        labels.append("scale_or_silhouette_temporal_jitter_review")
+    if selection.hard_failures:
+        labels.append("structural_hard_failure_review")
+    return labels
 
 
 if __name__ == "__main__":

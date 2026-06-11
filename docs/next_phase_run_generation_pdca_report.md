@@ -1711,3 +1711,330 @@ Conclusion:
 
 - The walk branch is now converged as the current local workflow reference.
 - Remaining work should move to sword action PDCA rather than broadening walk experiments.
+
+## Follow-Up: 768 Walk Quality Improvement Probe
+
+Reason:
+
+- The 512x512 converged walk source was structurally stable, but visually still looked too small and low-detail for a convincing 2D game asset review.
+- This branch tested whether a 768x768 VACE walk generation can improve face, outfit, and limb readability without losing the local control workflow.
+
+Implementation changes:
+
+- Added `wan_walk_lower` pose render style. It keeps lower-body walk controls readable while making upper-body control lines nearly white, reducing VACE guide leakage into hands and arms.
+- Added `--analysis-max-size` to `scripts/repair_frame_artifacts.py` and `scripts/select_best_span.py` so 768/1024 frames can be evaluated quickly while preserving original-resolution selected frames.
+- Added a script-level regression test to ensure analysis downscaling does not downscale selected output frames.
+
+Trial 1: 768 `wan_balanced`, 33 frames
+
+- Output: `outputs_quality_pdca/walk_v4_identity_seed717220_vace_len33_768_quality_probe_20260611_211909`
+- Selected span: `outputs_quality_span_selection/walk_v4_identity_seed717220_vace_len33_768_foreground_motion_gate_20260611_212306`
+- Result: visually larger and more readable than 512, but rejected as an adopted setting because VACE copied thin control lines around the hands.
+- Selected-span gate: `retake_required: 2/16` before changing control style.
+
+Trial 2: 768 `wan_walk_lower`, 33 frames
+
+- Output: `outputs_quality_pdca/walk_v4_identity_seed717220_vace_len33_768_lower_control_probe_20260611_213046`
+- Selected span: `outputs_quality_span_selection/walk_v4_identity_seed717220_vace_len33_768_lower_control_foreground_motion_gate_20260611_213320`
+- Selected gate: `outputs_quality_artifact_repair/walk_v4_identity_seed717220_vace_len33_768_lower_control_selected_gate_20260611_213440`
+- Result: motion improved to foreground motion `7.103`; selected gate had `retake_required: 0/16`, but visual review still showed some hand guide-line leakage and foot afterimage in the short probe.
+
+Trial 3: 768 `wan_walk_lower`, 121 frames
+
+- Output: `outputs_quality_pdca/walk_v4_identity_seed717220_vace_len121_768_lower_control_source_20260611_213748`
+- BiRefNet: `outputs_quality_birefnet/walk_v4_identity_seed717220_vace_len121_768_lower_control_birefnet_20260611_214536`
+- Full-source gate: `outputs_quality_artifact_repair/walk_v4_identity_seed717220_vace_len121_768_lower_control_full_gate_20260611_214737`
+- Selected span: `outputs_quality_span_selection/walk_v4_identity_seed717220_vace_len121_768_lower_control_foreground_motion_gate_v3_20260611_215649`
+- Selected gate: `outputs_quality_artifact_repair/walk_v4_identity_seed717220_vace_len121_768_lower_control_selected_gate_v3_20260611_215846`
+- Review package: `review_packages/walk_v4_identity_seed717220_vace_len121_768_lower_control_selected_quality_review_20260611_215932`
+
+Trial 3 result:
+
+- Full 121-frame source gate: `no_repair_needed: 113`, `repair_candidate: 6`, `retake_required: 2`.
+- Retake frames: `81`, `97`, both `duplicate_silhouette_area_high`.
+- Selected span: frames `59..74`.
+- Selected foreground motion: `4.558`.
+- Selected artifact gate: `no_repair_needed: 16/16`.
+- Godot validation: `ok: true`.
+
+Conclusion:
+
+- There is a real visual-quality improvement over the 512 walk proof: the selected 768 package has a larger readable character, clearer face/hair, better outfit definition, and cleaner full-body silhouette.
+- It is not yet a full 121-frame adopted source because 2 frames still trip the full-source retake gate and the 768 route can still show faint guide-line or skin-ghost artifacts depending on span.
+- The next quality step should focus on eliminating guide-line leakage at generation time, not post-cleaning. Reducing `protect-grow` and white-cleaning masks can touch skin/legs and is not safe as a default.
+
+## Follow-Up: 1024 Full-Body Side Reference Phase
+
+Reason:
+
+- Directly using the original bust-up reference as a Wan start image preserves the close-up framing too strongly.
+- Before more broad seed/prompt searches, the workflow needs a clean full-body side-view reference that Wan/VACE can preserve.
+- The reference image is treated as a character design source, not as pixels to puppet directly.
+
+Implementation:
+
+- Added `scripts/generate_fullbody_reference_candidates.py`.
+- The script creates 1024x1024 `novaOrangeXL_v120.safetensors + SDXL/OpenPoseXL2` candidates, runs start-frame cleanup, scores single-frame quality, selects a candidate, and writes a compact review summary.
+- Added tests in `tests/test_fullbody_reference_candidates_script.py` for workflow wiring and candidate assessment.
+
+Trial 1:
+
+- Output: `outputs_fullbody_reference/Anima_00013__20260611_231434`
+- Result: rejected by visual review.
+- The strict side prompt produced a model-sheet-like source with multiple side figures; the cleaned crop was not a safe adoption path.
+- The slight 3/4 prompt produced a high-quality full-body figure, but it was too front-facing for side-view walk generation.
+
+Retake changes:
+
+- Strengthened prompts and negative prompts against model sheets, turnaround sheets, multiple views, guide lines, and front-facing views.
+- Added stricter single-character retake variants.
+- Updated candidate assessment so `extra_foreground_components_removed` is no longer considered auto-adoptable.
+
+Trial 2:
+
+- Output: `outputs_fullbody_reference/Anima_00013__20260611_231614`
+- Selected raw candidate: `outputs_fullbody_reference/Anima_00013__20260611_231614/selected_reference/start_frame.png`
+- Background normalization: `outputs_fullbody_reference_cleanup/anima_00013_side_reference_bg_normalize_20260611_231757`
+- Final selected reference frame: `outputs_fullbody_reference_cleanup/anima_00013_side_reference_bg_normalize_20260611_231757/frames/frame_000.png`
+- Start-frame gate: `outputs_fullbody_reference_gate/anima_00013_selected_side_reference_gate_20260611_231815/artifact_repair_report.json`
+- Review package: `review_packages/anima_00013_fullbody_side_reference_phase1_20260611_231836`
+
+Result:
+
+- Selected candidate: `strict_side_profile_retake`
+- Source candidate report: `component_count: 1`, no start-frame warning issue codes.
+- Quality gate before background cleanup: `hard_failure: false`, no issue codes, score `0.95827`.
+- Background-normalized single-frame artifact gate: `no_repair_needed: 1/1`.
+- Visual review: the selected frame is a single full-body right-facing side-view character with readable face, sailor uniform, dark socks, brown loafers, and complete feet.
+
+Conclusion:
+
+- Phase 1 is complete enough to feed the next Wan/VACE walk-quality PDCA.
+- The adopted reference is not a final animation asset; it is a full-body side-view start/reference image for temporal generation.
+- The next step is Phase 2: replace RGB skeleton-like VACE controls with a softer silhouette/depth control style to reduce guide-line leakage.
+
+## Follow-Up: Phase 2 Control-Style Comparison With Full-Body Reference
+
+Reason:
+
+- The 768 proof improved visual scale, but previous `wan_balanced`/`wan_walk_lower` outputs could copy visible pose-guide lines around hands, legs, or the background.
+- Phase 2 tested whether a non-RGB silhouette/foot-contact control can preserve walk motion without copying skeleton-like guide lines.
+
+Implementation:
+
+- Added `vace_walk_silhouette` in `src/natural_sprite_lab/pose_templates.py`.
+- Added CLI support in `scripts/run_wan_walk_i2v.py`, `scripts/build_synthetic_sideview_motion_source.py`, and `scripts/import_motion_source_pose.py`.
+- The new control renders a white background with grayscale body, leg silhouettes, and foot-contact marks rather than OpenPose RGB bones.
+- Added regression coverage in `tests/test_pose_templates.py`.
+
+Comparison setup:
+
+- Start/reference image: `outputs_fullbody_reference_cleanup/anima_00013_side_reference_bg_normalize_20260611_231757/frames/frame_000.png`
+- Motion source: `outputs_motion_source_video_pdca/run_synthetic_sideview_walk_v4_edge_stride`
+- Mode: `WanVaceToVideo`
+- Resolution: `768x768`
+- Length: `33`
+- Seed: `717220`
+- Steps/CFG: `8`, `3.0`
+
+Results:
+
+1. `wan_balanced`
+   - Output: `outputs_quality_pdca/phase2_ref_side_wan_balanced_len33_768_20260611_232243`
+   - Gate: `outputs_quality_artifact_repair/phase2_ref_side_wan_balanced_len33_gate_20260611_232807`
+   - Gate summary: `no_repair_needed: 31`, `repair_candidate: 2`, `retake_required: 0`
+   - Visual review: best structural result in this comparison, but thin guide-like lines still appear near hands/side in several frames.
+
+2. `wan_walk_lower`
+   - Output: `outputs_quality_pdca/phase2_ref_side_wan_walk_lower_len33_768_20260611_232440`
+   - Gate: `outputs_quality_artifact_repair/phase2_ref_side_wan_walk_lower_len33_gate_20260611_232807`
+   - Gate summary: `no_repair_needed: 26`, `repair_candidate: 6`, `retake_required: 1`
+   - Visual review: similar guide leakage, plus one duplicate-silhouette gate failure.
+
+3. `vace_walk_silhouette`
+   - Output: `outputs_quality_pdca/phase2_ref_side_vace_walk_silhouette_len33_768_20260611_232622`
+   - Gate: `outputs_quality_artifact_repair/phase2_ref_side_vace_walk_silhouette_len33_gate_20260611_232808`
+   - Gate summary: `no_repair_needed: 23`, `repair_candidate: 5`, `retake_required: 5`
+   - Visual review: rejected. The non-RGB control avoided classic OpenPose color lines, but VACE copied the silhouette guide as back straps/limb guide shapes and produced stronger foot artifacts.
+
+Diagnostic package:
+
+- `review_packages/phase2_ref_side_wan_balanced_len33_diagnostic_20260611_233029`
+
+Conclusion:
+
+- The new silhouette control is not promoted.
+- `wan_balanced` is the best Phase 2 diagnostic candidate by gate count, but it is not promoted as the walk-quality default because visual guide-line leakage remains visible.
+- The next control retake should make control information less copyable by VACE, likely by lowering contrast further, separating control from character-colored regions, or moving foot-contact constraints into a non-image sidecar/evaluation layer rather than drawing them into the generation control video.
+
+## Follow-Up: Phase 2 Retake and Phase 4 Full 121-Frame Probe
+
+Reason:
+
+- `vace_walk_silhouette` reduced RGB skeleton semantics but still copied visible guide shapes into the character.
+- A second retake tested whether a much lower-contrast lower-body-only hint could preserve enough foot motion while avoiding back/arm guide-shape leakage.
+
+Implementation:
+
+- Added `vace_walk_lower_hint`.
+- This style draws only pale pelvis, lower-leg, and foot-contact hints; it intentionally omits torso/head/arm guide shapes so VACE has less copyable structure near the outfit and hands.
+
+Short 33-frame probe:
+
+- Output: `outputs_quality_pdca/phase2_ref_side_vace_walk_lower_hint_len33_768_20260611_233434`
+- Full 33 gate: `outputs_quality_artifact_repair/phase2_ref_side_vace_walk_lower_hint_len33_gate_20260611_233616`
+- Full 33 gate summary: `no_repair_needed: 30`, `repair_candidate: 1`, `retake_required: 2`
+- Selected span: `outputs_quality_span_selection/phase2_ref_side_vace_walk_lower_hint_len33_foreground_motion_gate_20260611_233739`
+- Selected span: frames `0..15`, foreground motion `7.624`, hard failures `0`, no selection penalties.
+- Selected gate: `outputs_quality_artifact_repair/phase2_ref_side_vace_walk_lower_hint_selected_gate_20260611_233923`
+- Selected gate summary: `no_repair_needed: 16/16`
+- Review package: `review_packages/phase2_ref_side_vace_walk_lower_hint_selected_review_20260611_234017`
+- Godot validation: `ok: true`
+
+Decision:
+
+- Promote `vace_walk_lower_hint` as the next walk-quality control default for full-source testing.
+- It is not a final adoption claim; it is the best current control representation because visual guide leakage is much lower than `wan_balanced`, `wan_walk_lower`, or `vace_walk_silhouette`.
+
+Full 121-frame probe:
+
+- Output: `outputs_quality_pdca/phase4_ref_side_vace_walk_lower_hint_len121_768_20260611_234129`
+- BiRefNet: `outputs_quality_birefnet/phase4_ref_side_vace_walk_lower_hint_len121_768_birefnet_20260611_234944`
+- Full gate: `outputs_quality_artifact_repair/phase4_ref_side_vace_walk_lower_hint_len121_full_gate_20260611_235159`
+- Raw span: `outputs_quality_span_selection/phase4_ref_side_vace_walk_lower_hint_len121_raw_foreground_motion_gate_20260611_235636`
+- Selected-span package: `review_packages/phase4_ref_side_vace_walk_lower_hint_len121_selected_review_20260612_000125`
+- Full-source package: `review_packages/phase4_ref_side_vace_walk_lower_hint_len121_full_source_review_20260611_235857`
+- Godot validation: `ok: true` for both selected-span and full-source packages.
+
+Full 121 result:
+
+- Frame count: `121`
+- Full-source artifact gate: `no_repair_needed: 48`, `repair_candidate: 73`, `retake_required: 0`.
+- Main recurring issue: `masked_ghost_or_small_artifact`, mostly small foot-shadow/foot-contact remnants.
+- Raw selected span: frames `1..16`, hard failures `0`, mean foreground motion `3.912`, selection penalty `mean_motion_delta_too_low`.
+
+Conclusion:
+
+- This is the strongest full-source E2E result in the branch because it combines a valid 1024 full-body side reference, lower-copy control, 768 generation, BiRefNet foreground separation, full-source retake count `0/121`, and Godot playback.
+- It is still not final adoption quality. The remaining blocker is motion/readability, not structural breakage: the full sequence is clean and consistent, but the walk is conservative and foot-shadow artifacts are still visible enough to require explicit visual labeling before claiming a production-quality walk.
+- Next practical step: add quality labels for foot-shadow/contact artifacts and low-motion/foot-sliding, then run a 1024 short probe only if the labels confirm the 768 short proof is visually stable enough.
+
+## Follow-Up: Labeled Quality Gate for the 121-Frame Walk Candidate
+
+Reason:
+
+- The previous full-source gate could report `retake_required: 0/121` while the visual review still saw weak motion, foot-contact shadows, and subtle copied guide artifacts.
+- To avoid overclaiming quality, the gate now records manual-review labels separately from hard structural failures.
+
+Implementation:
+
+- Added frame-level `review_labels` in `scripts/repair_frame_artifacts.py`.
+- Added summary-level `review_label_counts` and conservative `candidate_status`.
+- Added span-level `selection_review_labels` in `scripts/select_best_span.py`.
+- Added regression tests for visible guide-line labels, foot-shadow/contact labels, low-motion span labels, and conservative candidate classification.
+
+Labeled recheck:
+
+- Source frames: `outputs_quality_birefnet/phase4_ref_side_vace_walk_lower_hint_len121_768_birefnet_20260611_234944/frames`
+- Span selection report: `outputs_quality_span_selection/phase4_ref_side_vace_walk_lower_hint_len121_labeled_foreground_motion_gate_20260612_001054/span_selection_report.json`
+- Labeled artifact gate: `outputs_quality_artifact_repair/phase4_ref_side_vace_walk_lower_hint_len121_full_gate_labeled_20260612_001153/artifact_repair_report.json`
+
+Result:
+
+- Span selection: frames `3..18`, hard failures `0`, mean foreground motion `3.019`, `selection_review_labels: ["weak_motion_or_foot_sliding_review"]`.
+- Labeled full-source gate: `no_repair_needed: 36`, `repair_candidate: 83`, `retake_required: 2`.
+- Retake frames: `85`, `89`.
+- Main labels: `foot_shadow_or_contact_artifact_review: 85`, `skin_colored_afterimage_near_legs_review: 77`, `visible_guide_line_leakage_review: 8`.
+- Candidate status: `rejected`.
+
+Conclusion:
+
+- The full-body-reference `vace_walk_lower_hint` route remains the best current workflow direction, but the current 121-frame output is not adoptable.
+- The next improvement should not be Image2Image polish. The blocker is generation/control quality: stronger walk motion and cleaner foot-contact rendering are needed before refinement.
+- Next action: improve or replace the 120-frame walk motion source, then rerun 768 full-source generation and require both labeled full-source `retake_required: 0/121` and no low-motion selection label.
+
+## Follow-Up: Motion Source and VACE Strength PDCA
+
+Reason:
+
+- The labeled 121-frame candidate was too conservative: selected-span mean foreground motion was below target and labeled as weak motion / foot-sliding review.
+- The next question was whether stronger foot travel can clear the motion gate without reintroducing duplicate legs, guide leakage, or foot-contact artifacts.
+
+Motion sources:
+
+1. `run_synthetic_sideview_walk_v5_contact_swing`
+   - Settings: `stride=0.105`, `lift=0.052`, `body_bob=0.018`.
+   - Intent: stronger contact/swing motion.
+
+2. `run_synthetic_sideview_walk_v6_moderate_contact`
+   - Settings: `stride=0.094`, `lift=0.045`, `body_bob=0.015`.
+   - Intent: intermediate control between v4 and v5.
+
+Short 33-frame results:
+
+1. v5, VACE strength `1.0`
+   - Output: `outputs_quality_pdca/phase3_v5_contact_swing_vace_lower_hint_len33_768_20260612_001741`
+   - Span: `outputs_quality_span_selection/phase3_v5_contact_swing_len33_foreground_motion_gate_20260612_002005`
+   - Gate: `outputs_quality_artifact_repair/phase3_v5_contact_swing_len33_labeled_gate_20260612_002005`
+   - Result: mean foreground motion `7.953`, but selected span had hard failures `2`; full gate `retake_required: 7/33`. Rejected.
+
+2. v6, VACE strength `1.0`
+   - Output: `outputs_quality_pdca/phase3_v6_moderate_contact_vace_lower_hint_len33_768_20260612_002056`
+   - Span: `outputs_quality_span_selection/phase3_v6_moderate_contact_len33_foreground_motion_gate_20260612_002316`
+   - Gate: `outputs_quality_artifact_repair/phase3_v6_moderate_contact_len33_labeled_gate_20260612_002316`
+   - Result: mean foreground motion `7.803`, but selected span had hard failures `4`; full gate `retake_required: 11/33`. Rejected.
+
+3. v5, VACE strength `0.75`
+   - Output: `outputs_quality_pdca/phase3_v5_contact_swing_vace075_lower_hint_len33_768_20260612_002403`
+   - Span: `outputs_quality_span_selection/phase3_v5_contact_swing_vace075_len33_foreground_motion_gate_20260612_002623`
+   - Gate: `outputs_quality_artifact_repair/phase3_v5_contact_swing_vace075_len33_labeled_gate_20260612_002623`
+   - Result: mean foreground motion `6.352`; full gate improved to `retake_required: 4/33`. Still rejected.
+
+4. v5, VACE strength `0.55`
+   - Output: `outputs_quality_pdca/phase3_v5_contact_swing_vace055_lower_hint_len33_768_20260612_002703`
+   - BiRefNet: `outputs_quality_birefnet/phase3_v5_contact_swing_vace055_lower_hint_len33_768_birefnet_20260612_002904`
+   - Span: `outputs_quality_span_selection/phase3_v5_contact_swing_vace055_len33_foreground_motion_gate_20260612_002948`
+   - Full 33 gate: `outputs_quality_artifact_repair/phase3_v5_contact_swing_vace055_len33_labeled_gate_20260612_002948`
+   - Selected gate: `outputs_quality_artifact_repair/phase3_v5_contact_swing_vace055_selected_labeled_gate_20260612_003026`
+   - Review package: `review_packages/phase3_v5_contact_swing_vace055_selected_review_20260612_003057`
+   - Result: selected span frames `17..32`, hard failures `0`, mean foreground motion `7.695`, no selection penalties, Godot `ok: true`.
+   - Selected-span gate: `no_repair_needed: 11`, `repair_candidate: 5`, `retake_required: 0`, candidate status `selected_proof_only`.
+   - Full 33 gate: `retake_required: 2/33`, so it is not a full-source adoption.
+
+Conclusion:
+
+- The strongest short proof is `run_synthetic_sideview_walk_v5_contact_swing` with `--vace-strength 0.55`.
+- Lowering VACE strength was more effective than lowering the motion-source stride: v6 reduced neither hard failures nor artifacts, while v5 at `0.55` kept strong motion and reduced full-gate retakes.
+- Next action: run a 121-frame 768 probe with v5 + `vace_strength=0.55`, then require labeled full-source `retake_required: 0/121`, no selected-span motion penalty, and a clean visual review before adoption.
+
+## Follow-Up: 121-Frame v5 Contact-Swing Probe
+
+Reason:
+
+- The v5 + `vace_strength=0.55` short proof cleared the motion problem on a selected span.
+- The next test was whether that setting scales to a full 121-frame source.
+
+Run:
+
+- Output: `outputs_quality_pdca/phase4_v5_contact_swing_vace055_len121_768_20260612_003216`
+- BiRefNet: `outputs_quality_birefnet/phase4_v5_contact_swing_vace055_len121_768_birefnet_20260612_003926`
+- Span: `outputs_quality_span_selection/phase4_v5_contact_swing_vace055_len121_foreground_motion_gate_20260612_004123`
+- Full gate: `outputs_quality_artifact_repair/phase4_v5_contact_swing_vace055_len121_labeled_gate_20260612_004123`
+- Selected gate: `outputs_quality_artifact_repair/phase4_v5_contact_swing_vace055_len121_selected_labeled_gate_20260612_004300`
+- Review package: `review_packages/phase4_v5_contact_swing_vace055_len121_selected_review_20260612_004320`
+
+Results:
+
+- Full source generated `121` frames at `768x768`.
+- BiRefNet structure improved versus earlier strong-motion attempts: `mask_ok: 76`, `review_sparse_foreground_bbox: 44`, `retake_foreground_too_small: 1`.
+- Selected span: frames `0..15`, hard failures `0`, mean foreground motion `5.569`, no selection penalties.
+- Selected gate: `no_repair_needed: 14`, `repair_candidate: 2`, `retake_required: 0`, candidate status `selected_proof_only`.
+- Full-source labeled gate: `repair_candidate: 21`, `no_repair_needed: 49`, `retake_required: 51`, candidate status `rejected`.
+- Main full-source issue: `foreground_too_small: 51`.
+- Visual review: not adoptable. The selected contact sheet has useful walk motion, but the legs/feet become too faint and the character's readable foreground presence is unstable. The result is better motion evidence, not a production walk asset.
+
+Conclusion:
+
+- v5 + `vace_strength=0.55` solves the low-motion problem but introduces foreground preservation failure across the full 121-frame source.
+- The next PDCA should target subject preservation under stronger motion: either strengthen reference/subject conditioning without reintroducing guide copying, tune VACE strength between `0.55` and `0.75`, or improve the control video so feet move strongly while the body silhouette remains dense.
+- Do not move this candidate to Image2Image polish. The legs/feet are too faint; refinement would decorate a weak source rather than fix the generation failure.

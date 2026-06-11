@@ -1,51 +1,106 @@
-# Tasks: Converge Local 2D Animation Asset Workflow
+# Tasks: High-Quality Walk Animation Asset
 
-This file is the active convergence checklist only.
+This file is the active checklist for improving walk animation quality.
 
-Do not append detailed PDCA logs here. Put experiment details in
-`docs/next_phase_run_generation_pdca_report.md`, and archive old task expansions under
-`docs/archive/`.
+Keep detailed experiment logs in `docs/next_phase_run_generation_pdca_report.md`.
+Keep local generated outputs under ignored output/review directories.
 
 ## Top Rule
 
 - [x] Generate local-first 2D game animation assets from a character reference image plus a natural-language action request.
 - [x] Treat the input image as a design reference, not pixels to directly puppet or shake.
 - [x] Keep the main route on generated video/control workflows, not rig/cutout animation.
-- [x] Prefer `novaOrangeXL_v120.safetensors` for still/image refinement and VACE/Wan workflows for temporal motion.
-- [x] Preserve 120-frame-class source generations; selected spans are review evidence, not the final thinning/export step.
+- [x] Preserve 120-frame-class source generations; selected spans are evidence, not the final asset target.
+- [x] Prefer `novaOrangeXL_v120.safetensors` for still-image/full-body reference work.
+- [x] Prefer VACE/Wan workflows for temporal motion until a better local video workflow is proven.
 
-## Current Best Walk Evidence
+## Current Baseline
 
-- [x] Current source motion: `outputs_motion_source_video_pdca/run_synthetic_sideview_walk_v4_edge_stride`
-- [x] Current model route: `WanVaceToVideo` with `wan2.1_vace_1.3B_fp16.safetensors`
-- [x] Current control render: `wan_balanced`
-- [x] Current prompt route: identity prompt with explicit no-headgear negatives
-- [x] Current best 16-frame review package: `review_packages/synthetic_sideview_walk_v4_identity_prompt_seed717220_vace_len121_foreground_motion_review_20260611_175401`
-- [x] Current best selected-span metrics: foreground motion `4.993`, span hard failures `0/16`, artifact `retake_required: 0/16`, Godot `ok: true`
-- [x] Full 121-frame artifact gate was run: `outputs_artifact_repair/synthetic_sideview_walk_v4_identity_prompt_seed717220_vace_len121_full_sequence_gate_20260611_175642`
-- [x] Full 121-frame source gate now has `retake_required: 0/121` after fixing warm light subject protection in duplicate-silhouette scoring.
-- [x] Full 121-frame review package: `review_packages/synthetic_sideview_walk_v4_identity_prompt_seed717220_vace_len121_full_source_review_20260611_182900`
+- [x] 512 walk structural baseline exists: `review_packages/synthetic_sideview_walk_v4_identity_prompt_seed717220_vace_len121_full_source_review_20260611_182900`.
+- [x] 512 baseline has full-source artifact gate `retake_required: 0/121`.
+- [x] 768 quality proof exists: `review_packages/walk_v4_identity_seed717220_vace_len121_768_lower_control_selected_quality_review_20260611_215932`.
+- [x] 768 selected proof has clearer face/outfit/limbs than the 512 baseline.
+- [x] 768 selected proof has selected-span artifact gate `no_repair_needed: 16/16` and Godot `ok: true`.
+- [x] 768 full source is not adopted because full-source gate still has `retake_required: 2/121`.
 
-## Walk Convergence Criteria
+## Non-Goals
 
-- [x] Full 121-frame source gate has `retake_required: 0`.
-- [x] Full 121-frame preview/contact sheet has no recurring headgear, duplicate-leg, strong afterimage, or foreground-internal ghosting pattern.
-- [x] A review package exists for the full 121-frame source, not only a selected 16-frame span.
-- [x] Godot validation passes for the full 121-frame package.
-- [x] The Skill and PDCA report name the chosen walk workflow and the known rejection boundaries.
+- [x] Do not claim selected 16-frame proof as full 120-frame adoption.
+- [x] Do not solve guide-line leakage by unsafe white cleanup that touches skin, legs, hands, or outfit.
+- [x] Do not keep searching seeds/prompts before improving input reference, control representation, or motion source.
+- [x] Do not switch back to rig/cutout animation as the primary answer.
+- [x] Do not accept a candidate only because heuristic gates pass; contact sheet and preview review are required.
 
-## Closed Decisions
+## Phase 1: Full-Body Character Reference
 
-- [x] Retake or trim/regenerate around full-sequence frames `65` and `116` without reducing the selected-span walk readability.
-- [x] Stop broad walk PDCA expansion: the full 121-frame walk source is now clean enough to use as the current workflow reference.
-- [x] Keep weapon action PDCA out of this checklist until a new branch/task file is opened for that phase.
+- [x] Generate or curate a high-quality 1024x1024 full-body side-view character reference from `assets/reference/Anima_00013_.png`.
+- [x] Keep the character identity traits: brown bob hair, pink hair clip, sailor uniform, red necktie, dark socks, brown loafers.
+- [x] Produce at least two full-body reference candidates: strict side profile and slight 3/4 side.
+- [x] Select one reference candidate based on full-body readability, stable face, complete feet, and clean white/transparent background.
+- [x] Run start-frame quality checks on the selected full-body reference.
+- [x] Save a compact reference review package and record the selected path in the PDCA report.
 
-## Next Phase Pointer
+## Phase 2: Control Representation
 
-Sword action PDCA is the next phase, not an open task in this convergence checklist. Start from the weapon guide handoff notes in `docs/local_skills/natural-sprite-controlnet-pdca/SKILL.md` and log detailed trials in `docs/next_phase_run_generation_pdca_report.md`.
+- [x] Add `wan_walk_lower` as a lower-body-focused VACE control style.
+- [x] Add `--analysis-max-size` so 768/1024 analysis remains practical while preserving original output frames.
+- [x] Create a soft/silhouette walk control style that avoids visible RGB skeleton lines.
+- [x] Create a foot-contact control layer for left/right foot placement and ground contact.
+- [x] Compare `wan_balanced`, `wan_walk_lower`, and the new soft/silhouette control at the same seed and resolution.
+- [x] Reject any control style that leaks visible guide lines into hands, legs, or background.
+- [x] Promote one control style as the current walk-quality default only after selected-span gate and visual review pass.
+- [x] Design a second control-retake that preserves motion without copying guide shapes into the character.
 
-## Rules For Keeping This File Small
+## Phase 3: Motion Source Quality
 
-- [x] Archive expanded checklist history at `docs/archive/Tasks_20260611_pdca_expanded_before_convergence.md`.
-- [x] Add only convergence-level tasks here.
-- [x] When a task needs more than 3-5 evidence bullets, write a report section and link to it instead of expanding this checklist.
+- [x] Define visual criteria for a good walk source: foot contact, weight shift, leg alternation, arm swing, loop closure.
+- [x] Build or import at least one improved 120-frame walk motion source using those criteria.
+- [ ] Keep the existing synthetic v4 edge-stride source as the baseline comparator.
+- [x] Compare motion sources using foreground-normalized motion, contact-sheet review, and Godot playback.
+- [x] Reject sources with foot sliding, too-static hips, unstable body scale, or unclear contact phases.
+- [ ] Select one motion source for full 120-frame generation.
+
+## Phase 4: 768/1024 Generation PDCA
+
+- [x] Run a 768x768 full 121-frame walk generation using the selected full-body reference, selected control style, and selected motion source.
+- [x] Run BiRefNet foreground separation for the full 121-frame generation.
+- [x] Run full-source artifact gate with `--analysis-max-size 512`.
+- [x] Run span selection with `--motion-metric foreground` and `--analysis-max-size 512`.
+- [x] Export one selected-span review package with Godot validation.
+- [x] If 768 full source reaches `retake_required: 0/121`, export a full-source review package.
+- [x] If 768 selected proof improves but full source fails, document exact failing frames and failure type.
+- [ ] Run one 1024x1024 short probe only after 768 has a stable selected proof.
+- [ ] Do not run 1024 full 121-frame generation until short probe shows better visual quality without new structural failures.
+
+## Phase 5: Quality Gates
+
+- [x] Add explicit detection or review labels for visible guide-line leakage.
+- [x] Add explicit review labels for skin-colored afterimage near thighs/feet.
+- [x] Add explicit review labels for foot sliding and weak contact.
+- [x] Add explicit review labels for face/detail readability at game-asset scale.
+- [x] Keep artifact gate as a blocker for duplicate silhouettes, duplicate legs, large masks, and broken structure.
+- [x] Treat visual review as blocking when the gate passes but the animation still looks low quality.
+- [x] Record each candidate as `adopted_full_source`, `selected_proof_only`, `diagnostic`, or `rejected`.
+
+## Phase 6: Adoption Criteria
+
+- [x] Full 121-frame source package exists at 768 or higher.
+- [ ] Current labeled full-source artifact gate has `retake_required: 0/121`.
+- [ ] Full contact sheet has no recurring guide-line leakage, strong afterimage, duplicate legs, or headgear drift.
+- [ ] Preview GIF reads as a natural walk without obvious foot sliding.
+- [x] Character identity remains consistent across the full source.
+- [x] Godot validation passes for the full-source package.
+- [x] PDCA report states why the current candidate is better than the 512 baseline while still not adopted.
+- [x] Skill document names the current walk-quality workflow and known rejection boundaries.
+
+## Current Next Action
+
+- [x] Start with Phase 1: create a high-quality full-body side-view reference before running more broad Wan seed/prompt searches.
+- [x] Continue with Phase 2: create a soft/silhouette walk control style that avoids visible RGB skeleton-line leakage.
+- [x] Continue Phase 2 retake: reduce copied guide-shape leakage before promoting a walk-quality default.
+- [x] Continue with Phase 5/6: add explicit visual labels for the remaining foot-shadow/low-motion quality limits before calling the full 121-frame source adopted.
+- [x] Next: improve the 120-frame walk motion source so the selected span clears foreground motion without increasing foot-shadow/contact artifacts.
+- [x] Next: rerun 768 full-source generation with the improved motion source and require labeled full-source gate `retake_required: 0/121`.
+- [x] Next: use `run_synthetic_sideview_walk_v5_contact_swing` with `--vace-strength 0.55` as the next full-source 121-frame probe; short selected proof is `review_packages/phase3_v5_contact_swing_vace055_selected_review_20260612_003057`.
+- [ ] Next: solve full-source foreground preservation; the v5/contact-swing 121 probe fixed low motion but failed with `foreground_too_small: 51`.
+- [ ] Next: test a subject-preservation retake that keeps v5 motion while preventing faint legs/feet and foreground shrinkage.

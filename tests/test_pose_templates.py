@@ -38,20 +38,31 @@ def test_render_pose_frame_supports_wan_styles(tmp_path: Path) -> None:
     wan_line = render_pose_frame(frame, 128, 128, style="wan_line")
     wan_lower = render_pose_frame(frame, 128, 128, style="wan_lower")
     wan_balanced = render_pose_frame(frame, 128, 128, style="wan_balanced")
+    wan_walk_lower = render_pose_frame(frame, 128, 128, style="wan_walk_lower")
     vace_depth_proxy = render_pose_frame(frame, 128, 128, style="vace_depth_proxy")
     vace_side_proxy = render_pose_frame(frame, 128, 128, style="vace_side_proxy")
+    vace_walk_silhouette = render_pose_frame(frame, 128, 128, style="vace_walk_silhouette")
+    vace_walk_lower_hint = render_pose_frame(frame, 128, 128, style="vace_walk_lower_hint")
 
     assert wan_line.getpixel((0, 0)) == (255, 255, 255)
     assert wan_lower.getpixel((0, 0)) == (255, 255, 255)
     assert wan_balanced.getpixel((0, 0)) == (255, 255, 255)
+    assert wan_walk_lower.getpixel((0, 0)) == (255, 255, 255)
     assert vace_depth_proxy.getpixel((0, 0)) == (255, 255, 255)
     assert vace_side_proxy.getpixel((0, 0)) == (255, 255, 255)
+    assert vace_walk_silhouette.getpixel((0, 0)) == (255, 255, 255)
+    assert vace_walk_lower_hint.getpixel((0, 0)) == (255, 255, 255)
     assert wan_line.getbbox() == (0, 0, 128, 128)
     assert _non_white_pixels(wan_balanced) > 0
+    assert _non_white_pixels(wan_walk_lower) < _non_white_pixels(wan_balanced)
     assert _non_white_pixels(vace_depth_proxy) > _non_white_pixels(wan_balanced)
     assert _non_white_pixels(vace_side_proxy) > _non_white_pixels(wan_balanced)
+    assert _non_white_pixels(vace_walk_silhouette) > _non_white_pixels(wan_balanced)
+    assert _non_white_pixels(vace_walk_lower_hint) < _non_white_pixels(vace_walk_silhouette)
     assert wan_balanced.tobytes() != wan_line.tobytes()
     assert vace_side_proxy.tobytes() != vace_depth_proxy.tobytes()
+    assert vace_walk_silhouette.tobytes() != vace_side_proxy.tobytes()
+    assert vace_walk_lower_hint.tobytes() != vace_walk_silhouette.tobytes()
 
 
 def test_render_pose_frame_supports_thin_controlnet_style(tmp_path: Path) -> None:

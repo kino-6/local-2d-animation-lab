@@ -184,6 +184,62 @@ VACE subject/motion split findings:
 - Start from the v4 edge-stride synthetic side-view motion settings before trying new proxy controls: `stride=0.083`, `lift=0.038`, `body_bob=0.012`, `--pose-render-style wan_balanced`.
 - Keep `--vace-strength 1.0` as the current baseline. Raising it to `1.35` increased motion but collapsed the character into proxy-like/front-view structures in the tested run.
 - Do not treat `vace_depth_proxy` or `vace_side_proxy` as adopted controls for this character/action. They are diagnostics; VACE copied their simplified structure into the output instead of only using them as motion guidance.
+- The current walk-quality default is a full-body-reference VACE route, not the older bust-up-reference route:
+
+```bash
+uv run python scripts/run_wan_walk_i2v.py \
+  --mode vace \
+  --unet wan2.1_vace_1.3B_fp16.safetensors \
+  --start-image outputs_fullbody_reference_cleanup/anima_00013_side_reference_bg_normalize_20260611_231757/frames/frame_000.png \
+  --pose-root outputs_motion_source_video_pdca \
+  --pose-template run_synthetic_sideview_walk_v4_edge_stride \
+  --pose-render-style vace_walk_lower_hint \
+  --output-root outputs_quality_pdca \
+  --run-label phase4_ref_side_vace_walk_lower_hint_len121_768 \
+  --width 768 \
+  --height 768 \
+  --length 121 \
+  --steps 8 \
+  --cfg 3.0 \
+  --seed 717220
+```
+
+- Generate the full-body side-view start/reference frame before this VACE run. Use `scripts/generate_fullbody_reference_candidates.py` with `novaOrangeXL_v120.safetensors + SDXL/OpenPoseXL2`, then run start-frame artifact checks before using the selected frame as Wan/VACE input.
+- Current selected full-body reference evidence: `review_packages/anima_00013_fullbody_side_reference_phase1_20260611_231836`.
+- Current strongest 121-frame full-source evidence: `review_packages/phase4_ref_side_vace_walk_lower_hint_len121_full_source_review_20260611_235857`.
+- Current selected-span evidence from the same 121-frame source: `review_packages/phase4_ref_side_vace_walk_lower_hint_len121_selected_review_20260612_000125`.
+- Status is `selected_proof_only` / `needs_visual_quality_improvement`, not `adopted_full_source`. Full-source gate reached `retake_required: 0/121`, but the full sheet still has many small foot-shadow/contact repair candidates and the selected span is slightly below the foreground-motion target.
+- A later labeled recheck made this stricter: `outputs_quality_artifact_repair/phase4_ref_side_vace_walk_lower_hint_len121_full_gate_labeled_20260612_001153` reports `retake_required: 2/121`, `candidate_status: rejected`, and review labels dominated by foot-shadow/contact artifacts and skin-colored lower-body afterimages. Treat this as the current adoption decision until a new generation beats it.
+- The paired labeled span selection is `outputs_quality_span_selection/phase4_ref_side_vace_walk_lower_hint_len121_labeled_foreground_motion_gate_20260612_001054`; it reports `weak_motion_or_foot_sliding_review`.
+- `vace_walk_lower_hint` is preferred over `wan_balanced`, `wan_walk_lower`, and `vace_walk_silhouette` for the next walk PDCA because it reduces copyable guide structure near arms, back, and hands. It may also reduce motion strength, so always check foreground-normalized motion and foot contact.
+- Reject `vace_walk_silhouette` for this character/action unless substantially redesigned. The tested style avoided RGB OpenPose colors but VACE copied silhouette shapes into the character and increased retakes.
+- When the 121-frame v4/lower-hint route is too conservative, use the v5 contact-swing motion source with lower VACE strength as the next probe:
+
+```bash
+uv run python scripts/run_wan_walk_i2v.py \
+  --mode vace \
+  --unet wan2.1_vace_1.3B_fp16.safetensors \
+  --weight-dtype default \
+  --vace-strength 0.55 \
+  --start-image outputs_fullbody_reference_cleanup/anima_00013_side_reference_bg_normalize_20260611_231757/frames/frame_000.png \
+  --pose-root outputs_motion_source_video_pdca \
+  --pose-template run_synthetic_sideview_walk_v5_contact_swing \
+  --pose-render-style vace_walk_lower_hint \
+  --width 768 \
+  --height 768 \
+  --length 121 \
+  --steps 8 \
+  --cfg 3.0 \
+  --seed 717220
+```
+
+- Short-proof evidence for this setting: `review_packages/phase3_v5_contact_swing_vace055_selected_review_20260612_003057`.
+- It fixes the weak-motion label on a selected 16-frame span (`mean foreground motion: 7.695`, hard failures `0`, Godot `ok: true`) but is still only `selected_proof_only`; the full 33-frame gate has `retake_required: 2/33`.
+- Full 121-frame evidence for this setting: `review_packages/phase4_v5_contact_swing_vace055_len121_selected_review_20260612_004320`.
+- The full 121 source is rejected: `outputs_quality_artifact_repair/phase4_v5_contact_swing_vace055_len121_labeled_gate_20260612_004123` reports `retake_required: 51/121` dominated by `foreground_too_small`. The selected span has motion (`mean foreground motion: 5.569`) but visual review shows faint legs/feet and unstable foreground readability.
+- Next retake should preserve the subject under stronger motion. Do not send the v5 full-source result to Image2Image polish before foreground density and foot readability are fixed.
+- Do not use v5 at VACE strength `1.0` as the next full-source default. It increases motion but produced hard failures and `retake_required: 7/33`.
+- Do not use v6 moderate-contact as the next full-source default. It produced more hard failures than v5 and did not reduce copied artifacts.
 - For small 512x512 full-body sprites, evaluate walk motion with foreground-normalized motion, not only canvas-wide pixel delta:
 
 ```bash
@@ -195,13 +251,17 @@ uv run python scripts/select_best_span.py \
   --min-mean-motion-delta 4.0
 ```
 
-- The current best local walk evidence is the 121-frame VACE v4 edge-stride identity-prompt `wan_balanced` branch. Its full 121-frame package is `review_packages/synthetic_sideview_walk_v4_identity_prompt_seed717220_vace_len121_full_source_review_20260611_182900`.
-- Full-source walk gate: artifact `retake_required: 0/121`, Godot validation `ok: true`.
+- The historical 512 baseline is the 121-frame VACE v4 edge-stride identity-prompt `wan_balanced` branch. Its full 121-frame package is `review_packages/synthetic_sideview_walk_v4_identity_prompt_seed717220_vace_len121_full_source_review_20260611_182900`.
+- Historical 512 full-source walk gate: artifact `retake_required: 0/121`, Godot validation `ok: true`.
 - Selected-span evidence remains useful for comparison: foreground motion `4.993`, `hard_failures: 0/16`, artifact `retake_required: 0/16`.
 - Use the same successful seed (`717220`) when comparing identity prompt changes; a different seed improved the head but reduced foreground motion to `3.213`.
 - Include identity constraints that suppress the previous white headgear artifact: `uncovered brown bob hair`, `pink hair clip`, `navy sailor school uniform`, `red necktie`, plus negatives `hat`, `cap`, `hood`, `head scarf`, `white headgear`, `helmet`.
-- Treat this walk route as the current local workflow reference, while still requiring visual review before calling a new character/action adopted.
+- Treat this walk route as the baseline comparator, while using the newer full-body-reference `vace_walk_lower_hint` route for quality work.
 - Do not reject normal skirt plus two-foot walk frames as double-foot failures. Lower-body blob gates should count only foot-zone components; skirt/hem components that do not reach the foot zone are not duplicate feet.
+- For visual quality work after the 512 walk convergence, test 768 VACE before jumping to 1024. A 768x768 121-frame `wan_walk_lower` run improved face/outfit/limb readability, but the full source still had `retake_required: 2/121`; treat it as a quality-improvement candidate, not a full-source adoption.
+- `wan_walk_lower` is a lower-body-focused VACE control render style. It reduces upper-body guide leakage compared with `wan_balanced`, but does not remove every thin hand/leg guide artifact. Use it when image quality is more important than maximum whole-body pose pressure.
+- When evaluating 768/1024 outputs, pass `--analysis-max-size 512` to `scripts/select_best_span.py` and `scripts/repair_frame_artifacts.py`. This keeps the original selected frames while making quality analysis tractable.
+- Historical 768 quality proof package: `review_packages/walk_v4_identity_seed717220_vace_len121_768_lower_control_selected_quality_review_20260611_215932`. It is a 16-frame selected proof from a 121-frame source, with Godot `ok: true` and selected-span artifact gate `no_repair_needed: 16/16`.
 
 Source probe package example:
 
@@ -301,11 +361,11 @@ Stable local sequence:
 reference image
 -> generate or extract one clean full-body side-view start frame
 -> reject the start frame if it has multiple foreground components
--> WanAnimateToVideo with action pose video
--> automatic best-span selection
--> low-denoise novaOrangeXL Image2Image only after the span is structurally plausible
--> artifact gate with person masks
--> compact review package with Godot validation
+-> VACE/Wan generation with a low-copying action control video
+-> BiRefNet foreground separation when background/contact artifacts need isolation
+-> full-source artifact gate and foreground-motion span selection
+-> compact selected-span and full-source review packages with Godot validation
+-> low-denoise novaOrangeXL Image2Image only after the motion is structurally plausible
 ```
 
 Do not pass a bust-up reference directly to Wan. Wan tends to preserve the start-image framing, so a close-up input stays close-up instead of becoming a full-body game asset.
@@ -323,7 +383,7 @@ uv run python scripts/prepare_wan_start_frame.py \
 
 Review `start_frame_report.json` and `start_frame_debug_sheet.png`. `extra_foreground_components_removed` is acceptable only when the cleaned output visibly keeps the intended main character. `missing_foreground` or a large secondary component means retake the still frame before Wan.
 
-Current run command shape:
+Legacy `WanAnimateToVideo` command shape:
 
 ```bash
 uv run python scripts/run_wan_walk_i2v.py \
@@ -344,14 +404,16 @@ uv run python scripts/run_wan_walk_i2v.py \
 Recommended run settings from the 2026-06-11 PDCA:
 
 - SDXL start frame: generate at `1024x1024`.
-- Wan video probe: keep `512x512` until a better portrait workflow is proven.
-- Wan run pose rendering: prefer `--pose-render-style wan_lower` over the default black-background ControlNet renderer.
+- Do not feed the original bust-up reference directly to Wan/VACE for full-body game assets. First generate or curate a clean 1024 full-body side-view reference.
+- Wan/VACE walk probe: prefer `768x768` for quality work after a 512 baseline exists. Use `1024x1024` only as a short probe after the 768 route has a stable selected proof.
+- Wan/VACE walk pose rendering: prefer `--pose-render-style vace_walk_lower_hint` for the current full-body-reference route. `wan_balanced` is useful as a comparator but can leak guide-like lines around hands and sides.
 - Wan pose sampling: default behavior samples the full 120-frame pose template across the requested clip. `--pose-sample-span` can limit that range for experiments, but the 2026-06-11 `pose-sample-span=32` source-video run reduced motion delta while causing identity fading. Do not default to a narrow span without a passing quality gate.
 - Wan `character_mask`: supported by `scripts/run_wan_walk_i2v.py`, but keep it off by default. The 2026-06-11 mask probes worsened run quality in this setup.
 - Wan `continue_motion_max_frames=1` is a promising but not adopted setting for the current best walk source. One trial reached span score `0.83364` and gate `retake_required: 1/8` with small masks, but a seed repeat failed with `hard_failures: 6/8`. Use it as a controlled comparison setting, not as a default.
 - Wan action prompts: keep text broad and stability-focused. Let the pose template carry action-specific motion. In the run PDCA, explicitly over-specifying separated legs made duplicate/ghost silhouettes worse, while the broader walk-cycle prompt plus `run` pose template produced the best span.
 - Image2Image finish: denoise `0.20` to `0.30`, seed fixed with `--seed-step 0`.
 - Block Image2Image and inpaint as adoption paths when the gate reports `duplicate_silhouette_area_high`, `double_foot_or_duplicate_leg_risk`, or `lower_body_blob_count_high`.
+- Block adoption when full-source preview/contact sheets still show recurring guide-line leakage, strong afterimage, duplicate legs, headgear drift, or weak foot-contact readability, even if the artifact gate has `retake_required: 0`.
 
 BiRefNet foreground separation findings from the 2026-06-11 PDCA:
 

@@ -23,7 +23,16 @@ def main() -> None:
     parser.add_argument(
         "--render-style",
         default="wan_confidence_lower",
-        choices=("controlnet", "controlnet_thin", "wan_line", "wan_lower", "wan_confidence_lower", "wan_balanced"),
+        choices=(
+            "controlnet",
+            "controlnet_thin",
+            "wan_line",
+            "wan_lower",
+            "wan_confidence_lower",
+            "wan_balanced",
+            "vace_walk_silhouette",
+            "vace_walk_lower_hint",
+        ),
     )
     parser.add_argument("--min-confidence", default=0.05, type=float)
     parser.add_argument("--source-start-index", default=None, type=int)
