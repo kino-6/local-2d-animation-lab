@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "purpose": "Track local-first 2D game animation candidates as reference image plus pose sequence plus reviewed sprite outputs.",
+  "reference_image": "assets/reference/Anima_00013_.png",
+  "selected_full_body_reference": "outputs_fullbody_reference_cleanup/anima_00013_side_reference_bg_normalize_20260611_231757/frames/frame_000.png",
+  "actions": [
+    {
+      "action_name": "walk",
+      "pose_sequence": "outputs_motion_source_video_pdca/run_synthetic_sideview_walk_v4_edge_stride",
+      "expected_sprite_sheet": {
+        "frame_count": 120,
+        "format": "horizontal_rgba_or_review_package_frames",
+        "cell_size": "fixed_per_candidate",
+        "loop": "loop"
+      },
+      "review_outputs": [
+        "review_packages/synthetic_sideview_walk_v4_identity_prompt_seed717220_vace_len121_full_source_review_20260611_182900",
+        "review_packages/phase4_v5_contact_swing_vace055_len121_selected_review_20260612_004320",
+        "review_packages/phase10_single_keyframe_wan_i2v_len121_strict_selected_proof_review_20260612_130832"
+      ]
+    },
+    {
+      "action_name": "run",
+      "pose_sequence": "pending",
+      "expected_sprite_sheet": {
+        "frame_count": 120,
+        "format": "horizontal_rgba_or_review_package_frames",
+        "loop": "loop"
+      },
+      "review_outputs": []
+    },
+    {
+      "action_name": "idle",
+      "pose_sequence": "pending",
+      "expected_sprite_sheet": {
+        "frame_count": 120,
+        "format": "horizontal_rgba_or_review_package_frames",
+        "loop": "loop"
+      },
+      "review_outputs": []
+    },
+    {
+      "action_name": "attack_sword",
+      "pose_sequence": "pending",
+      "expected_sprite_sheet": {
+        "frame_count": 120,
+        "format": "horizontal_rgba_or_review_package_frames",
+        "loop": "once"
+      },
+      "review_outputs": []
+    },
+    {
+      "action_name": "attack_axe",
+      "pose_sequence": "pending",
+      "expected_sprite_sheet": {
+        "frame_count": 120,
+        "format": "horizontal_rgba_or_review_package_frames",
+        "loop": "once"
+      },
+      "review_outputs": []
+    },
+    {
+      "action_name": "attack_bow",
+      "pose_sequence": "pending",
+      "expected_sprite_sheet": {
+        "frame_count": 120,
+        "format": "horizontal_rgba_or_review_package_frames",
+        "loop": "once"
+      },
+      "review_outputs": []
+    },
+    {
+      "action_name": "hit_light",
+      "pose_sequence": "pending",
+      "expected_sprite_sheet": {
+        "frame_count": 120,
+        "format": "horizontal_rgba_or_review_package_frames",
+        "loop": "once"
+      },
+      "review_outputs": []
+    },
+    {
+      "action_name": "hit_heavy",
+      "pose_sequence": "pending",
+      "expected_sprite_sheet": {
+        "frame_count": 120,
+        "format": "horizontal_rgba_or_review_package_frames",
+        "loop": "once"
+      },
+      "review_outputs": []
+    },
+    {
+      "action_name": "hit_knockback",
+      "pose_sequence": "pending",
+      "expected_sprite_sheet": {
+        "frame_count": 120,
+        "format": "horizontal_rgba_or_review_package_frames",
+        "loop": "once"
+      },
+      "review_outputs": []
+    }
+  ],
+  "candidate_status_values": [
+    "adopted_full_source",
+    "selected_proof_only",
+    "diagnostic",
+    "rejected"
+  ],
+  "adoption_gate": {
+    "full_source_frames": 120,
+    "labeled_artifact_gate": "retake_required must be 0 for every full-source frame",
+    "motion_gate": "selected span must have no mean_motion_delta_too_low penalty",
+    "visual_gate": "contact sheet and preview must show readable legs, feet, identity, and loopable motion"
+  }
+}

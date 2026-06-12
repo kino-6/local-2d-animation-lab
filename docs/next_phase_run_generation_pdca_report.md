@@ -2038,3 +2038,150 @@ Conclusion:
 - v5 + `vace_strength=0.55` solves the low-motion problem but introduces foreground preservation failure across the full 121-frame source.
 - The next PDCA should target subject preservation under stronger motion: either strengthen reference/subject conditioning without reintroducing guide copying, tune VACE strength between `0.55` and `0.75`, or improve the control video so feet move strongly while the body silhouette remains dense.
 - Do not move this candidate to Image2Image polish. The legs/feet are too faint; refinement would decorate a weak source rather than fix the generation failure.
+
+## External Workflow Audit: Similar Projects
+
+Sources reviewed:
+
+- `comfyui-2d-character-pipeline`: `https://github.com/mor-o/comfyui-2d-character-pipeline`
+- Sprite Sheet Diffusion: `https://arxiv.org/html/2412.03685v2`
+- MusePose: `https://github.com/TMElyralab/MusePose`
+- MimicMotion: `https://github.com/tencent/MimicMotion`
+- Wan2.1 / Wan VACE family: `https://github.com/Wan-Video/Wan2.1`
+
+Key findings:
+
+- The closest operational project is `comfyui-2d-character-pipeline`. Its base route is staged: single character keyframe -> Wan2.2 i2v base video -> BiRefNet/RMBG sprite sheet. It reserves VACE mainly for later cosmetic inpaint where masks preserve non-cosmetic pixels.
+- The most important design difference from our current route is that base motion does not depend on drawn pose-control video. The keyframe anchors identity and Wan2.2 i2v invents motion. This may reduce guide-copy artifacts, but gives less explicit foot control.
+- Its sprite-sheet stage is production-oriented: BiRefNet mask, greyscale RGBA, fixed cell strip, and runtime registration. This maps well to our review-package/export direction.
+- MusePose reinforces that pose alignment should be a preprocessing gate, not an afterthought. Source motion should be checked for scale, hip height, ankle baseline, and facing before generation.
+- MimicMotion reinforces confidence-aware pose guidance and regional attention. In our local setting, that translates to confidence-aware control rendering and explicit feet/legs labels, but the control must not become more copyable by VACE.
+
+Local capability audit:
+
+- Present locally: `WanImageToVideo`, `WanVaceToVideo`, `WanAnimateToVideo`, `LoadVideo`, `GetVideoComponents`, `CreateVideo`, `SaveVideo`, `ImageStitch`, `JoinImageWithAlpha`.
+- Present locally: `wan2.1_i2v_480p_14B_fp16.safetensors`, `wan2.1_vace_1.3B_fp16.safetensors`, `wan_2.1_vae.safetensors`, `umt5_xxl_fp8_e4m3fn_scaled.safetensors`, `qwen_image_edit_2509_fp8_e4m3fn.safetensors`, `birefnet.safetensors`.
+- Missing for a direct clone of the external workflow: Wan2.2 i2v GGUF high/low experts, `ComfyUI-GGUF` loaders, `VRAMUnloadModel`, `BiRefNetRMBG`/ComfyUI-RMBG, SAM3 layer route.
+- Conclusion: do not copy the external workflow wholesale yet. Reuse its staging model: base animation first, BiRefNet sprite-sheet export second, VACE/inpaint only for masked later refinements.
+
+## Pose Alignment and Confidence-Aware Control Implementation
+
+Implementation:
+
+- Added `src/natural_sprite_lab/pose_alignment.py`.
+- Added motion-source alignment diagnostics: body envelope, hip height, shoulder width, ankle baseline, ankle separation, and facing direction.
+- Added optional synthetic-source alignment audit arguments: `--align-to-template-root` and `--align-to-template-name`.
+- Added imported motion-source pre/post alignment report output.
+- Added `vace_walk_confidence_hint`, a lower-body control style that varies pelvis, leg, and foot-contact strength based on keypoint confidence.
+- Added regression tests for alignment reporting and confidence-aware rendering.
+
+Alignment audit:
+
+- Rebuilt v4 and v5 controls through the alignment audit step:
+  - `outputs_motion_source_video_pdca/run_synthetic_sideview_walk_v4_edge_stride_aligned_audit`
+  - `outputs_motion_source_video_pdca/run_synthetic_sideview_walk_v5_contact_swing_aligned_audit`
+- Finding: pre-alignment v4/v5 were already close to the baseline target. The naive envelope transform shrank the post-alignment controls and should not be used as a default for these synthetic sources.
+- Decision: use alignment as a diagnostic/reject gate first. Apply transforms only when a source is actually mis-scaled or facing the wrong way.
+
+## Confidence-Aware Subject-Preservation Retake
+
+Run:
+
+- Output: `outputs_quality_pdca/phase10_v5_contact_swing_confidence_hint_vace065_len33_768_20260612_122128`
+- BiRefNet: `outputs_quality_birefnet/phase10_v5_contact_swing_confidence_hint_vace065_len33_768_birefnet_20260612_122304`
+- Span: `outputs_quality_span_selection/phase10_v5_confidence_hint_vace065_len33_foreground_motion_gate_20260612_122348`
+- Gate: `outputs_quality_artifact_repair/phase10_v5_confidence_hint_vace065_len33_labeled_gate_20260612_122349`
+
+Result:
+
+- Selected span: mean foreground motion `7.227`, no low-motion penalty.
+- Full 33 labeled gate: `retake_required: 15/33`.
+- Issue counts: `duplicate_silhouette_area_high: 13`, `double_foot_or_duplicate_leg_risk: 3`, `lower_body_blob_count_high: 3`.
+- Review labels: `foot_shadow_or_contact_artifact_review: 21`, `visible_guide_line_leakage_review: 20`, `skin_colored_afterimage_near_legs_review: 20`.
+- Candidate status: `rejected`.
+
+Conclusion:
+
+- Confidence-aware control is implemented, but the first variant is too copyable by VACE at strength `0.65`.
+- The subject-preservation blocker is not solved. The best path remains v5 motion with a less-copyable subject-preservation route, likely a stronger keyframe/Wan i2v base-motion route or a revised control rendering with less visible foot/contact ink.
+- New benchmark files:
+  - `docs/sprite_sheet_benchmark_manifest.json`
+  - `docs/walk_candidate_comparison.md`
+
+## 1024 Short Probe
+
+Reason:
+
+- After a stable 768 selected proof, Tasks allowed one 1024 short probe to test whether higher native resolution improves foreground density.
+
+Run:
+
+- Output: `outputs_quality_pdca/phase4_v5_contact_swing_vace055_len17_1024_probe_20260612_122809`
+- BiRefNet: `outputs_quality_birefnet/phase4_v5_contact_swing_vace055_len17_1024_probe_birefnet_20260612_122938`
+- Span: `outputs_quality_span_selection/phase4_v5_vace055_len17_1024_foreground_motion_gate_20260612_123011`
+- Gate: `outputs_quality_artifact_repair/phase4_v5_vace055_len17_1024_labeled_gate_20260612_123011`
+- Review package: `review_packages/phase4_v5_vace055_len17_1024_selected_visual_reject_review_20260612_123057`
+
+Result:
+
+- Selected span: mean foreground motion `11.666`, hard failures `0`, no selection penalties.
+- Labeled gate: `no_repair_needed: 17/17`, no issue labels, candidate status `adopted_full_source` by heuristic.
+- Godot validation: `ok: true`.
+- Visual review: rejected. The contact sheet has stronger foreground and more leg density than the failed 768 full-source probe, but shows obvious outfit color drift, arm/hair afterimages, and facing/identity instability across frames.
+
+Conclusion:
+
+- 1024 helps foreground density but does not solve adoption quality.
+- This run demonstrates why visual review remains blocking even when heuristic gates pass.
+- Do not run 1024 full 121-frame generation yet. The next work should improve identity/appearance stability first, likely by moving toward a stronger single-keyframe subject-preservation route or adding explicit visual labels for color/facing drift.
+
+## Single-Keyframe Wan i2v Retake
+
+Reason:
+
+- The external workflow audit suggested that base motion should come from a single anchored character keyframe rather than copyable pose-control video.
+- The VACE route improved motion but repeatedly traded that motion for guide leakage, faint legs, or foreground shrinkage.
+
+Short proof:
+
+- Output: `outputs_quality_pdca/phase10_single_keyframe_wan_i2v_len33_768_subject_preservation_probe_20260612_123320`
+- BiRefNet: `outputs_quality_birefnet/phase10_single_keyframe_wan_i2v_len33_768_birefnet_20260612_123624`
+- Span: `outputs_quality_span_selection/phase10_single_keyframe_wan_i2v_len33_foreground_motion_gate_20260612_123715`
+- Gate: `outputs_quality_artifact_repair/phase10_single_keyframe_wan_i2v_len33_labeled_gate_20260612_123716`
+- Review package: `review_packages/phase10_single_keyframe_wan_i2v_len33_selected_review_20260612_123812`
+
+Short proof result:
+
+- Full 33 labeled gate: `no_repair_needed: 33/33`, no issue labels.
+- Selected foreground motion: `16.424`.
+- Visual review: much better than VACE-control routes. The character stays full-body and coherent, visible guide lines disappear, and the motion reads as a walk.
+
+Full 121-frame run:
+
+- Output: `outputs_quality_pdca/phase10_single_keyframe_wan_i2v_len121_768_full_probe_20260612_123825`
+- BiRefNet: `outputs_quality_birefnet/phase10_single_keyframe_wan_i2v_len121_768_birefnet_20260612_125505`
+- Span: `outputs_quality_span_selection/phase10_single_keyframe_wan_i2v_len121_foreground_motion_gate_20260612_125717`
+- First gate: `outputs_quality_artifact_repair/phase10_single_keyframe_wan_i2v_len121_labeled_gate_20260612_125717`
+- Strict gate: `outputs_quality_artifact_repair/phase10_single_keyframe_wan_i2v_len121_labeled_gate_afterimage_strict_20260612_130434`
+- Review package: `review_packages/phase10_single_keyframe_wan_i2v_len121_strict_selected_proof_review_20260612_130832`
+
+Full run result:
+
+- Full 121 strict gate: `no_repair_needed: 121/121`, `retake_required: 0/121`.
+- Review labels: `lower_body_pale_afterimage_review: 12`, `foot_shadow_or_contact_artifact_review: 1`.
+- Selected foreground motion: `18.208`, no low-motion penalty.
+- BiRefNet structure: `mask_ok: 106`, `review_sparse_foreground_bbox: 15`.
+- Godot validation: `ok: true`.
+- Visual review: this is the best current walk-generation route. It solves the VACE foreground-shrinkage blocker and preserves identity better than the 1024 VACE probe. It is still not adopted because thin pale lower-body afterimages recur in multiple frames.
+
+Implementation change:
+
+- Added `lower_body_pale_afterimage_review` to `scripts/repair_frame_artifacts.py`.
+- The old gate missed these artifacts because they are attached to or near the protected foreground rather than detached background ghosts.
+- The strict gate now correctly downgrades the candidate to `selected_proof_only` even when `retake_required` is zero.
+
+Conclusion:
+
+- Main workflow should move to: full-body reference -> single-keyframe Wan i2v base motion -> BiRefNet foreground separation -> strict full-source gate -> Godot/review package.
+- VACE/control-video routes remain useful for diagnostics and action-specific experiments, but they are not currently the best walk-quality path.
+- Next quality target: reduce pale lower-body afterimages in Wan i2v without returning to guide-copy artifacts.

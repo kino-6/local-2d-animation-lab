@@ -31,6 +31,31 @@ def test_build_synthetic_sideview_motion_source_writes_template(tmp_path: Path) 
     assert saved_report["template_name"] == "run_synthetic_sideview_walk_test"
 
 
+def test_build_synthetic_sideview_motion_source_can_write_alignment_report(tmp_path: Path) -> None:
+    builder = _load_builder()
+    target_root = tmp_path / "target"
+    builder(
+        output_root=target_root,
+        template_name="target_walk",
+        frame_count=12,
+        render_style="vace_walk_lower_hint",
+    )
+
+    report = builder(
+        output_root=tmp_path,
+        template_name="aligned_walk",
+        frame_count=12,
+        render_style="vace_walk_confidence_hint",
+        align_to_template_root=target_root,
+        align_to_template_name="target_walk",
+    )
+
+    assert report["alignment"]["target_template_name"] == "target_walk"
+    assert "max_body_scale_drift" in report["alignment"]["post_alignment"]
+    saved_report = json.loads((tmp_path / "aligned_walk" / "motion_source_report.json").read_text(encoding="utf-8"))
+    assert "post_alignment" in saved_report["alignment"]
+
+
 def _load_builder():
     script = Path(__file__).resolve().parents[1] / "scripts" / "build_synthetic_sideview_motion_source.py"
     spec = importlib.util.spec_from_file_location("build_synthetic_sideview_motion_source", script)

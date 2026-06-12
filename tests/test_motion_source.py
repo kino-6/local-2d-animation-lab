@@ -35,6 +35,7 @@ def test_import_openpose_body25_directory_to_local_template(tmp_path: Path) -> N
     assert len(sequence) == 6
     assert not validate_pose_frame(sequence[0])
     assert "confidence" in sequence[0]
+    assert report["alignment"]["post_alignment"]["status"] == "aligned"
     assert (tmp_path / "pose_templates" / "run" / "contact_sheet.png").exists()
 
 

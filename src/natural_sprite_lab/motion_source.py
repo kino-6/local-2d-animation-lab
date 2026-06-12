@@ -7,6 +7,7 @@ from typing import Any, Iterable
 
 from PIL import Image
 
+from natural_sprite_lab.pose_alignment import pose_alignment_report
 from natural_sprite_lab.pose_templates import KEYPOINTS, PoseFrame, load_pose_sequence, render_pose_frame
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
 
@@ -81,6 +82,13 @@ def write_motion_source_template(
     if not raw_frames:
         raise ValueError(f"No readable pose frames found: {source}")
     target_frame = _load_target_frame(target_template_root, target_template_name or action)
+    alignment_report = _alignment_report_for_raw_frames(
+        raw_frames,
+        target_frame,
+        action=action,
+        variant=variant or action,
+        min_confidence=min_confidence,
+    )
     pose_frames = build_aligned_template(
         raw_frames,
         action=action,
@@ -126,6 +134,7 @@ def write_motion_source_template(
             "min_ankle_x_separation": min_ankle_x_separation,
             "retained_source_indices": [frame.source_index for frame in raw_frames],
         },
+        "alignment": alignment_report,
     }
     (action_dir / "motion_source_report.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n",
@@ -183,6 +192,45 @@ def build_aligned_template(
         _interpolate_pose_frame(aligned, index, frame_count, action=action, variant=variant)
         for index in range(frame_count)
     ]
+
+
+def _alignment_report_for_raw_frames(
+    raw_frames: list[RawPoseFrame],
+    target_frame: dict[str, Any],
+    *,
+    action: str,
+    variant: str,
+    min_confidence: float,
+) -> dict[str, Any]:
+    pre_frames = [
+        PoseFrame(
+            action=action,
+            variant=variant,
+            frame_index=index,
+            phase="source",
+            keypoints={name: [point[0], point[1]] for name, point in frame.keypoints.items()},
+            confidence=frame.confidence,
+            notes="pre_alignment",
+        )
+        for index, frame in enumerate(raw_frames)
+    ]
+    aligned = _align_sequence(raw_frames, target_frame, min_confidence=min_confidence)
+    post_frames = [
+        PoseFrame(
+            action=action,
+            variant=variant,
+            frame_index=index,
+            phase="source",
+            keypoints={name: [point[0], point[1]] for name, point in frame.keypoints.items()},
+            confidence=frame.confidence,
+            notes="post_alignment",
+        )
+        for index, frame in enumerate(aligned)
+    ]
+    return {
+        "pre_alignment": pose_alignment_report(pre_frames, target_frame).to_dict(),
+        "post_alignment": pose_alignment_report(post_frames, target_frame).to_dict(),
+    }
 
 
 def _frames_from_payload(payload: Any, min_confidence: float) -> list[RawPoseFrame]:

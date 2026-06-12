@@ -91,6 +91,7 @@ def main() -> None:
             "vace_side_proxy",
             "vace_walk_silhouette",
             "vace_walk_lower_hint",
+            "vace_walk_confidence_hint",
         ),
         default="controlnet",
     )

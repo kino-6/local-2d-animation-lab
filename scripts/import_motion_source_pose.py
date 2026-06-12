@@ -32,6 +32,7 @@ def main() -> None:
             "wan_balanced",
             "vace_walk_silhouette",
             "vace_walk_lower_hint",
+            "vace_walk_confidence_hint",
         ),
     )
     parser.add_argument("--min-confidence", default=0.05, type=float)

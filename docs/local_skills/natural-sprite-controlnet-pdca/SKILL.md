@@ -181,6 +181,10 @@ VACE subject/motion split findings:
 
 - `WanVaceToVideo` with `wan2.1_vace_1.3B_fp16.safetensors` is the current preferred local subject/motion split experiment when `WanAnimateToVideo` and FunControl stall.
 - Use `scripts/run_wan_walk_i2v.py --mode vace --unet wan2.1_vace_1.3B_fp16.safetensors --weight-dtype default`.
+- External workflow audit changed the planning priority. The closest outside project, `comfyui-2d-character-pipeline`, uses a staged route: single keyframe -> Wan2.2 i2v base motion -> BiRefNet/RMBG sprite sheet, while VACE is mostly reserved for masked cosmetic inpaint. Treat this as the next architecture to investigate once the missing local Wan2.2 GGUF / GGUF loader / VRAM eviction pieces are installed.
+- Local audit result: `WanImageToVideo`, `WanVaceToVideo`, `WanAnimateToVideo`, video load/save nodes, `ImageStitch`, and `JoinImageWithAlpha` exist locally. Missing for a direct clone of that external route: Wan2.2 i2v GGUF high/low experts, `UnetLoaderGGUF`, `CLIPLoaderGGUF`, `VRAMUnloadModel`, ComfyUI-RMBG `BiRefNetRMBG`, and SAM3 route.
+- Add pose-alignment diagnostics before generation. `src/natural_sprite_lab/pose_alignment.py` reports body envelope, hip height, shoulder width, ankle baseline, ankle separation, and facing direction. Use transforms only when the source is actually mis-scaled; the v4/v5 synthetic sources were already aligned before a naive envelope transform and became worse after forced alignment.
+- Confidence-aware controls exist as `vace_walk_confidence_hint`, but the first subject-preservation retake failed. At VACE strength `0.65`, it kept motion (`mean foreground motion: 7.227`) but raised full 33 gate retakes to `15/33` with guide leakage and duplicate silhouette labels. Do not promote it as default.
 - Start from the v4 edge-stride synthetic side-view motion settings before trying new proxy controls: `stride=0.083`, `lift=0.038`, `body_bob=0.012`, `--pose-render-style wan_balanced`.
 - Keep `--vace-strength 1.0` as the current baseline. Raising it to `1.35` increased motion but collapsed the character into proxy-like/front-view structures in the tested run.
 - Do not treat `vace_depth_proxy` or `vace_side_proxy` as adopted controls for this character/action. They are diagnostics; VACE copied their simplified structure into the output instead of only using them as motion guidance.
@@ -237,6 +241,11 @@ uv run python scripts/run_wan_walk_i2v.py \
 - It fixes the weak-motion label on a selected 16-frame span (`mean foreground motion: 7.695`, hard failures `0`, Godot `ok: true`) but is still only `selected_proof_only`; the full 33-frame gate has `retake_required: 2/33`.
 - Full 121-frame evidence for this setting: `review_packages/phase4_v5_contact_swing_vace055_len121_selected_review_20260612_004320`.
 - The full 121 source is rejected: `outputs_quality_artifact_repair/phase4_v5_contact_swing_vace055_len121_labeled_gate_20260612_004123` reports `retake_required: 51/121` dominated by `foreground_too_small`. The selected span has motion (`mean foreground motion: 5.569`) but visual review shows faint legs/feet and unstable foreground readability.
+- A 1024 short probe improved density but still failed visual review: `review_packages/phase4_v5_vace055_len17_1024_selected_visual_reject_review_20260612_123057`. Heuristic gate was clean, but outfit color drift, arm/hair afterimages, and facing/identity instability were obvious. Do not run 1024 full 121 until identity/color stability is addressed.
+- Current best walk route is single-keyframe Wan i2v, not VACE control video: `review_packages/phase10_single_keyframe_wan_i2v_len121_strict_selected_proof_review_20260612_130832`.
+- Evidence: strict full 121 gate reports `retake_required: 0/121`, selected foreground motion `18.208`, and Godot `ok: true`.
+- Do not mark it adopted yet. The strict visual labels report `lower_body_pale_afterimage_review: 12`, so it remains `selected_proof_only`.
+- Lesson: removing copyable pose-control video improved identity and foreground preservation more than raising resolution or VACE strength. The next walk PDCA should reduce pale lower-body afterimages in Wan i2v without returning to VACE guide leakage.
 - Next retake should preserve the subject under stronger motion. Do not send the v5 full-source result to Image2Image polish before foreground density and foot readability are fixed.
 - Do not use v5 at VACE strength `1.0` as the next full-source default. It increases motion but produced hard failures and `retake_required: 7/33`.
 - Do not use v6 moderate-contact as the next full-source default. It produced more hard failures than v5 and did not reduce copied artifacts.
@@ -335,6 +344,7 @@ Current quality-gate thresholds:
 - `dark_ratio > 0.18`: dark-frame/background failure
 - `background_contamination_ratio > 0.08`: background cleanup or retake needed
 - `upper_body_center_shift > 0.18`: identity/camera stability risk
+- `lower_body_pale_afterimage_review`: manual-review blocker for pale gray/blue-gray lower-body ghosting that is attached to the subject and can be missed by detached-artifact masks
 
 Export a compact review package for selected frames:
 
@@ -361,7 +371,8 @@ Stable local sequence:
 reference image
 -> generate or extract one clean full-body side-view start frame
 -> reject the start frame if it has multiple foreground components
--> VACE/Wan generation with a low-copying action control video
+-> prefer Wan i2v from the single keyframe for base walk motion when subject preservation matters
+-> use VACE/control video only for controlled probes or action-specific experiments
 -> BiRefNet foreground separation when background/contact artifacts need isolation
 -> full-source artifact gate and foreground-motion span selection
 -> compact selected-span and full-source review packages with Godot validation

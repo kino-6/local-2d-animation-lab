@@ -6,7 +6,9 @@ import math
 from pathlib import Path
 from typing import Any
 
+from natural_sprite_lab.pose_alignment import align_pose_frames_to_target, pose_alignment_report
 from natural_sprite_lab.pose_templates import PoseFrame, render_pose_frame, validate_pose_frame
+from natural_sprite_lab.pose_templates import load_pose_sequence
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
 
 
@@ -31,11 +33,14 @@ def main() -> None:
             "wan_balanced",
             "vace_walk_silhouette",
             "vace_walk_lower_hint",
+            "vace_walk_confidence_hint",
         ),
     )
     parser.add_argument("--stride", default=0.105, type=float)
     parser.add_argument("--lift", default=0.055, type=float)
     parser.add_argument("--body-bob", default=0.018, type=float)
+    parser.add_argument("--align-to-template-root", default=None, type=Path)
+    parser.add_argument("--align-to-template-name", default=None)
     args = parser.parse_args()
 
     report = build_synthetic_sideview_motion_source(
@@ -50,6 +55,8 @@ def main() -> None:
         stride=args.stride,
         lift=args.lift,
         body_bob=args.body_bob,
+        align_to_template_root=args.align_to_template_root,
+        align_to_template_name=args.align_to_template_name,
     )
     print(json.dumps(report, indent=2, ensure_ascii=False))
 
@@ -67,6 +74,8 @@ def build_synthetic_sideview_motion_source(
     stride: float = 0.105,
     lift: float = 0.055,
     body_bob: float = 0.018,
+    align_to_template_root: Path | None = None,
+    align_to_template_name: str | None = None,
 ) -> dict[str, Any]:
     if frame_count < 8:
         raise ValueError("frame_count must be at least 8")
@@ -87,6 +96,18 @@ def build_synthetic_sideview_motion_source(
         )
         for index in range(frame_count)
     ]
+    alignment: dict[str, Any] | None = None
+    if align_to_template_root and align_to_template_name:
+        target_frame = load_pose_sequence(align_to_template_root, align_to_template_name)[0]
+        pre_alignment = pose_alignment_report([frame.to_dict() for frame in frames], target_frame)
+        frames = align_pose_frames_to_target(frames, target_frame)
+        post_alignment = pose_alignment_report([frame.to_dict() for frame in frames], target_frame)
+        alignment = {
+            "target_template_root": str(align_to_template_root),
+            "target_template_name": align_to_template_name,
+            "pre_alignment": pre_alignment.to_dict(),
+            "post_alignment": post_alignment.to_dict(),
+        }
     image_paths: list[Path] = []
     for frame in frames:
         data = frame.to_dict()
@@ -124,6 +145,8 @@ def build_synthetic_sideview_motion_source(
             "retained_source_indices": list(range(frame_count)),
         },
     }
+    if alignment:
+        report["alignment"] = alignment
     (output_dir / "motion_source_report.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",

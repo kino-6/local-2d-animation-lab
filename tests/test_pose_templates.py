@@ -43,6 +43,7 @@ def test_render_pose_frame_supports_wan_styles(tmp_path: Path) -> None:
     vace_side_proxy = render_pose_frame(frame, 128, 128, style="vace_side_proxy")
     vace_walk_silhouette = render_pose_frame(frame, 128, 128, style="vace_walk_silhouette")
     vace_walk_lower_hint = render_pose_frame(frame, 128, 128, style="vace_walk_lower_hint")
+    vace_walk_confidence_hint = render_pose_frame(frame, 128, 128, style="vace_walk_confidence_hint")
 
     assert wan_line.getpixel((0, 0)) == (255, 255, 255)
     assert wan_lower.getpixel((0, 0)) == (255, 255, 255)
@@ -52,6 +53,7 @@ def test_render_pose_frame_supports_wan_styles(tmp_path: Path) -> None:
     assert vace_side_proxy.getpixel((0, 0)) == (255, 255, 255)
     assert vace_walk_silhouette.getpixel((0, 0)) == (255, 255, 255)
     assert vace_walk_lower_hint.getpixel((0, 0)) == (255, 255, 255)
+    assert vace_walk_confidence_hint.getpixel((0, 0)) == (255, 255, 255)
     assert wan_line.getbbox() == (0, 0, 128, 128)
     assert _non_white_pixels(wan_balanced) > 0
     assert _non_white_pixels(wan_walk_lower) < _non_white_pixels(wan_balanced)
@@ -59,10 +61,27 @@ def test_render_pose_frame_supports_wan_styles(tmp_path: Path) -> None:
     assert _non_white_pixels(vace_side_proxy) > _non_white_pixels(wan_balanced)
     assert _non_white_pixels(vace_walk_silhouette) > _non_white_pixels(wan_balanced)
     assert _non_white_pixels(vace_walk_lower_hint) < _non_white_pixels(vace_walk_silhouette)
+    assert _non_white_pixels(vace_walk_confidence_hint) > 0
     assert wan_balanced.tobytes() != wan_line.tobytes()
     assert vace_side_proxy.tobytes() != vace_depth_proxy.tobytes()
     assert vace_walk_silhouette.tobytes() != vace_side_proxy.tobytes()
     assert vace_walk_lower_hint.tobytes() != vace_walk_silhouette.tobytes()
+    assert vace_walk_confidence_hint.tobytes() != vace_walk_lower_hint.tobytes()
+
+
+def test_vace_confidence_hint_responds_to_keypoint_confidence(tmp_path: Path) -> None:
+    root = tmp_path / "pose_templates"
+    write_default_templates(root, frame_count=4, width=128, height=128)
+    frame = load_pose_sequence(root, "run")[1]
+    high = dict(frame)
+    high["confidence"] = {name: 1.0 for name in high["keypoints"]}
+    low = dict(frame)
+    low["confidence"] = {name: 0.15 for name in low["keypoints"]}
+
+    high_image = render_pose_frame(high, 128, 128, style="vace_walk_confidence_hint")
+    low_image = render_pose_frame(low, 128, 128, style="vace_walk_confidence_hint")
+
+    assert _non_white_pixels(high_image) > _non_white_pixels(low_image)
 
 
 def test_render_pose_frame_supports_thin_controlnet_style(tmp_path: Path) -> None:

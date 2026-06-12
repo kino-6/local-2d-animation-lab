@@ -394,7 +394,15 @@ def _analyze_frame(path: Path, args: argparse.Namespace) -> dict[str, Any]:
     if lower_blob_count > 2:
         issue_codes.append("double_foot_or_duplicate_leg_risk")
     issue_codes.extend(weapon_report["issue_codes"])
-    review_labels = _visual_review_labels(image, protected, repair_mask, bbox, args.min_mask_coverage)
+    lower_body_pale_afterimage_coverage = _lower_body_pale_afterimage_coverage(image, bbox)
+    review_labels = _visual_review_labels(
+        image,
+        protected,
+        repair_mask,
+        bbox,
+        args.min_mask_coverage,
+        lower_body_pale_afterimage_coverage,
+    )
 
     hard_issue_codes = {
         "double_foot_or_duplicate_leg_risk",
@@ -425,6 +433,7 @@ def _analyze_frame(path: Path, args: argparse.Namespace) -> dict[str, Any]:
         "lower_body_blob_count": lower_blob_count,
         "mask_coverage": round(mask_coverage, 5),
         "mask_pixels": round(_mask_pixels(repair_mask) * scale_x * scale_y),
+        "lower_body_pale_afterimage_coverage": round(lower_body_pale_afterimage_coverage, 5),
         "weapon": weapon_report,
         "issue_codes": issue_codes,
         "review_labels": review_labels,
@@ -567,6 +576,7 @@ def _visual_review_labels(
     repair_mask: Image.Image,
     bbox: tuple[int, int, int, int] | None,
     min_mask_coverage: float,
+    lower_body_pale_afterimage_coverage: float,
 ) -> list[str]:
     labels: list[str] = []
     if _guide_line_leakage_coverage(image, protected_mask) >= 0.00003:
@@ -576,6 +586,8 @@ def _visual_review_labels(
             labels.append("foot_shadow_or_contact_artifact_review")
         if _skin_afterimage_coverage(image, protected_mask, bbox) >= 0.00008:
             labels.append("skin_colored_afterimage_near_legs_review")
+        if lower_body_pale_afterimage_coverage >= 0.055:
+            labels.append("lower_body_pale_afterimage_review")
         left, top, right, bottom = bbox
         if (bottom - top) / max(1, image.height) < 0.34:
             labels.append("face_detail_readability_at_game_scale_review")
@@ -627,6 +639,45 @@ def _skin_afterimage_coverage(
             red, green, blue = pixels[x, y]
             skin_like = red > 170 and green > 115 and blue > 90 and red > green + 8 and green > blue - 5
             if skin_like:
+                count += 1
+    return count / max(1, total)
+
+
+def _lower_body_pale_afterimage_coverage(
+    image: Image.Image,
+    bbox: tuple[int, int, int, int] | None,
+) -> float:
+    if bbox is None:
+        return 0.0
+    left, top, right, bottom = bbox
+    width = right - left
+    left = max(0, left - round(width * 0.12))
+    right = min(image.width, right + round(width * 0.12))
+    lower_top = round(top + (bottom - top) * 0.56)
+    if lower_top >= bottom:
+        return 0.0
+    pixels = image.load()
+    count = 0
+    total = 0
+    for y in range(lower_top, bottom):
+        for x in range(left, right):
+            total += 1
+            red, green, blue = pixels[x, y]
+            high = max(red, green, blue)
+            low = min(red, green, blue)
+            saturation = high - low
+            brightness = (red + green + blue) / 3
+            white_distance = abs(red - 255) + abs(green - 255) + abs(blue - 255)
+            pale_gray = 38 < white_distance < 310 and 95 < brightness < 238 and saturation < 48
+            blue_gray = (
+                white_distance > 40
+                and 85 < brightness < 235
+                and blue >= red - 5
+                and green >= red - 15
+                and saturation < 78
+            )
+            skin_like = red > 165 and green > 105 and blue > 80 and red > green + 8 and green > blue - 10
+            if (pale_gray or blue_gray) and not skin_like:
                 count += 1
     return count / max(1, total)
 

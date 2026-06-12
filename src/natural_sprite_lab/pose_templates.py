@@ -184,7 +184,13 @@ def render_pose_frame(frame: dict[str, Any], width: int, height: int, style: str
             "left_hip": (210, 85, 35),
             "left_knee": (210, 85, 35),
         }
-    elif style in {"vace_depth_proxy", "vace_side_proxy", "vace_walk_silhouette", "vace_walk_lower_hint"}:
+    elif style in {
+        "vace_depth_proxy",
+        "vace_side_proxy",
+        "vace_walk_silhouette",
+        "vace_walk_lower_hint",
+        "vace_walk_confidence_hint",
+    }:
         background = (255, 255, 255)
         line_width = 4
         radius = 3
@@ -212,6 +218,9 @@ def render_pose_frame(frame: dict[str, Any], width: int, height: int, style: str
         return image
     if style == "vace_walk_lower_hint":
         _draw_vace_walk_lower_hint(draw, points, width, height)
+        return image
+    if style == "vace_walk_confidence_hint":
+        _draw_vace_walk_confidence_hint(draw, points, confidence, width, height)
         return image
     for start, end, default_color in BONES:
         color = default_color if style == "controlnet" else colors.get(start, (110, 110, 110))
@@ -501,6 +510,70 @@ def _draw_vace_walk_lower_hint(
             fill=(222, 222, 222) if is_near else (242, 242, 242),
             width=max(1, round(scale * 0.004)),
         )
+
+
+def _draw_vace_walk_confidence_hint(
+    draw: ImageDraw.ImageDraw,
+    points: dict[str, tuple[int, int]],
+    confidence: dict[str, float],
+    width: int,
+    height: int,
+) -> None:
+    scale = min(width, height)
+    center_x = round((points["left_hip"][0] + points["right_hip"][0] + points["neck"][0]) / 3)
+    hip_y = round((points["left_hip"][1] + points["right_hip"][1]) / 2)
+    right_forward = points["right_ankle"][0] >= points["left_ankle"][0]
+    pelvis_confidence = _joint_confidence(confidence, "left_hip", "right_hip")
+    pelvis_width = max(4, round(scale * (0.022 + pelvis_confidence * 0.020)))
+    pelvis_value = _confidence_gray(238, 210, pelvis_confidence)
+    draw.rounded_rectangle(
+        (
+            center_x - pelvis_width,
+            hip_y - round(scale * 0.010),
+            center_x + pelvis_width,
+            hip_y + round(scale * 0.018),
+        ),
+        radius=max(2, round(scale * 0.010)),
+        fill=(pelvis_value, pelvis_value, pelvis_value),
+    )
+    for hip, knee, ankle, is_near in (
+        ("right_hip", "right_knee", "right_ankle", right_forward),
+        ("left_hip", "left_knee", "left_ankle", not right_forward),
+    ):
+        leg_confidence = _joint_confidence(confidence, hip, knee, ankle)
+        near_boost = 1.0 if is_near else 0.78
+        width_px = max(2, round(scale * (0.010 + leg_confidence * 0.018) * near_boost))
+        value = _confidence_gray(244 if is_near else 248, 184 if is_near else 214, leg_confidence)
+        start = (center_x, points[hip][1])
+        end = points[ankle]
+        _draw_depth_limb(draw, start, points[knee], end, (value, value, value), width_px)
+        foot_confidence = min(confidence.get(ankle, leg_confidence), leg_confidence)
+        foot_len = round(scale * (0.036 + foot_confidence * 0.026) * near_boost)
+        direction = 1 if end[0] >= center_x else -1
+        contact_y = min(height - 1, end[1] + round(scale * 0.014))
+        contact_value = _confidence_gray(248 if is_near else 252, 205 if is_near else 230, foot_confidence)
+        contact_width = max(1, round(scale * (0.003 + foot_confidence * 0.004)))
+        draw.line(
+            (
+                end[0] - round(foot_len * 0.45),
+                contact_y,
+                end[0] + direction * foot_len,
+                contact_y,
+            ),
+            fill=(contact_value, contact_value, contact_value),
+            width=contact_width,
+        )
+
+
+def _joint_confidence(confidence: dict[str, float], *names: str) -> float:
+    if not names:
+        return 1.0
+    return min(max(0.0, min(1.0, confidence.get(name, 1.0))) for name in names)
+
+
+def _confidence_gray(low_confidence_gray: int, high_confidence_gray: int, confidence: float) -> int:
+    confidence = max(0.0, min(1.0, confidence))
+    return round(low_confidence_gray * (1.0 - confidence) + high_confidence_gray * confidence)
 
 
 def _draw_depth_limb(

@@ -120,6 +120,25 @@ def test_visual_review_labels_report_guides_and_foot_artifacts(tmp_path: Path) -
     assert "foot_shadow_or_contact_artifact_review" in analysis["review_labels"]
 
 
+def test_visual_review_labels_report_pale_lower_body_afterimage(tmp_path: Path) -> None:
+    frame = tmp_path / "pale_lower_afterimage.png"
+    image = Image.new("RGB", (256, 256), (255, 255, 255))
+    draw = ImageDraw.Draw(image)
+    draw.ellipse((112, 26, 144, 58), fill=(58, 38, 28))
+    draw.rectangle((104, 58, 152, 132), fill=(20, 40, 95))
+    draw.rectangle((110, 132, 124, 214), fill=(245, 205, 190))
+    draw.rectangle((136, 132, 150, 214), fill=(245, 205, 190))
+    draw.ellipse((96, 206, 128, 226), fill=(28, 24, 28))
+    draw.ellipse((134, 206, 166, 226), fill=(28, 24, 28))
+    draw.ellipse((148, 168, 202, 230), fill=(170, 182, 188))
+    image.save(frame)
+
+    analysis = _analyze_frame(frame, _args())
+
+    assert analysis["lower_body_pale_afterimage_coverage"] > 0.055
+    assert "lower_body_pale_afterimage_review" in analysis["review_labels"]
+
+
 def test_retake_gate_drives_retake_recommendation() -> None:
     recommendation = _recommendation(
         {"retake_required": 1, "repair_candidate": 7},
