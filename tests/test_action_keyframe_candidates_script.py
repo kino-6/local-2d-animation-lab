@@ -5,6 +5,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+from PIL import Image, ImageDraw
+
 
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "generate_action_keyframe_candidates.py"
 _SPEC = importlib.util.spec_from_file_location("generate_action_keyframe_candidates", _SCRIPT)
@@ -52,6 +54,7 @@ def test_img2img_endpoint_workflow_uses_source_latent() -> None:
         scheduler="karras",
         controlnet_strength=0.62,
         denoise=0.42,
+        source_edit_region="full",
     )
 
     workflow = _MODULE._workflow(
@@ -68,3 +71,61 @@ def test_img2img_endpoint_workflow_uses_source_latent() -> None:
     assert workflow["5"]["inputs"]["denoise"] == 0.42
     assert workflow["11"]["inputs"]["image"] == "source.png"
     assert workflow["13"]["class_type"] == "VAEEncode"
+
+
+def test_lower_body_endpoint_workflow_uses_inpaint_mask() -> None:
+    args = argparse.Namespace(
+        checkpoint="novaOrangeXL_v120.safetensors",
+        controlnet="SDXL\\OpenPoseXL2.safetensors",
+        width=1024,
+        height=1024,
+        steps=12,
+        cfg=4.8,
+        sampler="dpmpp_2m",
+        scheduler="karras",
+        controlnet_strength=0.62,
+        denoise=0.58,
+        source_edit_region="lower_body",
+    )
+
+    workflow = _MODULE._workflow(
+        args,
+        "positive",
+        "negative",
+        123,
+        "pose.png",
+        "run",
+        "source.png",
+        "lower_body_mask.png",
+    )
+
+    assert workflow["14"]["class_type"] == "LoadImageMask"
+    assert workflow["14"]["inputs"]["image"] == "lower_body_mask.png"
+    assert workflow["15"]["class_type"] == "VAEEncodeForInpaint"
+    assert workflow["15"]["inputs"]["mask"] == ["14", 0]
+    assert workflow["5"]["inputs"]["latent_image"] == ["15", 0]
+    assert workflow["16"]["class_type"] == "ImageCompositeMasked"
+    assert workflow["7"]["inputs"]["images"] == ["16", 0]
+
+
+def test_lower_body_edit_mask_ignores_plain_background_panel(tmp_path: Path) -> None:
+    source = tmp_path / "source.png"
+    mask_path = tmp_path / "mask.png"
+    image = Image.new("RGB", (128, 128), (255, 255, 255))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((42, 8, 86, 120), fill=(232, 230, 210))
+    draw.rectangle((54, 26, 74, 68), fill=(20, 25, 28))
+    draw.rectangle((50, 66, 60, 112), fill=(12, 18, 22))
+    draw.rectangle((68, 66, 78, 112), fill=(250, 210, 15))
+    image.save(source)
+
+    _MODULE._make_lower_body_edit_mask(source, mask_path)
+
+    mask = Image.open(mask_path).convert("L")
+    bbox = mask.getbbox()
+    assert bbox is not None
+    left, top, right, bottom = bbox
+    assert left > 30
+    assert right < 116
+    assert top > 45
+    assert bottom > 105

@@ -595,6 +595,15 @@ General action endpoint findings from the 2026-06-12 conservative endpoint probe
   - `outputs_general_action_quality/action_keyframes_refcond/ComfyUI2025_131891_trim_run_keyframes_20260612_223625`
 - Treat `endpoint_delta_too_low` as a blocker. A clean endpoint is not useful for first/last Wan if it stays too close to the source pose.
 - Current implication: reference-conditioned endpoints need stronger pose transfer or localized lower-body editing before they can drive `run`; do not expand this path to `hit` or weapon actions until `run` can move without breaking.
+- Remaining-task rerun on 2026-06-12 confirmed the same gate:
+  - `outputs_general_action_quality/action_keyframes_refcond_rerun/ComfyUI2025_131891_trim_run_keyframes_20260612_231436`
+  - `outputs_general_action_quality/action_keyframes_refcond_rerun/ComfyUI2025_131891_trim_hit_light_keyframes_20260612_233040`
+  - `outputs_general_action_quality/action_keyframes_refcond_rerun/ComfyUI2025_131891_trim_hit_heavy_keyframes_20260612_233101`
+- These reruns can score `candidate_ok` automatically, but visual review still rejected them for first/last use because the endpoints remained too neutral/front-facing to read as the requested action.
+- `scripts/generate_action_keyframe_candidates.py --source-edit-region lower_body` is available as a diagnostic lower-body masked endpoint path. The corrected mask avoids plain background panels, but the tested run endpoint still failed with `duplicate_silhouette_area_high`:
+  - `outputs_general_action_quality/action_keyframes_refcond_lower_body/ComfyUI2025_131891_trim_run_keyframes_20260612_233937`
+- Do not use local lower-body endpoint inpaint as an adoption path until it can produce a clean, visibly action-bearing `run` endpoint without redrawing the outfit or duplicating the lower-body silhouette.
+- General action comparison belongs in `docs/general_action_comparison.md`; keep walk ranking in `docs/walk_candidate_comparison.md`.
 
 ## Breakage Evaluation
 
@@ -609,8 +618,13 @@ Reject or retake when any of these are visible in contact sheets, side-by-side s
 - Weapon, hand, bow, string, or arrow breaks
 - Hit reaction has weak recoil or unclear impact
 - Animation reads as unrelated still images
+- First/last interpolation warps or teleports into the endpoint
+- Side-view source drifts into front-view during action generation
+- Background tone changes enough to read as scene/lighting drift
 
 Do not adopt a candidate just because the heuristic score is high. Treat `quality_gate.status == needs_retake_or_manual_review` as blocking until the side-by-side sheet and full contact sheet have been reviewed.
+
+When exporting a review package, record comparable fields in `manifest.json`: `motion_score`, `artifact_gate_summary`, `visual_decision`, `visual_labels`, and `godot_status`. Use visual labels such as `endpoint_warp_or_pose_teleport_review`, `side_to_front_view_drift_review`, `background_tone_drift_review`, and `lower_body_pale_afterimage_review`.
 
 ## Artifact Repair Gate
 

@@ -22,11 +22,20 @@ def test_export_review_package_writes_godot_manifest(tmp_path: Path, monkeypatch
         character_id="anima_00013",
         fps=8,
         comparison_sheets=[comparison],
+        visual_decision="selected_proof_only",
+        visual_labels=["endpoint_warp_or_pose_teleport_review"],
+        motion_score=12.5,
+        artifact_gate_summary="no_repair_needed: 3/3",
+        godot_status="ok",
     )
 
     manifest = Path(package["manifest"]).read_text(encoding="utf-8")
     assert '"frame_count": 3' in manifest
     assert '"action": "run"' in manifest
+    assert '"visual_decision": "selected_proof_only"' in manifest
+    assert '"endpoint_warp_or_pose_teleport_review"' in manifest
+    assert '"motion_score": 12.5' in manifest
+    assert '"godot_status": "ok"' in manifest
     assert (Path(package["review_dir"]) / "preview.gif").exists()
     assert (Path(package["review_dir"]) / "contact_sheet.png").exists()
     assert package["comparison_sheets"]

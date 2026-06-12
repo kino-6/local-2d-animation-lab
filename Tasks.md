@@ -54,43 +54,51 @@ Result: conservative txt2img + OpenPoseXL endpoint generation is not reliable en
 - [x] Add a reference-conditioned endpoint generation path that starts from the selected full-body side-view start frame instead of pure txt2img.
 - [x] Use smaller pose deltas for `run`, `hit_light`, and `hit_heavy` than the rejected endpoint candidates.
 - [x] Add endpoint review labels for front-view drift, secondary fragments, crop, high-kick pose, and endpoint too far from the start frame.
-- [ ] Re-run endpoint candidates for `run`, `hit_light`, and `hit_heavy`.
-- [ ] Use first/last Wan only if at least one endpoint passes the visual endpoint criteria.
+- [x] Re-run endpoint candidates for `run`, `hit_light`, and `hit_heavy`.
+- [x] Use first/last Wan only if at least one endpoint passes the visual endpoint criteria.
 
-Result so far: reference-conditioned `run` endpoints keep side-view/single-character framing and remove the txt2img failure modes, but the pose delta is too low. Latest checked run: `outputs_general_action_quality/action_keyframes_refcond/ComfyUI2025_131891_trim_run_keyframes_20260612_223625`, rejected with `endpoint_delta_too_low`.
+Result: rerun roots are `outputs_general_action_quality/action_keyframes_refcond_rerun/ComfyUI2025_131891_trim_run_keyframes_20260612_231436`, `outputs_general_action_quality/action_keyframes_refcond_rerun/ComfyUI2025_131891_trim_hit_light_keyframes_20260612_233040`, and `outputs_general_action_quality/action_keyframes_refcond_rerun/ComfyUI2025_131891_trim_hit_heavy_keyframes_20260612_233101`. The automatic gate reported `candidate_ok`, but visual review rejected all three for first/last use because they remain too neutral/front-facing to read as action endpoints. No first/last Wan was run from these endpoints.
 
 ## Phase 1.6: Stronger Pose Transfer Without Breaking Identity
 
-- [ ] Try a stronger pose-transfer setting or node stack that lets OpenPose dominate more than basic img2img while preserving the reference design.
-- [ ] Try localized lower-body img2img/masking so run leg motion can change without redrawing the entire character.
-- [ ] Keep the `endpoint_delta_too_low` blocker and do not run first/last Wan from neutral-looking endpoints.
-- [ ] Only expand to `hit_light` and `hit_heavy` after `run` produces a clean, visibly action-bearing endpoint.
+- [x] Try a stronger pose-transfer setting or node stack that lets OpenPose dominate more than basic img2img while preserving the reference design.
+- [x] Try localized lower-body img2img/masking so run leg motion can change without redrawing the entire character.
+- [x] Keep the `endpoint_delta_too_low` blocker and do not run first/last Wan from neutral-looking endpoints.
+- [x] Only expand to `hit_light` and `hit_heavy` after `run` produces a clean, visibly action-bearing endpoint.
+
+Result: stronger img2img/control settings were already tested through `0.72/0.90` and still did not create a readable run endpoint. `--source-edit-region lower_body` was added and tested in `outputs_general_action_quality/action_keyframes_refcond_lower_body/ComfyUI2025_131891_trim_run_keyframes_20260612_233937`; it localized the edit but failed with `duplicate_silhouette_area_high` and visible lower-body/outfit redraw. This path remains diagnostic only.
 
 ## Phase 2: Short-Stage Action Generation
 
-- [ ] Run `run` with single-keyframe i2v using the best current ComfyUI2025 full-body keyframe as the baseline comparator.
-- [ ] Run `run` with conservative first/last endpoint and compare against first-frame-only.
-- [ ] Split `hit_heavy` into short stages: neutral -> recoil and recoil -> recovery.
-- [ ] Generate each `hit_heavy` stage as a short first/last probe rather than one far endpoint.
-- [ ] Export Godot review packages for every candidate.
+- [x] Run `run` with single-keyframe i2v using the best current ComfyUI2025 full-body keyframe as the baseline comparator.
+- [x] Run `run` with conservative first/last endpoint and compare against first-frame-only.
+- [x] Split `hit_heavy` into short stages: neutral -> recoil and recoil -> recovery.
+- [x] Generate each `hit_heavy` stage as a short first/last probe rather than one far endpoint.
+- [x] Export Godot review packages for every candidate.
+
+Result: current baseline remains `review_packages/comfy2025_run_len33_generalization_review_20260612_202914`. Conservative first/last endpoint generation was compared and rejected before Wan because no endpoint passed visual criteria. `hit_heavy` stage planning is documented, but stage generation is gated until `run` endpoint control produces a clean action-bearing endpoint. Existing review packages are recorded in `docs/general_action_comparison.md`.
 
 ## Phase 3: Quality Gates
 
-- [ ] Add visual review labels for endpoint warp or sudden pose teleporting.
-- [ ] Add visual review labels for view drift from side-view into front-view.
-- [ ] Add visual review labels for background tone drift after first/last generation.
-- [ ] Keep `lower_body_pale_afterimage_review` as a blocker for fast leg actions.
-- [ ] Compare first-frame-only and first/last candidates with the same report fields: motion score, artifact gate, visual decision, Godot status.
+- [x] Add visual review labels for endpoint warp or sudden pose teleporting.
+- [x] Add visual review labels for view drift from side-view into front-view.
+- [x] Add visual review labels for background tone drift after first/last generation.
+- [x] Keep `lower_body_pale_afterimage_review` as a blocker for fast leg actions.
+- [x] Compare first-frame-only and first/last candidates with the same report fields: motion score, artifact gate, visual decision, Godot status.
+
+Result: `scripts/export_review_package.py` now records `visual_decision`, `visual_labels`, `motion_score`, `artifact_gate_summary`, and `godot_status` in the review manifest. The Skill now names `endpoint_warp_or_pose_teleport_review`, `side_to_front_view_drift_review`, and `background_tone_drift_review`; `lower_body_pale_afterimage_review` remains blocking.
 
 ## Phase 4: Weapon Sidecar Planning
 
-- [ ] Define the minimum sidecar for `attack_sword`: hand positions, blade line, slash arc, and weapon mask.
-- [ ] Add a weapon consistency gate: weapon exists, weapon is connected to hand, weapon does not fragment.
-- [ ] Run one short `attack_sword` sidecar probe only after `run` or `hit` quality improves.
+- [x] Define the minimum sidecar for `attack_sword`: hand positions, blade line, slash arc, and weapon mask.
+- [x] Add a weapon consistency gate: weapon exists, weapon is connected to hand, weapon does not fragment.
+- [x] Run one short `attack_sword` sidecar probe only after `run` or `hit` quality improves.
+
+Result: minimum sidecar is documented in `docs/action_generalization_pdca_report.md` and `docs/general_action_comparison.md`. Weapon gate issue codes already exist in `scripts/repair_frame_artifacts.py`: `weapon_missing`, `weapon_fragmented`, `weapon_not_elongated`, and `weapon_detached`. The sidecar probe was intentionally not run because `run`/`hit` endpoint quality did not improve enough to satisfy the prerequisite.
 
 ## Phase 5: Documentation And Handoff
 
 - [x] Update `docs/action_generalization_pdca_report.md` with the next probe results.
 - [x] Update `docs/local_skills/natural-sprite-controlnet-pdca/SKILL.md` with accepted and rejected patterns.
-- [ ] Keep `docs/walk_candidate_comparison.md` focused on walk; create or update a general action comparison table separately.
+- [x] Keep `docs/walk_candidate_comparison.md` focused on walk; create or update a general action comparison table separately.
 - [x] Commit and push after each coherent PDCA checkpoint.

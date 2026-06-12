@@ -182,3 +182,38 @@ Next implication:
 - Keep reference-conditioned endpoint generation as the preferred safety baseline.
 - Add stronger pose transfer or localized lower-body editing before expecting `run` endpoints from img2img.
 - Candidate next probes: masked lower-body img2img, a denoise/control grid beyond `0.72/0.90`, or a ControlNet/IPAdapter-style identity split where pose can dominate without losing the character.
+
+## Follow-Up: Remaining Tasks Execution
+
+I re-ran the open Phase 1.5 endpoint candidates after regenerating the ComfyUI2025 full-body reference because the older output roots had been cleaned up.
+
+Regenerated source:
+
+- `outputs_general_action_quality/fullbody_reference_regen/ComfyUI2025_131891_trim_20260612_231230/selected_reference/start_frame.png`
+- Visual note: usable as a diagnostic full-body reference, but not a strong side-view game sprite source. It is mostly front-facing, so it should not be treated as a production start frame.
+
+Reference-conditioned endpoint reruns:
+
+| Action | Candidate root | Automatic result | Visual decision |
+|---|---|---|---|
+| `run` | `outputs_general_action_quality/action_keyframes_refcond_rerun/ComfyUI2025_131891_trim_run_keyframes_20260612_231436` | both candidates `candidate_ok`, `source_delta` about `12.4` | Rejected for first/last. The endpoint stays near a neutral/front standing pose and does not read as a run keyframe. |
+| `hit_light` | `outputs_general_action_quality/action_keyframes_refcond_rerun/ComfyUI2025_131891_trim_hit_light_keyframes_20260612_233040` | both candidates `candidate_ok`, `source_delta` about `12.3-12.7` | Rejected for first/last. The image is stable, but not a readable hit reaction. |
+| `hit_heavy` | `outputs_general_action_quality/action_keyframes_refcond_rerun/ComfyUI2025_131891_trim_hit_heavy_keyframes_20260612_233101` | both candidates `candidate_ok`, `source_delta` about `12.3-12.5` | Rejected for first/last. The image is stable, but still too neutral/front-facing for a heavy hit endpoint. |
+
+Localized lower-body endpoint probe:
+
+- Implementation: `scripts/generate_action_keyframe_candidates.py --source-edit-region lower_body`.
+- The first mask implementation failed because the beige reference panel was treated as foreground. The mask was corrected to use subject-like color/saturation/dark-pixel extraction and a regression test was added.
+- Probe: `outputs_general_action_quality/action_keyframes_refcond_lower_body/ComfyUI2025_131891_trim_run_keyframes_20260612_233937`.
+- Result: rejected. The corrected mask localized the lower body, but the generated endpoint still failed with `duplicate_silhouette_area_high` and visibly redrew the outfit/leg structure instead of creating a clean run stride.
+
+Decision:
+
+- Do not run first/last Wan from these endpoints.
+- Keep `endpoint_delta_too_low` plus visual action-readability as a blocker. A numerically different endpoint is not enough if it does not read as the requested action.
+- Do not expand first/last endpoint work to `hit_light`, `hit_heavy`, or `attack_sword` until `run` produces a clean, visibly action-bearing endpoint.
+- For `attack_sword`, the minimum sidecar remains: hand anchors, blade line, slash arc, and weapon mask. The existing weapon consistency gate should continue to reject `weapon_missing`, `weapon_fragmented`, `weapon_not_elongated`, and `weapon_detached`.
+
+Comparison table:
+
+- `docs/general_action_comparison.md`

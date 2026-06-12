@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from PIL import Image
+from PIL import Image, ImageFilter
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
@@ -169,6 +169,12 @@ def main() -> None:
         help="Img2img denoise used only when --source-image is provided.",
     )
     parser.add_argument(
+        "--source-edit-region",
+        choices=("full", "lower_body"),
+        default="full",
+        help="Optional source-image region to redraw during img2img endpoint generation.",
+    )
+    parser.add_argument(
         "--min-endpoint-delta",
         default=12.0,
         type=float,
@@ -192,11 +198,17 @@ def main() -> None:
         path.mkdir(parents=True, exist_ok=True)
 
     source_image_name = None
+    source_mask_name = None
     prepared_source_image = None
+    source_edit_mask = None
     if args.source_image is not None:
         prepared_source_image = reference_dir / "source_image.png"
         _prepare_source_image(args.source_image, prepared_source_image, args.width, args.height)
         source_image_name = _upload_image(server, prepared_source_image)
+        if args.source_edit_region == "lower_body":
+            source_edit_mask = reference_dir / "source_lower_body_edit_mask.png"
+            _make_lower_body_edit_mask(prepared_source_image, source_edit_mask)
+            source_mask_name = _upload_image(server, source_edit_mask)
 
     report: dict[str, Any] = {
         "status": "started",
@@ -217,6 +229,8 @@ def main() -> None:
             "mode": "img2img_openpose" if source_image_name else "txt2img_openpose",
             "source_image": str(args.source_image) if args.source_image else None,
             "prepared_source_image": str(prepared_source_image) if prepared_source_image else None,
+            "source_edit_region": args.source_edit_region if source_image_name else None,
+            "source_edit_mask": str(source_edit_mask) if source_edit_mask else None,
             "denoise": args.denoise if source_image_name else None,
             "min_endpoint_delta": args.min_endpoint_delta if source_image_name else None,
             "identity_traits": args.identity_traits,
@@ -240,7 +254,16 @@ def main() -> None:
             pose_image.save(pose_path)
             pose_name = _upload_image(server, pose_path)
             positive = candidate.positive_template.format(identity_traits=args.identity_traits)
-            workflow = _workflow(args, positive, NEGATIVE_PROMPT, seed, pose_name, candidate.name, source_image_name)
+            workflow = _workflow(
+                args,
+                positive,
+                NEGATIVE_PROMPT,
+                seed,
+                pose_name,
+                candidate.name,
+                source_image_name,
+                source_mask_name,
+            )
             workflow_path = workflow_dir / f"{candidate.name}.json"
             workflow_path.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -464,9 +487,34 @@ def _workflow(
     pose_image_name: str,
     prefix: str,
     source_image_name: str | None,
+    source_mask_name: str | None = None,
 ) -> dict[str, Any]:
     if source_image_name is None:
         return _txt2img_workflow(args, positive, negative, seed, pose_image_name, prefix)
+    latent_ref: list[Any] = ["13", 0]
+    save_image_ref: list[Any] = ["6", 0]
+    mask_nodes: dict[str, Any] = {}
+    if source_mask_name is not None:
+        latent_ref = ["15", 0]
+        save_image_ref = ["16", 0]
+        mask_nodes = {
+            "14": {"class_type": "LoadImageMask", "inputs": {"image": source_mask_name, "channel": "red"}},
+            "15": {
+                "class_type": "VAEEncodeForInpaint",
+                "inputs": {"pixels": ["12", 0], "vae": ["1", 2], "mask": ["14", 0], "grow_mask_by": 4},
+            },
+            "16": {
+                "class_type": "ImageCompositeMasked",
+                "inputs": {
+                    "destination": ["12", 0],
+                    "source": ["6", 0],
+                    "x": 0,
+                    "y": 0,
+                    "resize_source": False,
+                    "mask": ["14", 0],
+                },
+            },
+        }
     return {
         "1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": args.checkpoint}},
         "2": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["1", 1], "text": positive}},
@@ -477,7 +525,7 @@ def _workflow(
                 "model": ["1", 0],
                 "positive": ["10", 0],
                 "negative": ["10", 1],
-                "latent_image": ["13", 0],
+                "latent_image": latent_ref,
                 "seed": seed,
                 "steps": args.steps,
                 "cfg": args.cfg,
@@ -487,7 +535,7 @@ def _workflow(
             },
         },
         "6": {"class_type": "VAEDecode", "inputs": {"samples": ["5", 0], "vae": ["1", 2]}},
-        "7": {"class_type": "SaveImage", "inputs": {"images": ["6", 0], "filename_prefix": f"action_keyframe_{prefix}"}},
+        "7": {"class_type": "SaveImage", "inputs": {"images": save_image_ref, "filename_prefix": f"action_keyframe_{prefix}"}},
         "8": {"class_type": "LoadImage", "inputs": {"image": pose_image_name}},
         "9": {"class_type": "ControlNetLoader", "inputs": {"control_net_name": args.controlnet}},
         "10": {
@@ -514,6 +562,7 @@ def _workflow(
             },
         },
         "13": {"class_type": "VAEEncode", "inputs": {"pixels": ["12", 0], "vae": ["1", 2]}},
+        **mask_nodes,
     }
 
 
@@ -531,6 +580,88 @@ def _prepare_source_image(source: Path, output: Path, width: int, height: int) -
     canvas.paste(resized, ((width - resized.width) // 2, (height - resized.height) // 2))
     canvas.save(output)
     return output
+
+
+def _make_lower_body_edit_mask(source: Path, output: Path) -> Path:
+    image = Image.open(source).convert("RGB")
+    foreground = _subject_mask(image)
+    bbox = foreground.getbbox()
+    mask = Image.new("L", image.size, 0)
+    if bbox is not None:
+        left, top, right, bottom = bbox
+        height = bottom - top
+        lower_top = round(top + height * 0.48)
+        padding_x = round((right - left) * 0.18)
+        left = max(0, left - padding_x)
+        right = min(image.width, right + padding_x)
+        lower = foreground.crop((left, lower_top, right, bottom))
+        mask.paste(lower, (left, lower_top))
+        mask = mask.filter(ImageFilter.MaxFilter(25)).filter(ImageFilter.GaussianBlur(7))
+    output.parent.mkdir(parents=True, exist_ok=True)
+    mask.save(output)
+    return output
+
+
+def _subject_mask(image: Image.Image) -> Image.Image:
+    out = Image.new("L", image.size, 0)
+    pixels = image.load()
+    mask = out.load()
+    for y in range(image.height):
+        for x in range(image.width):
+            red, green, blue = pixels[x, y]
+            high = max(red, green, blue)
+            low = min(red, green, blue)
+            saturation = high - low
+            brightness = (red + green + blue) / 3
+            dark_outfit = brightness < 105 and saturation > 12
+            saturated_outfit = saturation > 58 and brightness < 245
+            skin_or_hair = red > 145 and green > 95 and blue > 55 and red > blue + 20 and saturation > 30
+            if dark_outfit or saturated_outfit or skin_or_hair:
+                mask[x, y] = 255
+    components = _connected_components(out, min_pixels=80)
+    if not components:
+        return out
+    main = Image.new("L", image.size, 0)
+    main_pixels = main.load()
+    for x, y in components[0]["points"]:
+        main_pixels[x, y] = 255
+    return main
+
+
+def _connected_components(mask: Image.Image, min_pixels: int) -> list[dict[str, Any]]:
+    width, height = mask.size
+    pixels = mask.load()
+    seen: set[tuple[int, int]] = set()
+    components: list[dict[str, Any]] = []
+    for y in range(height):
+        for x in range(width):
+            if pixels[x, y] == 0 or (x, y) in seen:
+                continue
+            stack = [(x, y)]
+            seen.add((x, y))
+            points = []
+            while stack:
+                px, py = stack.pop()
+                points.append((px, py))
+                for nx, ny in ((px - 1, py), (px + 1, py), (px, py - 1), (px, py + 1)):
+                    if nx < 0 or ny < 0 or nx >= width or ny >= height:
+                        continue
+                    if pixels[nx, ny] == 0 or (nx, ny) in seen:
+                        continue
+                    seen.add((nx, ny))
+                    stack.append((nx, ny))
+            if len(points) < min_pixels:
+                continue
+            xs = [point[0] for point in points]
+            ys = [point[1] for point in points]
+            components.append(
+                {
+                    "points": points,
+                    "pixels": len(points),
+                    "bbox": (min(xs), min(ys), max(xs) + 1, max(ys) + 1),
+                }
+            )
+    return sorted(components, key=lambda item: int(item["pixels"]), reverse=True)
 
 
 def _mean_delta(left_path: Path, right_path: Path) -> float:

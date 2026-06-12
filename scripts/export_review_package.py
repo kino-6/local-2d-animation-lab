@@ -26,6 +26,11 @@ def main() -> None:
     parser.add_argument("--source-report", action="append", default=[], type=Path)
     parser.add_argument("--comparison-sheet", action="append", default=[], type=Path)
     parser.add_argument("--source-command", default="")
+    parser.add_argument("--visual-decision", default="unreviewed")
+    parser.add_argument("--visual-label", action="append", default=[])
+    parser.add_argument("--motion-score", default=None, type=float)
+    parser.add_argument("--artifact-gate-summary", default="")
+    parser.add_argument("--godot-status", default="")
     parser.add_argument("--validate-godot", action="store_true")
     parser.add_argument("--godot", default=shutil.which("godot") or "godot")
     parser.add_argument("--godot-project", default=Path("godot"), type=Path)
@@ -42,6 +47,11 @@ def main() -> None:
         source_reports=args.source_report,
         comparison_sheets=args.comparison_sheet,
         source_command=args.source_command,
+        visual_decision=args.visual_decision,
+        visual_labels=args.visual_label,
+        motion_score=args.motion_score,
+        artifact_gate_summary=args.artifact_gate_summary,
+        godot_status=args.godot_status,
         validate_godot=args.validate_godot,
         godot=args.godot,
         godot_project=args.godot_project,
@@ -61,6 +71,11 @@ def export_review_package(
     source_reports: list[Path] | None = None,
     comparison_sheets: list[Path] | None = None,
     source_command: str = "",
+    visual_decision: str = "unreviewed",
+    visual_labels: list[str] | None = None,
+    motion_score: float | None = None,
+    artifact_gate_summary: str = "",
+    godot_status: str = "",
     validate_godot: bool = False,
     godot: str = "godot",
     godot_project: Path = Path("godot"),
@@ -119,6 +134,14 @@ def export_review_package(
             "copied_reports": [_repo_relative(path) for path in copied_reports],
             "comparison_sheets": [_repo_relative(path) for path in copied_comparisons],
             "source_command": source_command,
+            "visual_decision": visual_decision,
+            "visual_labels": visual_labels or [],
+            "comparison_fields": {
+                "motion_score": motion_score,
+                "artifact_gate_summary": artifact_gate_summary,
+                "visual_decision": visual_decision,
+                "godot_status": godot_status,
+            },
         },
     }
     manifest_path = review_dir / "manifest.json"
@@ -135,6 +158,11 @@ def export_review_package(
         source_command=source_command,
         copied_reports=copied_reports,
         copied_comparisons=copied_comparisons,
+        visual_decision=visual_decision,
+        visual_labels=visual_labels or [],
+        motion_score=motion_score,
+        artifact_gate_summary=artifact_gate_summary,
+        godot_status=godot_status,
     )
     summary_path = review_dir / "review_summary.md"
     summary_path.write_text(summary, encoding="utf-8")
@@ -168,10 +196,19 @@ def _summary_text(
     source_command: str,
     copied_reports: list[Path],
     copied_comparisons: list[Path],
+    visual_decision: str,
+    visual_labels: list[str],
+    motion_score: float | None,
+    artifact_gate_summary: str,
+    godot_status: str,
 ) -> str:
     reports = "\n".join(f"- `{_repo_relative(path)}`" for path in copied_reports) or "- none"
     comparisons = "\n".join(f"- `{_repo_relative(path)}`" for path in copied_comparisons) or "- none"
     command = source_command or "not recorded"
+    labels = ", ".join(visual_labels) or "none"
+    motion = "not recorded" if motion_score is None else str(motion_score)
+    artifact_gate = artifact_gate_summary or "not recorded"
+    godot = godot_status or "not recorded"
     return f"""# Animation Review Package
 
 ## Summary
@@ -183,6 +220,11 @@ def _summary_text(
 - preview: `{_repo_relative(preview_gif)}`
 - contact_sheet: `{_repo_relative(contact_sheet)}`
 - godot_manifest: `{_repo_relative(manifest_path)}`
+- visual_decision: `{visual_decision}`
+- visual_labels: `{labels}`
+- motion_score: `{motion}`
+- artifact_gate_summary: `{artifact_gate}`
+- godot_status: `{godot}`
 
 ## Source Command
 
