@@ -13,9 +13,13 @@ from typing import Any
 
 from PIL import Image, ImageFilter
 
+from natural_sprite_lab.comfy_queue import add_queue_wait_arguments
+from natural_sprite_lab.comfy_queue import wait_for_queue_capacity_from_args
 from natural_sprite_lab.pose_templates import load_pose_sequence, render_pose_frame
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
+from natural_sprite_lab.progress import ProgressTimer
+from natural_sprite_lab.progress import progress_iter
 from natural_sprite_lab.weapon_guides import render_weapon_guide, weapon_guide_for
 
 
@@ -125,6 +129,7 @@ def main() -> None:
     parser.add_argument("--post-trim-start", default=0, type=int)
     parser.add_argument("--post-trim-end", default=None, type=int)
     parser.add_argument("--timeout-seconds", default=1800.0, type=float)
+    add_queue_wait_arguments(parser)
     args = parser.parse_args()
 
     run_label = args.run_label or f"{args.pose_template}_{args.mode}"
@@ -228,7 +233,7 @@ def main() -> None:
     report_path = run_dir / "wan_walk_i2v_report.json"
 
     try:
-        prompt_id = _queue_prompt(args.comfy_url.rstrip("/"), workflow)
+        prompt_id = _queue_prompt(args.comfy_url.rstrip("/"), workflow, args=args)
         report["prompt_id"] = prompt_id
         history = _wait_for_history(args.comfy_url.rstrip("/"), prompt_id, args.timeout_seconds)
         frame_paths = _download_frames(args.comfy_url.rstrip("/"), history, frames_dir)
@@ -695,7 +700,14 @@ def _upload_image(server_url: str, path: Path) -> str:
     return str(payload.get("name") or filename)
 
 
-def _queue_prompt(server_url: str, workflow: dict[str, Any]) -> str:
+def _queue_prompt(
+    server_url: str,
+    workflow: dict[str, Any],
+    *,
+    args: argparse.Namespace | None = None,
+) -> str:
+    if args is not None:
+        wait_for_queue_capacity_from_args(server_url, args)
     body = json.dumps({"prompt": workflow, "client_id": str(uuid.uuid4())}).encode("utf-8")
     request = urllib.request.Request(
         f"{server_url}/prompt",
@@ -708,26 +720,30 @@ def _queue_prompt(server_url: str, workflow: dict[str, Any]) -> str:
 
 
 def _wait_for_history(server_url: str, prompt_id: str, timeout_seconds: float) -> dict[str, Any]:
-    deadline = time.monotonic() + timeout_seconds
-    while time.monotonic() < deadline:
-        history = _get_json(server_url, f"/history/{prompt_id}", timeout=30)
-        if prompt_id in history:
-            item = history[prompt_id]
-            status = item.get("status", {})
-            if status.get("status_str") == "error":
-                raise RuntimeError(f"ComfyUI prompt failed: {status}")
-            node_errors = item.get("node_errors")
-            if node_errors:
-                raise RuntimeError(f"ComfyUI node errors: {node_errors}")
-            return item
-        time.sleep(2.0)
+    started = time.monotonic()
+    deadline = started + timeout_seconds
+    with ProgressTimer(total_seconds=timeout_seconds, desc=f"ComfyUI {prompt_id[:8]}") as progress:
+        while time.monotonic() < deadline:
+            history = _get_json(server_url, f"/history/{prompt_id}", timeout=30)
+            if prompt_id in history:
+                item = history[prompt_id]
+                status = item.get("status", {})
+                if status.get("status_str") == "error":
+                    raise RuntimeError(f"ComfyUI prompt failed: {status}")
+                node_errors = item.get("node_errors")
+                if node_errors:
+                    raise RuntimeError(f"ComfyUI node errors: {node_errors}")
+                return item
+            progress.update_elapsed(time.monotonic() - started)
+            time.sleep(2.0)
     raise TimeoutError(f"Timed out waiting for ComfyUI prompt: {prompt_id}")
 
 
 def _download_frames(server_url: str, history: dict[str, Any], frames_dir: Path) -> list[Path]:
     paths: list[Path] = []
     save_image_output = history.get("outputs", {}).get("14", {})
-    for image in save_image_output.get("images", []):
+    images = list(save_image_output.get("images", []))
+    for image in progress_iter(images, total=len(images), desc="download Wan frames", unit="frame"):
         image_bytes = _download_image(server_url, image)
         local = frames_dir / f"frame_{len(paths):03d}.png"
         Image.open(BytesIO(image_bytes)).convert("RGBA").save(local)

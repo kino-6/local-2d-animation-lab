@@ -13,8 +13,12 @@ from typing import Any
 
 from PIL import Image, ImageDraw
 
+from natural_sprite_lab.comfy_queue import add_queue_wait_arguments
+from natural_sprite_lab.comfy_queue import wait_for_queue_capacity_from_args
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
+from natural_sprite_lab.progress import ProgressTimer
+from natural_sprite_lab.progress import progress_iter
 
 
 POSITIVE_PROMPT = (
@@ -52,6 +56,7 @@ def main() -> None:
     parser.add_argument("--background-cleanup-min-channel", default=150, type=int)
     parser.add_argument("--positive", default=POSITIVE_PROMPT)
     parser.add_argument("--negative", default=NEGATIVE_PROMPT)
+    add_queue_wait_arguments(parser)
     parser.add_argument("--timeout-seconds", default=900.0, type=float)
     args = parser.parse_args()
 
@@ -96,7 +101,13 @@ def main() -> None:
     try:
         refined_paths: list[Path] = []
         copied_sources: list[Path] = []
-        for index, source in enumerate(source_frames):
+        indexed_sources = list(enumerate(source_frames))
+        for index, source in progress_iter(
+            indexed_sources,
+            total=len(indexed_sources),
+            desc="img2img refine frames",
+            unit="frame",
+        ):
             prepared_source = _prepare_source(
                 source,
                 source_dir / f"source_{index:03d}.png",
@@ -110,7 +121,7 @@ def main() -> None:
             workflow = _workflow(args, image_name, index)
             workflow_path = workflow_dir / f"frame_{index:03d}.json"
             workflow_path.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-            prompt_id = _queue_prompt(args.comfy_url.rstrip("/"), workflow)
+            prompt_id = _queue_prompt(args.comfy_url.rstrip("/"), workflow, args=args)
             report["prompt_ids"].append(prompt_id)
             history = _wait_for_history(args.comfy_url.rstrip("/"), prompt_id, args.timeout_seconds)
             image_bytes = _download_first_saveimage(args.comfy_url.rstrip("/"), history, "9")
@@ -279,7 +290,14 @@ def _upload_image(server_url: str, path: Path) -> str:
     return str(payload.get("name") or filename)
 
 
-def _queue_prompt(server_url: str, workflow: dict[str, Any]) -> str:
+def _queue_prompt(
+    server_url: str,
+    workflow: dict[str, Any],
+    *,
+    args: argparse.Namespace | None = None,
+) -> str:
+    if args is not None:
+        wait_for_queue_capacity_from_args(server_url, args)
     body = json.dumps({"prompt": workflow, "client_id": str(uuid.uuid4())}).encode("utf-8")
     request = urllib.request.Request(
         f"{server_url}/prompt",
@@ -292,20 +310,23 @@ def _queue_prompt(server_url: str, workflow: dict[str, Any]) -> str:
 
 
 def _wait_for_history(server_url: str, prompt_id: str, timeout_seconds: float) -> dict[str, Any]:
-    deadline = time.monotonic() + timeout_seconds
-    while time.monotonic() < deadline:
-        request = urllib.request.Request(f"{server_url}/history/{prompt_id}", method="GET")
-        history = json.loads(_open(request, timeout=30).decode("utf-8"))
-        if prompt_id in history:
-            item = history[prompt_id]
-            status = item.get("status", {})
-            if status.get("status_str") == "error":
-                raise RuntimeError(f"ComfyUI prompt failed: {status}")
-            node_errors = item.get("node_errors")
-            if node_errors:
-                raise RuntimeError(f"ComfyUI node errors: {node_errors}")
-            return item
-        time.sleep(1.0)
+    started = time.monotonic()
+    deadline = started + timeout_seconds
+    with ProgressTimer(total_seconds=timeout_seconds, desc=f"ComfyUI {prompt_id[:8]}") as progress:
+        while time.monotonic() < deadline:
+            request = urllib.request.Request(f"{server_url}/history/{prompt_id}", method="GET")
+            history = json.loads(_open(request, timeout=30).decode("utf-8"))
+            if prompt_id in history:
+                item = history[prompt_id]
+                status = item.get("status", {})
+                if status.get("status_str") == "error":
+                    raise RuntimeError(f"ComfyUI prompt failed: {status}")
+                node_errors = item.get("node_errors")
+                if node_errors:
+                    raise RuntimeError(f"ComfyUI node errors: {node_errors}")
+                return item
+            progress.update_elapsed(time.monotonic() - started)
+            time.sleep(1.0)
     raise TimeoutError(f"Timed out waiting for ComfyUI prompt: {prompt_id}")
 
 

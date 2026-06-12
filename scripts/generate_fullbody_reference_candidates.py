@@ -13,8 +13,12 @@ from typing import Any
 
 from PIL import Image
 
+from natural_sprite_lab.comfy_queue import add_queue_wait_arguments
+from natural_sprite_lab.comfy_queue import wait_for_queue_capacity_from_args
 from natural_sprite_lab.pose_templates import render_pose_frame
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
+from natural_sprite_lab.progress import ProgressTimer
+from natural_sprite_lab.progress import progress_iter
 from natural_sprite_lab.quality import analyze_frame_quality
 from natural_sprite_lab.quality.start_frame import make_start_frame_debug_sheet
 from natural_sprite_lab.quality.start_frame import prepare_clean_start_frame
@@ -108,6 +112,7 @@ def main() -> None:
     parser.add_argument("--seed", default=717220, type=int)
     parser.add_argument("--controlnet-strength", default=0.72, type=float)
     parser.add_argument("--identity-traits", default=DEFAULT_IDENTITY_TRAITS)
+    add_queue_wait_arguments(parser)
     parser.add_argument("--timeout-seconds", default=900.0, type=float)
     args = parser.parse_args()
 
@@ -144,7 +149,13 @@ def main() -> None:
     report_path = run_dir / "reference_candidates_report.json"
 
     try:
-        for index, candidate in enumerate(CANDIDATES):
+        candidates = list(enumerate(CANDIDATES))
+        for index, candidate in progress_iter(
+            candidates,
+            total=len(candidates),
+            desc="fullbody reference candidates",
+            unit="candidate",
+        ):
             seed = args.seed + candidate.seed_offset
             pose_path = pose_dir / f"{candidate.name}.png"
             pose_image = _pose_image(candidate.pose_variant, args.width, args.height)
@@ -155,7 +166,7 @@ def main() -> None:
             workflow_path = workflow_dir / f"{candidate.name}.json"
             workflow_path.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-            prompt_id = _queue_prompt(server, workflow)
+            prompt_id = _queue_prompt(server, workflow, args=args)
             history = _wait_for_history(server, prompt_id, args.timeout_seconds)
             image_bytes = _download_first_saveimage(server, history, "7")
             source_path = source_dir / f"{index:02d}_{candidate.name}.png"
@@ -424,7 +435,14 @@ def _upload_image(server_url: str, path: Path) -> str:
     return str(payload.get("name") or filename)
 
 
-def _queue_prompt(server_url: str, workflow: dict[str, Any]) -> str:
+def _queue_prompt(
+    server_url: str,
+    workflow: dict[str, Any],
+    *,
+    args: argparse.Namespace | None = None,
+) -> str:
+    if args is not None:
+        wait_for_queue_capacity_from_args(server_url, args)
     body = json.dumps({"prompt": workflow, "client_id": str(uuid.uuid4())}).encode("utf-8")
     request = urllib.request.Request(
         f"{server_url}/prompt",
@@ -437,20 +455,23 @@ def _queue_prompt(server_url: str, workflow: dict[str, Any]) -> str:
 
 
 def _wait_for_history(server_url: str, prompt_id: str, timeout_seconds: float) -> dict[str, Any]:
-    deadline = time.monotonic() + timeout_seconds
-    while time.monotonic() < deadline:
-        request = urllib.request.Request(f"{server_url}/history/{prompt_id}", method="GET")
-        history = json.loads(_open(request, timeout=30).decode("utf-8"))
-        if prompt_id in history:
-            item = history[prompt_id]
-            status = item.get("status", {})
-            if status.get("status_str") == "error":
-                raise RuntimeError(f"ComfyUI prompt failed: {status}")
-            node_errors = item.get("node_errors")
-            if node_errors:
-                raise RuntimeError(f"ComfyUI node errors: {node_errors}")
-            return item
-        time.sleep(1.0)
+    started = time.monotonic()
+    deadline = started + timeout_seconds
+    with ProgressTimer(total_seconds=timeout_seconds, desc=f"ComfyUI {prompt_id[:8]}") as progress:
+        while time.monotonic() < deadline:
+            request = urllib.request.Request(f"{server_url}/history/{prompt_id}", method="GET")
+            history = json.loads(_open(request, timeout=30).decode("utf-8"))
+            if prompt_id in history:
+                item = history[prompt_id]
+                status = item.get("status", {})
+                if status.get("status_str") == "error":
+                    raise RuntimeError(f"ComfyUI prompt failed: {status}")
+                node_errors = item.get("node_errors")
+                if node_errors:
+                    raise RuntimeError(f"ComfyUI node errors: {node_errors}")
+                return item
+            progress.update_elapsed(time.monotonic() - started)
+            time.sleep(1.0)
     raise TimeoutError(f"Timed out waiting for ComfyUI prompt: {prompt_id}")
 
 

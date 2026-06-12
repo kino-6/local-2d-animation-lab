@@ -21,8 +21,10 @@ from generate_fullbody_reference_candidates import _select_candidate
 from generate_fullbody_reference_candidates import _upload_image
 from generate_fullbody_reference_candidates import _wait_for_history
 from generate_fullbody_reference_candidates import _workflow as _txt2img_workflow
+from natural_sprite_lab.comfy_queue import add_queue_wait_arguments
 from natural_sprite_lab.pose_templates import render_pose_frame
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
+from natural_sprite_lab.progress import progress_iter
 from natural_sprite_lab.quality import analyze_frame_quality
 from natural_sprite_lab.quality.start_frame import make_start_frame_debug_sheet
 from natural_sprite_lab.quality.start_frame import prepare_clean_start_frame
@@ -172,6 +174,7 @@ def main() -> None:
         type=float,
         help="Minimum mean pixel delta from --source-image for an endpoint to count as action-bearing.",
     )
+    add_queue_wait_arguments(parser)
     parser.add_argument("--identity-traits", default=DEFAULT_IDENTITY_TRAITS)
     parser.add_argument("--timeout-seconds", default=900.0, type=float)
     args = parser.parse_args()
@@ -224,7 +227,13 @@ def main() -> None:
     report_path = run_dir / "action_keyframe_report.json"
 
     try:
-        for index, candidate in enumerate(ACTION_CANDIDATES[args.action]):
+        candidates = list(enumerate(ACTION_CANDIDATES[args.action]))
+        for index, candidate in progress_iter(
+            candidates,
+            total=len(candidates),
+            desc=f"{args.action} endpoint candidates",
+            unit="candidate",
+        ):
             seed = args.seed + candidate.seed_offset
             pose_path = pose_dir / f"{candidate.name}.png"
             pose_image = _pose_image(candidate.pose_variant, args.width, args.height)
@@ -235,7 +244,7 @@ def main() -> None:
             workflow_path = workflow_dir / f"{candidate.name}.json"
             workflow_path.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-            prompt_id = _queue_prompt(server, workflow)
+            prompt_id = _queue_prompt(server, workflow, args=args)
             history = _wait_for_history(server, prompt_id, args.timeout_seconds)
             image_bytes = _download_first_saveimage(server, history, "7")
             source_path = source_dir / f"{index:02d}_{candidate.name}.png"
