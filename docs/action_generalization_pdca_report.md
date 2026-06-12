@@ -9,6 +9,12 @@ This report checks whether the single-keyframe Wan i2v lesson from walk generati
 - Key issue: Wan i2v preserves start-image framing, so the bust-up input is not directly suitable for full-body 2D game animation.
 - Mitigation: generate a 1024 full-body side-view keyframe first, then run single-keyframe Wan i2v for multiple action types.
 
+External notes used:
+
+- Wan2.1 / Wan i2v workflows support image-conditioned video generation, including first/last-frame style endpoint control in compatible workflows.
+- Sprite-sheet research frames the problem as reference character plus pose/action sequence, not pure prompt generation.
+- Community sprite workflows emphasize preparing full-body character references before animation and treating weapon/action details as separate controlled elements.
+
 Full-body keyframe:
 
 - Output root: `outputs_generalization_pdca/fullbody_reference/ComfyUI2025_131891_trim_20260612_200239`
@@ -62,3 +68,42 @@ Action scope after this probe:
 - Good candidates for the current route: `walk`, `run`, `idle`, `turn`, `hit_light`, `hit_heavy`.
 - Requires extra action guidance: `attack_sword`, `attack_axe`, `attack_bow`, weapon throws, projectile attacks.
 - Quality improvement should focus next on reducing afterimages for fast lower-body motion and preventing view drift for idle/turn actions.
+
+## Follow-Up: First/Last Keyframe Probe
+
+External workflow notes suggested using explicit action endpoints when first-frame-only i2v cannot control the destination pose. I implemented a local endpoint-keyframe generator and tested it on the ComfyUI2025 character.
+
+Implementation:
+
+- Added `scripts/generate_action_keyframe_candidates.py`.
+- The script generates action endpoint candidates with OpenPoseXL + `novaOrangeXL_v120.safetensors`.
+- Supported initial actions: `run`, `hit_heavy`, `attack_sword`.
+- It writes candidate reports, contact sheets, and a selected `end_frame.png` for Wan first/last-frame generation.
+
+Generated endpoint keyframes:
+
+- Run endpoint: `outputs_generalization_pdca/action_keyframes/ComfyUI2025_131891_trim_run_keyframes_20260612_211813/selected_keyframe/end_frame.png`
+- Hit endpoint: `outputs_generalization_pdca/action_keyframes/ComfyUI2025_131891_trim_hit_heavy_keyframes_20260612_211850/selected_keyframe/end_frame.png`
+
+First/last probes:
+
+| Action | Review package | Gate summary | Visual decision |
+|---|---|---|---|
+| `run` first/last | `review_packages/comfy2025_run_len33_first_last_review_20260612_213101` | full gate `no_repair_needed: 33/33`, Godot `ok: true` | Not adopted. Endpoint control worked, but the clip moves too slowly at first, then warps into the endpoint with dark/green smearing. First-frame-only `run` is still better as an action proof. |
+| `hit_heavy` first/last | `review_packages/comfy2025_hit_heavy_len33_first_last_review_20260612_213306` | full gate `retake_required: 4/33`, Godot `ok: true` | Rejected. The endpoint helps the action arc, but the large crouch transition creates duplicate-leg and lower-body silhouette failures. |
+
+Findings:
+
+- First/last keyframes are useful for action intent, but only if the endpoint keyframe is itself sprite-like, side-view, clean, and close enough to the start framing.
+- Bad or over-dramatic endpoint keyframes make Wan interpolate through broad smears rather than produce clean game frames.
+- The automatic gate can miss endpoint-induced visual warping when each individual frame has a clean isolated foreground. Visual contact-sheet review remains mandatory.
+- For `run`, the next endpoint should be a conservative stride pose, not a dramatic kick/high-stride illustration.
+- For `hit_heavy`, use two short probes or a 3-stage key pose plan: neutral -> recoil -> low recovery. A single far endpoint is too much motion for clean first/last interpolation.
+
+Updated local strategy:
+
+```text
+single-keyframe i2v: best for initial action proof and subject preservation
+first/last i2v: use only with conservative endpoint keyframes
+weapon actions: require weapon sidecar/key-pose control before first/last
+```

@@ -252,6 +252,13 @@ uv run python scripts/run_wan_walk_i2v.py \
 - Strong semantic but failed quality: `review_packages/comfy2025_hit_heavy_len33_generalization_review_20260612_203118`. Hit reactions need tighter duration or key-pose guidance to avoid smearing through large rotations.
 - Weapon actions are a separate class. `review_packages/comfy2025_attack_sword_len33_generalization_review_20260612_203324` invented a readable glowing blade, but failed full-gate quality and needs weapon/action sidecar control rather than prompt-only generation.
 - If the user-provided image is bust-up or cropped, do not pass it directly to Wan for game assets. First generate or select a full-body side-view keyframe, then run i2v.
+- First/last-frame probing is implemented via `scripts/generate_action_keyframe_candidates.py` plus `scripts/run_wan_walk_i2v.py --mode first_last`.
+- Use first/last only when the endpoint keyframe is conservative, side-view, sprite-like, and close to the start framing. The 2026-06-12 ComfyUI2025 probe showed that dramatic endpoints can force Wan into slow buildup plus smeared warp frames even when the artifact gate reports `no_repair_needed`.
+- Negative first/last evidence:
+  - `review_packages/comfy2025_run_len33_first_last_review_20260612_213101`: full gate clean, but visual review rejected due endpoint warp/dark smearing.
+  - `review_packages/comfy2025_hit_heavy_len33_first_last_review_20260612_213306`: rejected with `retake_required: 4/33`.
+- For `run`, prefer single-keyframe i2v until a conservative stride endpoint is available.
+- For `hit_heavy`, split the action into shorter stages instead of one far first/last endpoint: neutral -> recoil -> low recovery.
 - Next retake should preserve the subject under stronger motion. Do not send the v5 full-source result to Image2Image polish before foreground density and foot readability are fixed.
 - Do not use v5 at VACE strength `1.0` as the next full-source default. It increases motion but produced hard failures and `retake_required: 7/33`.
 - Do not use v6 moderate-contact as the next full-source default. It produced more hard failures than v5 and did not reduce copied artifacts.

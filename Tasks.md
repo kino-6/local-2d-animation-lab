@@ -161,3 +161,17 @@ Use the following outside projects as the next planning anchor:
 - [x] Next: audit `comfyui-2d-character-pipeline` and map its staged workflow to our local pipeline.
 - [x] Next: implement pose-alignment diagnostics before running more generation.
 - [x] Next: implement confidence-aware control rendering for feet/legs before running another broad seed search.
+
+## Phase 12: Research-Grounded General Action Workflow
+
+- [x] Record the external workflow lesson: cropped/bust-up references need a full-body side-view keyframe before Wan animation.
+- [x] Record the external workflow lesson: first/last keyframes can constrain action endpoints better than first-frame-only i2v.
+- [x] Record the external workflow lesson: weapon actions need weapon/action sidecar guidance beyond prompt-only generation.
+- [x] Implement action endpoint keyframe generation for at least `run`, `hit_heavy`, and `attack_sword`.
+- [x] Generate a `run` endpoint keyframe from the ComfyUI2025 full-body reference.
+- [x] Generate a `hit_heavy` endpoint keyframe from the ComfyUI2025 full-body reference.
+- [x] Run Wan first/last-frame generation for `run` and compare against the first-frame-only `run` probe.
+- [x] Run Wan first/last-frame generation for `hit_heavy` and compare against the first-frame-only `hit_heavy` probe.
+- [x] Gate the first/last probes with BiRefNet, span selection, strict artifact labels, and Godot review packages.
+- [x] Update the Skill with when to use single-keyframe i2v versus first/last keyframes versus weapon sidecar control.
+- [x] Keep generated outputs ignored; commit only durable scripts, Tasks, and reports.
