@@ -566,6 +566,36 @@ Dedicated reports:
 - `docs/run_template_vs_walk_template_report.md`
 - `docs/next_phase_run_generation_pdca_report.md`
 
+General action endpoint findings from the 2026-06-12 conservative endpoint probe:
+
+- The active general-action objective is still: create 2D game animation assets from a character reference image plus a natural-language action request.
+- Treat the input as design reference, not pixels to puppet. Keep the main route on generated video workflows, not rig or cutout animation.
+- `novaOrangeXL_v120.safetensors` remains the default still-image checkpoint for local endpoint/keyframe work unless a checkpoint comparison proves otherwise.
+- Single-keyframe Wan i2v remains the best first proof route for subject preservation.
+- First/last Wan i2v is allowed only after the endpoint image itself passes visual review.
+- Conservative txt2img + OpenPoseXL endpoint generation was tested for `run`, `hit_light`, and `hit_heavy`:
+  - `outputs_general_action_quality/action_keyframes/ComfyUI2025_131891_trim_run_keyframes_20260612_221908`
+  - `outputs_general_action_quality/action_keyframes/ComfyUI2025_131891_trim_hit_light_keyframes_20260612_221944`
+  - `outputs_general_action_quality/action_keyframes/ComfyUI2025_131891_trim_hit_heavy_keyframes_20260612_222004`
+- Result: do not use these endpoints for first/last Wan. Even with low-stride and compact-recoil prompts, txt2img + OpenPose still drifted into front-view, illustration-like poses, high kicks, cropped dramatic crouches, or secondary character fragments.
+- Endpoint acceptance criteria are stricter than generic still-image quality:
+  - exactly one full-body character
+  - side-view or near-side-view matching the start frame
+  - complete feet/hands and no crop
+  - no secondary face, tiny character, split silhouette, or extra foreground component
+  - endpoint pose is close enough to the start frame for Wan to interpolate without warping
+  - action reads as a game sprite key pose, not a standalone illustration
+- If a candidate endpoint is `manual_review_or_retake`, front-view, cropped, high-kick, crouched too far, or contains secondary fragments, do not run first/last Wan with it.
+- Next preferred endpoint route: reference-conditioned/img2img endpoint generation from the selected full-body side-view start frame, with a smaller pose delta than pure txt2img endpoint generation.
+- Reference-conditioned endpoint generation was added to `scripts/generate_action_keyframe_candidates.py` via `--source-image`.
+- The route uses img2img latent initialization plus OpenPose ControlNet. It is safer than txt2img for identity/framing, but the first `run` probes showed insufficient action pose transfer:
+  - `outputs_general_action_quality/action_keyframes_refcond/ComfyUI2025_131891_trim_run_keyframes_20260612_222745`
+  - `outputs_general_action_quality/action_keyframes_refcond/ComfyUI2025_131891_trim_run_keyframes_20260612_222924`
+  - `outputs_general_action_quality/action_keyframes_refcond/ComfyUI2025_131891_trim_run_keyframes_20260612_223120`
+  - `outputs_general_action_quality/action_keyframes_refcond/ComfyUI2025_131891_trim_run_keyframes_20260612_223625`
+- Treat `endpoint_delta_too_low` as a blocker. A clean endpoint is not useful for first/last Wan if it stays too close to the source pose.
+- Current implication: reference-conditioned endpoints need stronger pose transfer or localized lower-body editing before they can drive `run`; do not expand this path to `hit` or weapon actions until `run` can move without breaking.
+
 ## Breakage Evaluation
 
 Reject or retake when any of these are visible in contact sheets, side-by-side sheets, evaluation reports, or Godot playback:
