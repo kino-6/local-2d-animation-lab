@@ -30,6 +30,18 @@ Keep local generated outputs under ignored output/review directories.
 - [x] Do not keep searching seeds/prompts before improving input reference, control representation, or motion source.
 - [x] Do not switch back to rig/cutout animation as the primary answer.
 - [x] Do not accept a candidate only because heuristic gates pass; contact sheet and preview review are required.
+- [x] Do not treat prompt-only tuning as the main quality-improvement strategy.
+
+## External Research Baseline
+
+Use the following outside projects as the next planning anchor:
+
+- [ ] `comfyui-2d-character-pipeline`: inspect local applicability of the staged ComfyUI route: pose edit, Wan video, BiRefNet, sprite sheet export, layered outputs.
+- [ ] `Sprite Sheet Diffusion`: translate the task definition into this project: reference image plus pose sequence produces a coherent sprite-sheet action sequence.
+- [ ] `MusePose`: evaluate pose alignment as a first-class preprocessing step before generation.
+- [ ] `MimicMotion`: evaluate confidence-aware pose guidance and regional emphasis as the model-side lesson for hands/feet/legs.
+- [ ] `Wan2.2 Animate`: evaluate whether its animation/replacement preprocessing is a better local subject-preservation route than current VACE.
+- [ ] Keep all imported lessons local-first; external services may inform UX or evaluation, but not become the required production path.
 
 ## Phase 1: Full-Body Character Reference
 
@@ -93,7 +105,48 @@ Keep local generated outputs under ignored output/review directories.
 - [x] PDCA report states why the current candidate is better than the 512 baseline while still not adopted.
 - [x] Skill document names the current walk-quality workflow and known rejection boundaries.
 
-## Current Next Action
+## Phase 7: External Workflow Audit
+
+- [ ] Clone or inspect `comfyui-2d-character-pipeline` without mixing its generated outputs into this repository.
+- [ ] Map its workflow stages to this project's stages: reference preparation, pose/control authoring, video generation, foreground extraction, sprite sheet export, review package.
+- [ ] Record which ComfyUI nodes/models are already installed locally and which are missing.
+- [ ] Identify whether its Wan workflow uses stronger subject preservation than our current VACE route.
+- [ ] Identify whether its layered sprite-sheet output can become a later export stage without changing the core generation route.
+- [ ] Write a short audit section in `docs/next_phase_run_generation_pdca_report.md`.
+
+## Phase 8: Reference and Pose Alignment
+
+- [ ] Implement or prototype a pose-alignment report inspired by MusePose: compare source pose scale, hip height, shoulder width, ankle baseline, and facing direction against the selected full-body reference.
+- [ ] Add an alignment transform for imported or synthetic pose sequences before rendering control video.
+- [ ] Add per-frame alignment diagnostics to the motion source report.
+- [ ] Reject motion sources whose aligned foot baseline or body scale drifts beyond a configured threshold.
+- [ ] Rebuild the current v4 and v5 walk controls through the alignment step and compare against the existing controls.
+
+## Phase 9: Confidence-Aware Control
+
+- [ ] Extend local pose templates or imported pose JSON to carry confidence values for hips, knees, ankles, shoulders, elbows, wrists, and head.
+- [ ] Render confidence-aware lower-body controls where uncertain keypoints are dimmer and high-confidence foot contact is clearer.
+- [ ] Add regional emphasis for feet/ankles and hands without drawing copyable guide shapes into the character area.
+- [ ] Compare current `vace_walk_lower_hint` against at least one confidence-aware variant at the same seed, length, and resolution.
+- [ ] Gate the comparison on foreground preservation, guide leakage, foot readability, and foreground-normalized motion.
+
+## Phase 10: Subject Preservation Retake
+
+- [ ] Solve the latest blocker: v5/contact-swing at `vace_strength=0.55` improves motion but fails full-source foreground preservation with `foreground_too_small: 51`.
+- [ ] Test a subject-preservation retake that keeps v5 motion but prevents faint legs/feet and foreground shrinkage.
+- [ ] Test at least one intermediate VACE strength between `0.55` and `0.75`.
+- [ ] Test one stronger-reference route before more motion-source changes: improved start frame, subject mask/reference conditioning, or Wan2.2 Animate if locally feasible.
+- [ ] Do not run Image2Image polish until the source generation has readable legs/feet and full-source foreground stability.
+- [ ] Promote a candidate only if full 121-frame labeled gate reaches `retake_required: 0/121`, selected span has no low-motion penalty, and visual review passes.
+
+## Phase 11: Sprite-Sheet Task Framing
+
+- [ ] Create a benchmark manifest that matches Sprite Sheet Diffusion's framing: `reference_image`, `pose_sequence`, `action_name`, `expected_sprite_sheet`, `review_outputs`.
+- [ ] Add a compact comparison table for every walk candidate: source route, control style, resolution, length, motion score, retake count, candidate status, visual decision.
+- [ ] Keep selected 16-frame proofs as evidence, but require a separate full 120-frame adoption row.
+- [ ] Add placeholders for later actions beyond walk: run, idle, sword attack, axe attack, bow attack, hit light, hit heavy, knockback.
+
+## Current Next Action: Research-Grounded Plan
 
 - [x] Start with Phase 1: create a high-quality full-body side-view reference before running more broad Wan seed/prompt searches.
 - [x] Continue with Phase 2: create a soft/silhouette walk control style that avoids visible RGB skeleton-line leakage.
@@ -104,3 +157,6 @@ Keep local generated outputs under ignored output/review directories.
 - [x] Next: use `run_synthetic_sideview_walk_v5_contact_swing` with `--vace-strength 0.55` as the next full-source 121-frame probe; short selected proof is `review_packages/phase3_v5_contact_swing_vace055_selected_review_20260612_003057`.
 - [ ] Next: solve full-source foreground preservation; the v5/contact-swing 121 probe fixed low motion but failed with `foreground_too_small: 51`.
 - [ ] Next: test a subject-preservation retake that keeps v5 motion while preventing faint legs/feet and foreground shrinkage.
+- [ ] Next: audit `comfyui-2d-character-pipeline` and map its staged workflow to our local pipeline.
+- [ ] Next: implement pose-alignment diagnostics before running more generation.
+- [ ] Next: implement confidence-aware control rendering for feet/legs before running another broad seed search.
