@@ -40,6 +40,15 @@ def test_workflow_routes_controlnet_conditioning_into_sampler() -> None:
     assert workflow["10"]["inputs"]["control_net"] == ["9", 0]
 
 
+def test_candidate_prompt_templates_accept_custom_identity_traits() -> None:
+    template = _MODULE.CANDIDATES[0].positive_template
+
+    positive = template.format(identity_traits="blonde character with black and yellow hooded armor")
+
+    assert "blonde character with black and yellow hooded armor" in positive
+    assert "brown bob haircut" not in positive
+
+
 def test_assess_candidate_accepts_full_body_clean_candidate() -> None:
     assessment = _assess_candidate(
         {

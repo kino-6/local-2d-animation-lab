@@ -246,6 +246,12 @@ uv run python scripts/run_wan_walk_i2v.py \
 - Evidence: strict full 121 gate reports `retake_required: 0/121`, selected foreground motion `18.208`, and Godot `ok: true`.
 - Do not mark it adopted yet. The strict visual labels report `lower_body_pale_afterimage_review: 12`, so it remains `selected_proof_only`.
 - Lesson: removing copyable pose-control video improved identity and foreground preservation more than raising resolution or VACE strength. The next walk PDCA should reduce pale lower-body afterimages in Wan i2v without returning to VACE guide leakage.
+- Generalization probe with `assets/reference/ComfyUI2025_131891_trim.png`: `docs/action_generalization_pdca_report.md`.
+- The single-keyframe Wan i2v route is not walk-only. It produced useful probes for `idle`, `run`, `hit_heavy`, and partial `attack_sword`.
+- Best generalization evidence: `review_packages/comfy2025_run_len33_generalization_review_20260612_202914` reads as a run and keeps identity, but remains `selected_proof_only` due lower-body afterimages.
+- Strong semantic but failed quality: `review_packages/comfy2025_hit_heavy_len33_generalization_review_20260612_203118`. Hit reactions need tighter duration or key-pose guidance to avoid smearing through large rotations.
+- Weapon actions are a separate class. `review_packages/comfy2025_attack_sword_len33_generalization_review_20260612_203324` invented a readable glowing blade, but failed full-gate quality and needs weapon/action sidecar control rather than prompt-only generation.
+- If the user-provided image is bust-up or cropped, do not pass it directly to Wan for game assets. First generate or select a full-body side-view keyframe, then run i2v.
 - Next retake should preserve the subject under stronger motion. Do not send the v5 full-source result to Image2Image polish before foreground density and foot readability are fixed.
 - Do not use v5 at VACE strength `1.0` as the next full-source default. It increases motion but produced hard failures and `retake_required: 7/33`.
 - Do not use v6 moderate-contact as the next full-source default. It produced more hard failures than v5 and did not reduce copied artifacts.

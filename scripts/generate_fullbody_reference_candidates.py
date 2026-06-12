@@ -20,7 +20,7 @@ from natural_sprite_lab.quality.start_frame import make_start_frame_debug_sheet
 from natural_sprite_lab.quality.start_frame import prepare_clean_start_frame
 
 
-IDENTITY_TRAITS = (
+DEFAULT_IDENTITY_TRAITS = (
     "same character design as the provided reference image, young anime girl, warm brown bob haircut, "
     "small pink hair clip, large amber eyes, white sailor school uniform, dark navy sailor collar, "
     "red necktie, dark pleated skirt, dark socks, brown loafers"
@@ -39,7 +39,7 @@ NEGATIVE_PROMPT = (
 class ReferenceCandidate:
     name: str
     pose_variant: str
-    positive: str
+    positive_template: str
     seed_offset: int
 
 
@@ -48,10 +48,10 @@ CANDIDATES = (
         name="strict_side_profile",
         pose_variant="strict_side",
         seed_offset=0,
-        positive=(
+        positive_template=(
             "masterpiece, best quality, polished anime game sprite animation start frame, one single character only, "
             "full body, strict right-facing side profile, profile face, one visible eye, nose points right, torso side-on, "
-            f"feet fully visible, centered on canvas, clean white background, crisp cel shading, {IDENTITY_TRAITS}, "
+            "feet fully visible, centered on canvas, clean white background, crisp cel shading, {identity_traits}, "
             "neutral standing walk-ready pose, readable silhouette, complete hands and shoes, no model sheet"
         ),
     ),
@@ -59,10 +59,10 @@ CANDIDATES = (
         name="slight_three_quarter_side",
         pose_variant="three_quarter_side",
         seed_offset=1000,
-        positive=(
+        positive_template=(
             "masterpiece, best quality, polished anime game sprite animation start frame, one single character only, "
             "full body, slight 3/4 side view facing right, body turned to the right, not front-facing, "
-            f"feet fully visible, centered on canvas, clean white background, crisp cel shading, {IDENTITY_TRAITS}, "
+            "feet fully visible, centered on canvas, clean white background, crisp cel shading, {identity_traits}, "
             "neutral standing walk-ready pose, readable silhouette, complete hands and shoes, no model sheet"
         ),
     ),
@@ -70,10 +70,10 @@ CANDIDATES = (
         name="strict_side_profile_retake",
         pose_variant="strict_side",
         seed_offset=2000,
-        positive=(
+        positive_template=(
             "masterpiece, best quality, clean anime game sprite animation start frame, exactly one full-body girl, "
             "right-facing side view only, profile silhouette, profile face, one eye visible, nose and shoes point right, "
-            f"plain white background, no border, no guide line, crisp cel shading, {IDENTITY_TRAITS}, "
+            "plain white background, no border, no guide line, crisp cel shading, {identity_traits}, "
             "standing walk-ready pose with both shoes fully visible"
         ),
     ),
@@ -81,10 +81,10 @@ CANDIDATES = (
         name="side_walk_ready_retake",
         pose_variant="strict_side",
         seed_offset=3000,
-        positive=(
+        positive_template=(
             "masterpiece, best quality, single full-body anime game character, right-facing side-view walk start frame, "
             "not a character sheet, not a turnaround, one figure centered, full body from head to shoes, profile face, "
-            f"clean white background, crisp cel shading, {IDENTITY_TRAITS}, readable feet, dark socks and brown loafers"
+            "clean white background, crisp cel shading, {identity_traits}, readable feet and shoes"
         ),
     ),
 )
@@ -107,6 +107,7 @@ def main() -> None:
     parser.add_argument("--scheduler", default="karras")
     parser.add_argument("--seed", default=717220, type=int)
     parser.add_argument("--controlnet-strength", default=0.72, type=float)
+    parser.add_argument("--identity-traits", default=DEFAULT_IDENTITY_TRAITS)
     parser.add_argument("--timeout-seconds", default=900.0, type=float)
     args = parser.parse_args()
 
@@ -135,7 +136,7 @@ def main() -> None:
             "scheduler": args.scheduler,
             "seed": args.seed,
             "controlnet_strength": args.controlnet_strength,
-            "identity_traits": IDENTITY_TRAITS,
+            "identity_traits": args.identity_traits,
             "negative": NEGATIVE_PROMPT,
         },
         "candidates": [],
@@ -149,7 +150,8 @@ def main() -> None:
             pose_image = _pose_image(candidate.pose_variant, args.width, args.height)
             pose_image.save(pose_path)
             pose_name = _upload_image(server, pose_path)
-            workflow = _workflow(args, candidate.positive, NEGATIVE_PROMPT, seed, pose_name, candidate.name)
+            positive = candidate.positive_template.format(identity_traits=args.identity_traits)
+            workflow = _workflow(args, positive, NEGATIVE_PROMPT, seed, pose_name, candidate.name)
             workflow_path = workflow_dir / f"{candidate.name}.json"
             workflow_path.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -170,7 +172,7 @@ def main() -> None:
                     "pose_variant": candidate.pose_variant,
                     "seed": seed,
                     "prompt_id": prompt_id,
-                    "positive": candidate.positive,
+                    "positive": positive,
                     "pose_image": str(pose_path),
                     "workflow": str(workflow_path),
                     "source": str(source_path),
