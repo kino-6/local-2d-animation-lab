@@ -930,6 +930,7 @@ Operational rule:
 - Do not double-clean selected start references. If a generator report records both a cleaned preview and an animation-probe source, pass the source to Wan so start-frame normalization happens exactly once.
 - LocalVL rule: LocalVL can over-promote readable-looking walk clips. If artifact, region, or Agent visual review rejects the animation, final status remains rejected even when LocalVL says adoptable.
 - 2026-06-14 Anima sidecar result: OpenPoseXL2 plus `t2i-adapter_diffusers_xl_lineart` at sidecar strength `0.16` produced one deterministic `candidate_ok` start reference. The follow-up 17-frame Wan i2v probe read as walking but was rejected for lower-body afterimages, leg recoloring/darkening, foot/contact smears, and duplicate-silhouette risk. Do not promote this route to 120 frames until the short probe passes artifact and visual review.
+- 2026-06-14 preservation sweep: lowering Wan `shift/cfg` from the retained sidecar start improves luma/color stability but weakens motion and increases duplicate-silhouette failures. BiRefNet can improve foreground separation slightly, but it cannot fix duplicate legs or lower-body ghosts that are inside the character foreground. Do not continue scalar-only Wan setting sweeps as the main route.
 
 ## Retake Policy
 

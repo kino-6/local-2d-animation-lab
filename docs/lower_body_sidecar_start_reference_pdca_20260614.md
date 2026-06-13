@@ -176,3 +176,25 @@ Next work should focus on preserving the improved start reference through video 
 - compare Wan settings around lower shift/CFG with this better start frame;
 - test BiRefNet foreground separation and conservative histogram correction after this new sidecar start;
 - keep deterministic artifact gate authoritative over LocalVL.
+
+## 2026-06-14 Preservation Follow-Up
+
+Follow-up report:
+
+```text
+docs/wan_preservation_sweep_from_sidecar_start_20260614.md
+```
+
+Summary:
+
+- baseline Wan from the retained sidecar start has the best walk readability, but still fails due red/black leg recoloring and lower-body ghosts.
+- low `shift/cfg` variants improve luma and color stability but create more duplicate-silhouette failures and weaker walk motion.
+- BiRefNet on the low-setting branch slightly improves foreground/background separation but cannot repair duplicate legs or body-internal afterimages.
+
+Decision remains:
+
+```text
+rejected_diagnostic
+```
+
+Do not promote to 120 frames yet.
