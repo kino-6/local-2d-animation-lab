@@ -499,3 +499,35 @@ The retake improved side-view composition compared with the previous selected fr
 - Do not tune only denoise/control strength for another long loop.
 - Do not accept a pretty contact sheet unless it reads as a game animation.
 - Do not rely on postprocess to fix duplicate feet, vanishing legs, or bad walk mechanics.
+
+## 2026-06-14 Lower-Body Sidecar Start-Reference Result
+
+The next loop moved lower-body sidecar control earlier, into still start-reference generation instead of reference-locked animation regeneration.
+
+Evidence:
+
+```text
+outputs/20260614_005144/fullbody_reference/anima_00013/
+outputs/20260614_010251/wan_walk_i2v/anima_sidecar_source_start_probe_i2v_len17/
+outputs/20260614_010359/sprite_asset_quality_flow/anima_sidecar_probe_quality/
+```
+
+Result:
+
+- Low-strength lineart sidecar plus OpenPose produced the first deterministic Anima `candidate_ok` start reference in this loop.
+- The selected still was visually plausible as a side-view 2D game walk start frame.
+- The short Wan i2v probe read as a walk, and motion readability passed.
+- Artifact gate rejected the animation because lower-body afterimages, recoloring, foot/contact smears, and duplicate-silhouette risk remained.
+
+New boundary:
+
+```text
+sidecar start-reference generation: useful
+single-keyframe Wan i2v from the improved start: still not adoption-ready
+```
+
+Also found:
+
+- Do not feed a cleaned selected preview back into the start-frame normalizer.
+- Use the generated source or recorded animation-probe source so normalization happens exactly once.
+- LocalVL can over-promote animated outputs; artifact gate remains authoritative.

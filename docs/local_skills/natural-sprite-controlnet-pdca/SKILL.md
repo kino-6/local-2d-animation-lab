@@ -926,6 +926,10 @@ Operational rule:
 - Use `--foot-guide walk` only as a lower-body/contact sidecar on control-video routes. It is a weak guide for shoe target zones, ground contact, and stride envelope; it must be compared against a no-guide probe with the same start frame and seed before adoption.
 - 2026-06-13 foot-guide result: current visible overlay is rejected. VACE produced byte-identical near-white outputs with or without the guide. Wan22Fun reacted to the guide, but rendered guide/control pixels into the output and worsened foot/contact labels. Do not adopt visible guide overlays; move foot constraints into a non-rendered mask/latent/control channel or a better reference-preserving video-control route.
 - Improvement boundary: use postprocess for luma/saturation jitter, dirty background cleanup, minor specks, and still-image polish after the action already reads correctly. Use retake or a route change for double feet, duplicated lower legs, guide/control burn-in, identity loss, silhouette collapse, major lower-body redraw, or motion that does not read as walking.
+- Start-reference sidecar rule: lower-body/foot lineart sidecar can be useful during still start-reference generation. Keep it low strength and verify with deterministic start-reference gate before animation spend.
+- Do not double-clean selected start references. If a generator report records both a cleaned preview and an animation-probe source, pass the source to Wan so start-frame normalization happens exactly once.
+- LocalVL rule: LocalVL can over-promote readable-looking walk clips. If artifact, region, or Agent visual review rejects the animation, final status remains rejected even when LocalVL says adoptable.
+- 2026-06-14 Anima sidecar result: OpenPoseXL2 plus `t2i-adapter_diffusers_xl_lineart` at sidecar strength `0.16` produced one deterministic `candidate_ok` start reference. The follow-up 17-frame Wan i2v probe read as walking but was rejected for lower-body afterimages, leg recoloring/darkening, foot/contact smears, and duplicate-silhouette risk. Do not promote this route to 120 frames until the short probe passes artifact and visual review.
 
 ## Retake Policy
 

@@ -16,6 +16,7 @@ _SPEC.loader.exec_module(_MODULE)
 _workflow = _MODULE._workflow
 _assess_candidate = _MODULE._assess_candidate
 _select_candidate = _MODULE._select_candidate
+_foot_contact_sidecar_image = _MODULE._foot_contact_sidecar_image
 
 
 def test_workflow_routes_controlnet_conditioning_into_sampler() -> None:
@@ -38,6 +39,43 @@ def test_workflow_routes_controlnet_conditioning_into_sampler() -> None:
     assert workflow["5"]["inputs"]["negative"] == ["10", 1]
     assert workflow["8"]["inputs"]["image"] == "pose.png"
     assert workflow["10"]["inputs"]["control_net"] == ["9", 0]
+
+
+def test_workflow_chains_sidecar_controlnet_when_enabled() -> None:
+    args = SimpleNamespace(
+        checkpoint="novaOrangeXL_v120.safetensors",
+        width=1024,
+        height=1024,
+        steps=32,
+        cfg=5.6,
+        sampler="dpmpp_2m",
+        scheduler="karras",
+        controlnet="SDXL\\OpenPoseXL2.safetensors",
+        controlnet_strength=0.72,
+        sidecar_style="foot_contact_lineart",
+        sidecar_controlnet="SDXL\\t2i-adapter_diffusers_xl_lineart.safetensors",
+        sidecar_strength=0.16,
+        sidecar_start_percent=0.0,
+        sidecar_end_percent=0.45,
+    )
+
+    workflow = _workflow(args, "positive", "negative", 123, "pose.png", "strict_side", "sidecar.png")
+
+    assert workflow["5"]["inputs"]["positive"] == ["13", 0]
+    assert workflow["5"]["inputs"]["negative"] == ["13", 1]
+    assert workflow["11"]["inputs"]["image"] == "sidecar.png"
+    assert workflow["12"]["inputs"]["control_net_name"] == "SDXL\\t2i-adapter_diffusers_xl_lineart.safetensors"
+    assert workflow["13"]["inputs"]["positive"] == ["10", 0]
+    assert workflow["13"]["inputs"]["strength"] == 0.16
+    assert workflow["13"]["inputs"]["end_percent"] == 0.45
+
+
+def test_foot_contact_sidecar_image_is_nonblank() -> None:
+    image = _foot_contact_sidecar_image("strict_side", 256, 256)
+
+    assert image.size == (256, 256)
+    assert image.getbbox() == (0, 0, 256, 256)
+    assert len(set(image.convert("L").getdata())) > 1
 
 
 def test_candidate_prompt_templates_accept_custom_identity_traits() -> None:

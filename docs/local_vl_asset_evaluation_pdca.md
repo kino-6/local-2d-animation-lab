@@ -185,3 +185,44 @@ Result:
 Observation:
 
 The raw normalized booleans can still be over-permissive, but the numeric scores plus deterministic override produced the correct final decision. Keep LocalVL as a semantic secondary review, not a sole start-reference gate.
+
+## 2026-06-14 Sidecar Start-Reference And Probe Review
+
+Start-reference review:
+
+```text
+outputs/20260614_010050/local_vl_eval/anima_sidecar_start_reference_vl/start_reference_vl_eval.json
+```
+
+LocalVL agreed with the deterministic gate:
+
+- `is_walk_ready_start_reference: true`
+- selected deterministic status: `candidate_ok`
+- no blocking reasons
+
+Animation quality review:
+
+```text
+outputs/20260614_010359/sprite_asset_quality_flow/anima_sidecar_probe_quality/local_vl/local_vl_eval/local_vl/local_vl_eval.json
+```
+
+LocalVL over-promoted the short animation:
+
+- `is_readable_walk_action: true`
+- `is_adoptable_as_animation_or_walk_endpoint: true`
+- visible issues still included brightness/saturation drift and foot smears.
+
+Final quality-flow decision:
+
+```text
+rejected_animation_candidate
+```
+
+Reason:
+
+- deterministic artifact gate rejected the clip.
+- motion readability passed, but artifact gate found lower-body afterimages, duplicate-silhouette risk, and ghost/contact artifacts.
+
+Rule update:
+
+LocalVL can support semantic action readability, but it must not override artifact, region, or Agent visual rejection. If LocalVL says "adoptable" and deterministic gate says "rejected", final status remains rejected.

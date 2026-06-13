@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from PIL import Image
+from PIL import ImageDraw
 
 from natural_sprite_lab.comfy_queue import add_queue_wait_arguments
 from natural_sprite_lab.comfy_queue import wait_for_queue_capacity_from_args
@@ -207,6 +208,11 @@ def main() -> None:
     parser.add_argument("--scheduler", default="karras")
     parser.add_argument("--seed", default=717220, type=int)
     parser.add_argument("--controlnet-strength", default=0.72, type=float)
+    parser.add_argument("--sidecar-style", default="none", choices=("none", "foot_contact_lineart"))
+    parser.add_argument("--sidecar-controlnet", default="SDXL\\t2i-adapter_diffusers_xl_lineart.safetensors")
+    parser.add_argument("--sidecar-strength", default=0.0, type=float)
+    parser.add_argument("--sidecar-start-percent", default=0.0, type=float)
+    parser.add_argument("--sidecar-end-percent", default=0.45, type=float)
     parser.add_argument("--identity-traits", default=DEFAULT_IDENTITY_TRAITS)
     add_queue_wait_arguments(parser)
     parser.add_argument("--timeout-seconds", default=900.0, type=float)
@@ -219,9 +225,10 @@ def main() -> None:
     source_dir = run_dir / "generated"
     cleaned_dir = run_dir / "cleaned"
     pose_dir = run_dir / "control_pose"
+    sidecar_dir = run_dir / "sidecar_pose"
     workflow_dir = run_dir / "workflow"
     review_dir = run_dir / "review"
-    for path in (source_dir, cleaned_dir, pose_dir, workflow_dir, review_dir):
+    for path in (source_dir, cleaned_dir, pose_dir, sidecar_dir, workflow_dir, review_dir):
         path.mkdir(parents=True, exist_ok=True)
 
     report: dict[str, Any] = {
@@ -239,6 +246,11 @@ def main() -> None:
             "scheduler": args.scheduler,
             "seed": args.seed,
             "controlnet_strength": args.controlnet_strength,
+            "sidecar_style": args.sidecar_style,
+            "sidecar_controlnet": args.sidecar_controlnet,
+            "sidecar_strength": args.sidecar_strength,
+            "sidecar_start_percent": args.sidecar_start_percent,
+            "sidecar_end_percent": args.sidecar_end_percent,
             "identity_traits": args.identity_traits,
             "negative": NEGATIVE_PROMPT,
         },
@@ -259,8 +271,15 @@ def main() -> None:
             pose_image = _pose_image(candidate.pose_variant, args.width, args.height)
             pose_image.save(pose_path)
             pose_name = _upload_image(server, pose_path)
+            sidecar_path = None
+            sidecar_name = None
+            if _sidecar_enabled(args):
+                sidecar_path = sidecar_dir / f"{candidate.name}.png"
+                sidecar_image = _foot_contact_sidecar_image(candidate.pose_variant, args.width, args.height)
+                sidecar_image.save(sidecar_path)
+                sidecar_name = _upload_image(server, sidecar_path)
             positive = candidate.positive_template.format(identity_traits=args.identity_traits)
-            workflow = _workflow(args, positive, NEGATIVE_PROMPT, seed, pose_name, candidate.name)
+            workflow = _workflow(args, positive, NEGATIVE_PROMPT, seed, pose_name, candidate.name, sidecar_name)
             workflow_path = workflow_dir / f"{candidate.name}.json"
             workflow_path.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -291,6 +310,7 @@ def main() -> None:
                     "prompt_id": prompt_id,
                     "positive": positive,
                     "pose_image": str(pose_path),
+                    "sidecar_image": str(sidecar_path) if sidecar_path else None,
                     "workflow": str(workflow_path),
                     "source": str(source_path),
                     "cleaned": str(cleaned_path),
@@ -307,6 +327,18 @@ def main() -> None:
         selected_dir.mkdir(parents=True, exist_ok=True)
         selected_path = selected_dir / "start_frame.png"
         Image.open(selected["cleaned"]).save(selected_path)
+        animation_start_path = selected_dir / "animation_probe_start_source.png"
+        Image.open(selected["source"]).save(animation_start_path)
+        rechecked_path = selected_dir / "start_frame_rechecked.png"
+        cleaned_reference_recheck = prepare_clean_start_frame(
+            selected_path,
+            rechecked_path,
+            width=args.width,
+            height=args.height,
+            require_profile_detail=True,
+            require_lower_body_readiness=True,
+            max_background_contamination_ratio=0.08,
+        )
         selection_status = selected["assessment"]["status"]
         animation_probe_allowed = selection_status == "candidate_ok"
         report["status"] = "completed"
@@ -316,6 +348,8 @@ def main() -> None:
             "source": selected["source"],
             "cleaned": selected["cleaned"],
             "selected_reference": str(selected_path),
+            "animation_probe_start_image": str(animation_start_path),
+            "cleaned_reference_recheck": cleaned_reference_recheck.to_dict(),
             "selection_score": selected["assessment"]["selection_score"],
             "selection_status": selection_status,
             "animation_probe_allowed": animation_probe_allowed,
@@ -342,6 +376,7 @@ def main() -> None:
             memo.write("\n## Start-Frame Review Checklist\n\n")
             memo.write("- selected asset status: `start_frame_candidate_only`\n")
             memo.write(f"- animation probe allowed: `{animation_probe_allowed}`\n")
+            memo.write("- use `selected_reference/animation_probe_start_source.png` for Wan probes so the frame is normalized exactly once\n")
             if not animation_probe_allowed:
                 memo.write("- blocking status: `blocked_start_reference_quality`\n")
             memo.write("- side-view confidence: manual review required\n")
@@ -358,7 +393,11 @@ def main() -> None:
         raise
 
 
-def _pose_image(variant: str, width: int, height: int) -> Image.Image:
+def _sidecar_enabled(args: argparse.Namespace) -> bool:
+    return getattr(args, "sidecar_style", "none") != "none" and float(getattr(args, "sidecar_strength", 0.0)) > 0.0
+
+
+def _pose_frame(variant: str) -> dict[str, Any]:
     if variant == "strict_side":
         center = 0.50
         shoulder_span = 0.035
@@ -369,7 +408,7 @@ def _pose_image(variant: str, width: int, height: int) -> Image.Image:
         shoulder_span = 0.070
         hip_span = 0.052
         nose_x = 0.545
-    frame = {
+    return {
         "action": "walk",
         "variant": variant,
         "frame_index": 0,
@@ -391,7 +430,55 @@ def _pose_image(variant: str, width: int, height: int) -> Image.Image:
             "left_ankle": [center - 0.070, 0.905],
         },
     }
+
+
+def _pose_image(variant: str, width: int, height: int) -> Image.Image:
+    frame = _pose_frame(variant)
     return render_pose_frame(frame, width, height, style="controlnet_thin")
+
+
+def _foot_contact_sidecar_image(variant: str, width: int, height: int) -> Image.Image:
+    frame = _pose_frame(variant)
+    keypoints = frame["keypoints"]
+    image = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(image)
+
+    def xy(name: str) -> tuple[int, int]:
+        point = keypoints[name]
+        return int(point[0] * width), int(point[1] * height)
+
+    def line(a: str, b: str, fill: tuple[int, int, int], line_width: int) -> None:
+        draw.line([xy(a), xy(b)], fill=fill, width=line_width)
+
+    stroke = max(3, width // 170)
+    soft_stroke = max(2, width // 240)
+    ground_y = int(0.925 * height)
+    draw.line(
+        [(int(0.34 * width), ground_y), (int(0.66 * width), ground_y)],
+        fill=(190, 190, 190),
+        width=max(2, width // 260),
+    )
+    for hip, knee, ankle in (
+        ("right_hip", "right_knee", "right_ankle"),
+        ("left_hip", "left_knee", "left_ankle"),
+    ):
+        line(hip, knee, (45, 45, 45), stroke)
+        line(knee, ankle, (45, 45, 45), stroke)
+        ax, ay = xy(ankle)
+        shoe_w = max(38, int(width * 0.070))
+        shoe_h = max(12, int(height * 0.020))
+        draw.rounded_rectangle(
+            [ax - shoe_w // 3, ground_y - shoe_h, ax + shoe_w, ground_y + shoe_h // 2],
+            radius=max(3, shoe_h // 3),
+            outline=(20, 20, 20),
+            width=soft_stroke,
+        )
+        draw.ellipse(
+            [ax - stroke, ay - stroke, ax + stroke, ay + stroke],
+            outline=(20, 20, 20),
+            width=soft_stroke,
+        )
+    return image
 
 
 def _workflow(
@@ -401,7 +488,10 @@ def _workflow(
     seed: int,
     pose_image_name: str,
     prefix: str,
+    sidecar_image_name: str | None = None,
 ) -> dict[str, Any]:
+    sampler_positive = ["10", 0]
+    sampler_negative = ["10", 1]
     workflow: dict[str, Any] = {
         "1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": args.checkpoint}},
         "2": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["1", 1], "text": positive}},
@@ -411,8 +501,8 @@ def _workflow(
             "class_type": "KSampler",
             "inputs": {
                 "model": ["1", 0],
-                "positive": ["10", 0],
-                "negative": ["10", 1],
+                "positive": sampler_positive,
+                "negative": sampler_negative,
                 "latent_image": ["4", 0],
                 "seed": seed,
                 "steps": args.steps,
@@ -439,6 +529,23 @@ def _workflow(
             },
         },
     }
+    if _sidecar_enabled(args) and sidecar_image_name:
+        workflow["11"] = {"class_type": "LoadImage", "inputs": {"image": sidecar_image_name}}
+        workflow["12"] = {"class_type": "ControlNetLoader", "inputs": {"control_net_name": args.sidecar_controlnet}}
+        workflow["13"] = {
+            "class_type": "ControlNetApplyAdvanced",
+            "inputs": {
+                "positive": ["10", 0],
+                "negative": ["10", 1],
+                "control_net": ["12", 0],
+                "image": ["11", 0],
+                "strength": args.sidecar_strength,
+                "start_percent": args.sidecar_start_percent,
+                "end_percent": args.sidecar_end_percent,
+            },
+        }
+        workflow["5"]["inputs"]["positive"] = ["13", 0]
+        workflow["5"]["inputs"]["negative"] = ["13", 1]
     return workflow
 
 

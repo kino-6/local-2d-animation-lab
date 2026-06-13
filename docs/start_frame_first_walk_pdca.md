@@ -216,3 +216,45 @@ blocked_start_reference_quality
 ```
 
 Do not run animation from this selected candidate. The retake improved side-view composition but did not solve the shoe/contact gate. The next useful change is to condition candidate generation directly on clearer lower-body/foot structure, not to keep asking text alone for shoes.
+
+## 2026-06-14 Lower-Body Sidecar Start-Reference Probe
+
+Run:
+
+- Reference: `assets/reference/Anima_00013_.png`
+- Candidate generation report: `outputs/20260614_005144/fullbody_reference/anima_00013/reference_candidates_report.json`
+- Candidate contact sheet: `outputs/20260614_005144/fullbody_reference/anima_00013/contact_sheet.png`
+- LocalVL review: `outputs/20260614_010050/local_vl_eval/anima_sidecar_start_reference_vl/start_reference_vl_eval.json`
+
+Changes:
+
+- Added optional lower-body/foot lineart sidecar support to `scripts/generate_fullbody_reference_candidates.py`.
+- Used `SDXL\t2i-adapter_diffusers_xl_lineart.safetensors` at low strength (`0.16`, end `0.45`) after OpenPose.
+- Added tests for sidecar workflow wiring and sidecar image generation.
+
+Result:
+
+- 12 candidates were generated.
+- 1 candidate reached deterministic `candidate_ok`.
+- Auto-selected candidate: `small_stride_side_walk_sprite`.
+- Selected status: `candidate_ok`.
+- `animation_probe_allowed: true`.
+
+Selected lower-body metrics:
+
+- `foot_component_count: 2`
+- `lower_leg_component_count: 2`
+- `foot_separation_ratio: 0.50163`
+- `foot_zone_coverage: 0.01894`
+- `lower_leg_visibility_ratio: 0.02517`
+
+Agent visual review:
+
+- The selected still is much better than prior Anima start-reference attempts.
+- It is full-body, right-facing, and the two shoes are readable.
+- The stride is conservative, so the correct status is probe input, not adopted animation source.
+
+Important implementation boundary:
+
+- Re-cleaning the selected cleaned preview can make it fail with `shoes_unreadable`.
+- Wan probes should use the generated source image or the recorded `animation_probe_start_image`, so start-frame normalization happens exactly once.
