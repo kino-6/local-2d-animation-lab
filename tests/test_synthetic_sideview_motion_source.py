@@ -107,6 +107,28 @@ def test_lower_body_sidecar_renderer_is_nonblank(tmp_path: Path) -> None:
     assert image.getpixel((64, round(frame["foot_contact"]["ground_y"] * 128))) != (255, 255, 255)
 
 
+def test_lower_body_sidecar_lineart_renderer_uses_outline_signal(tmp_path: Path) -> None:
+    module = _load_module()
+    frame = module.synthetic_sideview_frame(
+        0,
+        8,
+        action="walk",
+        variant="sidecar_lineart_test",
+        stride=0.14,
+        lift=0.07,
+        body_bob=0.012,
+        arm_swing_scale=0.35,
+        leg_side_offset=0.09,
+    ).to_dict()
+
+    image = module.render_lower_body_sidecar(frame, 128, 128, style="foot_contact_lineart")
+    colors = image.getcolors(maxcolors=256)
+
+    assert colors is not None
+    assert (0, 0, 0) in {color for _, color in colors}
+    assert (255, 255, 255) in {color for _, color in colors}
+
+
 def _load_builder():
     script = Path(__file__).resolve().parents[1] / "scripts" / "build_synthetic_sideview_motion_source.py"
     spec = importlib.util.spec_from_file_location("build_synthetic_sideview_motion_source", script)

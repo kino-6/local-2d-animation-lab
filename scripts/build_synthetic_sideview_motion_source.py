@@ -42,7 +42,7 @@ def main() -> None:
     parser.add_argument(
         "--sidecar-style",
         default="foot_contact_soft",
-        choices=("none", "foot_contact_soft", "foot_contact_boxes"),
+        choices=("none", "foot_contact_soft", "foot_contact_boxes", "foot_contact_lineart"),
     )
     parser.add_argument("--stride", default=0.105, type=float)
     parser.add_argument("--lift", default=0.055, type=float)
@@ -498,7 +498,7 @@ def _foot_box_x_gap(left_box: list[float], right_box: list[float]) -> float:
 
 
 def render_lower_body_sidecar(frame: dict[str, Any], width: int, height: int, *, style: str = "foot_contact_soft") -> Image.Image:
-    if style not in {"foot_contact_soft", "foot_contact_boxes"}:
+    if style not in {"foot_contact_soft", "foot_contact_boxes", "foot_contact_lineart"}:
         raise ValueError(f"Unknown lower-body sidecar style: {style}")
     image = Image.new("RGB", (width, height), (255, 255, 255))
     draw = ImageDraw.Draw(image)
@@ -507,25 +507,35 @@ def render_lower_body_sidecar(frame: dict[str, Any], width: int, height: int, *,
     foot_contact = frame.get("foot_contact") or _foot_contact_metadata(keypoints, ground_y=0.86)
     ground_y = round(float(foot_contact["ground_y"]) * height)
     base = 214 if style == "foot_contact_soft" else 150
-    draw.line((0, ground_y, width, ground_y), fill=(232, 232, 232), width=max(1, round(width * 0.003)))
+    lineart = style == "foot_contact_lineart"
+    ground_color = (96, 96, 96) if lineart else (232, 232, 232)
+    ground_width = max(1, round(width * (0.006 if lineart else 0.003)))
+    draw.line((0, ground_y, width, ground_y), fill=ground_color, width=ground_width)
     pelvis = (
         round((points["left_hip"][0] + points["right_hip"][0]) / 2),
         round((points["left_hip"][1] + points["right_hip"][1]) / 2),
     )
     draw.line(
         (points["left_hip"], pelvis, points["right_hip"]),
-        fill=(base, base, base),
-        width=max(2, round(width * 0.011)),
+        fill=(32, 32, 32) if lineart else (base, base, base),
+        width=max(2, round(width * (0.008 if lineart else 0.011))),
         joint="curve",
     )
     for side, shade in (("left", 178), ("right", 116)):
         hip = points[f"{side}_hip"]
         knee = points[f"{side}_knee"]
         ankle = points[f"{side}_ankle"]
-        color = (shade, shade, shade)
-        draw.line((hip, knee, ankle), fill=color, width=max(3, round(width * 0.014)), joint="curve")
+        color = (0, 0, 0) if lineart else (shade, shade, shade)
+        draw.line((hip, knee, ankle), fill=color, width=max(2, round(width * (0.009 if lineart else 0.014))), joint="curve")
         foot = foot_contact[f"{side}_foot"]
-        _draw_sidecar_foot(draw, foot, width, height, color=color, boxes_only=style == "foot_contact_boxes")
+        _draw_sidecar_foot(
+            draw,
+            foot,
+            width,
+            height,
+            color=color,
+            boxes_only=style in {"foot_contact_boxes", "foot_contact_lineart"},
+        )
     return image
 
 

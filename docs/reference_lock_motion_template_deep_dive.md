@@ -370,6 +370,67 @@ But an OpenPose-family adapter is not the right carrier for toe/heel/foot-box se
 
 Do not continue with scalar tuning of this OpenPose-family sidecar as the mainline. If the lower-body sidecar route continues, the next meaningful test needs a more suitable local control model such as lineart, softedge, depth, segmentation, or a mask/evaluation use of the sidecar rather than another OpenPose-like pose adapter.
 
+## 2026-06-13 Lineart Sidecar Carrier Probe
+
+Implemented:
+
+- `scripts/manage_sidecar_control_models.py`
+- `foot_contact_lineart` sidecar render style in `scripts/build_synthetic_sideview_motion_source.py`
+
+Model acquisition:
+
+```text
+C:\LocalWork\StabilityMatrix\Data\Packages\ComfyUI\models\controlnet\SDXL\t2i-adapter_diffusers_xl_lineart.safetensors
+```
+
+Evidence:
+
+- inventory before download: `outputs/20260613_234244/model_management/sidecar_control_model_inventory/model_inventory_report.json`
+- acquisition: `outputs/20260613_234258/model_management/t2i_lineart_sdxl_acquisition/model_acquisition_report.json`
+- inventory after download: `outputs/20260613_234308/model_management/sidecar_control_model_inventory_after_download/model_inventory_report.json`
+- lineart sidecar source: `outputs/20260613_234318/motion_source_video_pdca/motion_sources/sideview_walk_lineart_sidecar_v1/`
+
+Source diagnostics passed:
+
+- `sampled_min_ankle_x_separation: 0.1205`
+- `sampled_min_foot_box_x_gap: 0.03002`
+- `unclear_ankle_separation_count: 0`
+- `unclear_foot_box_count: 0`
+
+Generation probes:
+
+| Probe | Reference | Sidecar | Artifact gate | Span | Region | Decision |
+| --- | --- | --- | --- | --- | --- | --- |
+| A | `assets/reference/Anima_00013_.png` | lineart `0.35`, end `0.55` | `retake_required: 8/8`, visible guide leakage `7/8` | hard failures `8/8` | retake `7/8` | `rejected_diagnostic` |
+| B | `assets/reference/ComfyUI2025_131891_trim.png` | lineart `0.15`, end `0.45` | `retake_required: 8/8` | hard failures `8/8` | retake `8/8` | `rejected_diagnostic` |
+
+Visual review:
+
+- Probe A showed clear line/control leakage and tiny secondary character-like fragments.
+- Probe B leaked fewer explicit lines, but it still did not become a readable 2D walk asset. The output collapsed around the reference composition rather than producing side-view sprite walking.
+
+Takeaway:
+
+```text
+Lineart model acquisition and loading succeeded.
+But lineart sidecar alone is not a magic foot/contact fix in the current reference-locked img2img route.
+```
+
+The failure boundary has moved:
+
+```text
+OpenPose-only cannot carry foot-box semantics.
+OpenPose-family sidecar is too semantically weak.
+Lineart sidecar can influence the image, but the reference image and identity lock can still dominate or corrupt the action composition.
+```
+
+Next mainline:
+
+- Generate or select a walk-ready, full-body, side-view start/reference first.
+- Only then test lower-body sidecars.
+- Do not use bust-up or non-sprite-framed references for this ControlNet regeneration path.
+- Do not spend on 120 frames until the short proof is already a readable game walk.
+
 ## Non-Goals For The Next Loop
 
 - Do not switch to InstantID/PuLID before the side-view motion control is clean; they mainly help face identity and add dependency complexity.

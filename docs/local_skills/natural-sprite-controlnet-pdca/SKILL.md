@@ -52,6 +52,12 @@ Lower-body/contact control update, 2026-06-13:
   - artifact hard failures improved versus OpenPose-only foot-contact v3 (`3/8 -> 2/8`), but region retakes worsened (`2/8 -> 3/8`) and feet/contact temporal instability worsened (`0.02694 -> 0.0582`).
   - Visual review found shoe/leg recolor, lower-body ghosting, and unstable foot rendering.
 - Rule: do not continue scalar tuning of an OpenPose-family secondary sidecar ControlNet as the mainline. If lower-body sidecar control is pursued, use a more suitable local model such as lineart, softedge, depth, segmentation, or use the sidecar as a gate/mask signal instead of a second OpenPose-like adapter.
+- Lineart sidecar update:
+  - `t2i-adapter_diffusers_xl_lineart.safetensors` was downloaded and ComfyUI listed it under `ControlNetLoader`.
+  - `foot_contact_lineart` sidecar rendering exists and passed source diagnostics.
+  - Probe A: `outputs/20260613_234423/reference_pose_regen/walk_ipadv_upper_mask_lineart_sidecar035_8f/`, decision `rejected_diagnostic`, artifact `retake_required: 8/8`, visible guide leakage `7/8`.
+  - Probe B: `outputs/20260613_234732/reference_pose_regen/comfy2025_walk_ipadv_upper_mask_lineart_sidecar015_8f/`, decision `rejected_diagnostic`, artifact `retake_required: 8/8`, region retake `8/8`.
+  - Lesson: lineart sidecar can influence the image, but it does not solve walk quality if the reference image/composition is not already walk-ready and full-body side-view. Do not keep scalar-sweeping sidecar strength before fixing the start/reference framing.
 
 ## Output Target
 
