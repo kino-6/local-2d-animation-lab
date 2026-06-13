@@ -39,12 +39,12 @@ Detailed evidence:
   - `unclear_foot_box_count: 0`
   - `max_stance_slide_delta: 0.00345`
 
-## Active PDCA: Use Foot-Contact Template In Generation
+## Completed PDCA: Use Foot-Contact Template In Generation
 
-- [ ] Confirm ComfyUI queue capacity before generation.
+- [x] Confirm ComfyUI queue capacity before generation.
   - If queue is larger than the configured limit, wait instead of adding more jobs.
   - Keep all output under `outputs/<timestamp>/...`.
-- [ ] Run an 8-frame probe with the new foot-contact OpenPose source.
+- [x] Run an 8-frame probe with the new foot-contact OpenPose source.
   - Source image:
     - `outputs/20260613_185524/background_normalize/prior_best_start_background_normalize/frames/frame_000.png`
   - Pose source:
@@ -62,36 +62,52 @@ Detailed evidence:
     - IPAdapter weight `0.55`
     - IPAdapter end `0.62`
     - IPAdapter attention mask `upper_body`
-- [ ] Gate the generated 8-frame probe.
+- [x] Gate the generated 8-frame probe.
   - `repair_frame_artifacts.py --mask-only --weapon none`
   - `select_best_span.py --action walk --motion-metric foreground --allow-hard-failures`
   - `analyze_sprite_regions.py`
   - Agent visual review of `comparison_sheet.png`, `contact_sheet.png`, and `preview.gif`.
-- [ ] Compare against the previous upper-body-mask proof.
+  - Generated output:
+    - `outputs/20260613_223902/reference_pose_regen/walk_ipadv_upper_mask_foot_contact_v3_8f/`
+  - Gate outputs:
+    - artifact: `outputs/20260613_224018/artifact_repair/walk_ipadv_upper_mask_foot_contact_v3_8f_mask_gate/artifact_repair_report.json`
+    - span: `outputs/20260613_224018/span_selection/walk_ipadv_upper_mask_foot_contact_v3_8f_span/span_selection_report.json`
+    - region: `outputs/20260613_224018/region_diagnostics/walk_ipadv_upper_mask_foot_contact_v3_8f_regions/region_diagnostics_report.json`
+- [x] Compare against the previous upper-body-mask proof.
   - Prior proof:
     - `outputs/20260613_214841/reference_pose_regen/walk_ipadv_style_precise_upper_mask_sideview_v2_8f/`
   - Required improvement:
     - region `retake_required` below `2/8`, or
     - clear visual improvement in foot/contact readability without identity drift.
-- [ ] Decide promotion status.
+  - Result:
+    - region retake stayed `2/8`, not below previous proof.
+    - artifact hard failures worsened from `0` to `3`.
+    - span motion dropped from previous `11.725` to `8.918`.
+    - lower-body/feet temporal deltas improved, but not enough to beat the prior proof overall.
+- [x] Decide promotion status.
   - `rejected_diagnostic`: guide burn-in, duplicate lower limbs, severe identity drift, or worse foot/contact labels.
   - `selected_proof_only`: clearer foot/contact but still not adoption OK.
   - `adopted_animation_candidate`: only if short proof has artifact hard failures `0`, region retakes `0`, readable walk contact, and stable identity.
-- [ ] Record result in reports and Skill.
+  - Decision: `rejected_diagnostic`.
+  - Reason: the foot-contact template is better as a control source, but feeding it through the same OpenPose-only path did not improve generated sprite adoption quality. It increased duplicate-silhouette hard failures.
+- [x] Record result in reports and Skill.
   - Update `docs/reference_lock_motion_template_deep_dive.md`.
   - Update `docs/walk_candidate_comparison.md`.
   - Update `docs/local_skills/natural-sprite-controlnet-pdca/SKILL.md` if the decision changes the workflow rule.
 
-## If The Probe Fails
+## Failure Analysis
 
-- [ ] Do not tune only prompts or scalar weights for a long loop.
-- [ ] Inspect whether failure comes from:
+- [x] Do not tune only prompts or scalar weights for a long loop.
+- [x] Inspect whether failure comes from:
   - pose template still too exaggerated;
   - ControlNet copying the guide;
   - IPAdapter still freezing or recoloring the body;
   - model unable to preserve lower-body structure frame-to-frame.
-- [ ] If foot/contact remains poor, test lower-body sidecar as a separate control/mask candidate rather than visible overlay.
-- [ ] If identity drifts, compare upper-body mask strength and whole-character mask only as a short diagnostic.
+  - Finding: the template itself is cleaner, but OpenPose-only does not carry foot-box semantics into generated shoes/contact. The failure is a mechanism limit, not only template geometry.
+- [x] If foot/contact remains poor, test lower-body sidecar as a separate control/mask candidate rather than visible overlay.
+  - Next route: use `lower_body_sidecar/` as a separate control/mask candidate, not as visible overlay.
+- [x] If identity drifts, compare upper-body mask strength and whole-character mask only as a short diagnostic.
+  - Finding: identity drift was not the primary blocker in this probe.
 
 ## Status Vocabulary
 

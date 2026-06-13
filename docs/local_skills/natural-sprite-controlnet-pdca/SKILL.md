@@ -38,6 +38,13 @@ Lower-body/contact control update, 2026-06-13:
   - `sampled_min_foot_box_x_gap: 0.11352`
   - `unclear_foot_box_count: 0`
 - Treat `lower_body_sidecar/` as a control/mask candidate, not as visible final art. Do not overlay it into final pixels unless a workflow proves it does not leak.
+- Generation probe result:
+  - `outputs/20260613_223902/reference_pose_regen/walk_ipadv_upper_mask_foot_contact_v3_8f/`
+  - decision `rejected_diagnostic`
+  - artifact hard failures `3/8`
+  - region retake decisions `2/8`
+  - span motion `8.918`
+- Lesson: foot/contact metadata improves template validation, but OpenPose-only does not carry toe/heel/foot-box semantics into generated shoes/contact. If this route stalls, test `lower_body_sidecar/` as a separate non-visible control or mask candidate rather than adding more foot semantics to OpenPose alone.
 
 ## Output Target
 

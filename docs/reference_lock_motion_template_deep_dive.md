@@ -266,6 +266,49 @@ Key diagnostics:
 
 The next generation experiment should use this as the motion source. The sidecar is not final artwork; it is a structured lower-body/contact control candidate for future ControlNet, mask, or retake routing.
 
+## 2026-06-13 Foot-Contact v3 Generation Probe
+
+Probe:
+
+```text
+outputs/20260613_223902/reference_pose_regen/walk_ipadv_upper_mask_foot_contact_v3_8f/
+```
+
+Settings matched the previous best upper-body-mask IPAdapterAdvanced route, but replaced the pose source with:
+
+```text
+outputs/20260613_222505/motion_source_video_pdca/motion_sources/sideview_walk_foot_contact_v3/controlnet/
+```
+
+Gate reports:
+
+- artifact: `outputs/20260613_224018/artifact_repair/walk_ipadv_upper_mask_foot_contact_v3_8f_mask_gate/artifact_repair_report.json`
+- span: `outputs/20260613_224018/span_selection/walk_ipadv_upper_mask_foot_contact_v3_8f_span/span_selection_report.json`
+- region: `outputs/20260613_224018/region_diagnostics/walk_ipadv_upper_mask_foot_contact_v3_8f_regions/region_diagnostics_report.json`
+
+Result versus the previous best proof:
+
+| Metric | Previous upper-body mask | Foot-contact v3 |
+| --- | ---: | ---: |
+| Artifact hard failures | `0/8` | `3/8` |
+| Region retake decisions | `2/8` | `2/8` |
+| Span motion | `11.725` | `8.918` |
+| Mean lower-body temporal delta | `0.07925` | `0.06004` |
+| Mean feet/contact temporal delta | `0.04478` | `0.02694` |
+
+Decision: `rejected_diagnostic`.
+
+The cleaner foot-contact template improved lower-body stability metrics, but did not improve the generated sprite enough to beat the prior proof. The artifact gate worsened due to duplicate-silhouette hard failures, and motion became more conservative.
+
+The important takeaway is narrower:
+
+```text
+Foot/contact metadata is useful for template validation.
+But OpenPose-only does not carry toe/heel/foot-box semantics into generated shoes/contact.
+```
+
+Next mechanism should use `lower_body_sidecar/` as a separate non-visible control or mask candidate. Do not keep tuning only OpenPose geometry, text prompts, or scalar ControlNet/IPAdapter weights.
+
 ## Non-Goals For The Next Loop
 
 - Do not switch to InstantID/PuLID before the side-view motion control is clean; they mainly help face identity and add dependency complexity.
