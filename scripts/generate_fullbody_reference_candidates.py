@@ -36,10 +36,10 @@ NEGATIVE_PROMPT = (
     "extra limbs, extra legs, duplicate body, duplicate face, multiple characters, chibi, child body, merged legs, "
     "front view when side view is requested, back view, character sheet, model sheet, turnaround sheet, "
     "multiple views, side-by-side figures, guide lines, red border lines, headgear, animal ears, helmet, "
-    "weapon, sword, bow, staff, background scenery, text, watermark, logo, motion blur, ghost trail, afterimage, "
+    "weapon, sword, bow, staff, bicycle, vehicle, prop, chair, background scenery, text, watermark, logo, motion blur, ghost trail, afterimage, "
     "long cloak covering legs, coat hiding legs, skirt hiding knees, shoes touching each other, single foot blob, "
     "black shadow merged with shoes, unreadable lower legs, rear view, looking away from camera, "
-    "front-facing full-body portrait, fashion illustration pose, feet crossed, toes hidden, shoes hidden by skirt"
+    "front-facing full-body portrait, looking at viewer, fashion illustration pose, feet crossed, toes hidden, shoes hidden by skirt"
 )
 
 
@@ -163,6 +163,28 @@ CANDIDATES = (
             "not front view, not rear view, face partly visible, clean readable silhouette, "
             "feet shoulder-width apart, shoes separated and fully visible, lower legs not hidden by outfit, "
             "plain white background, no panel, no guide lines, {identity_traits}"
+        ),
+    ),
+    ReferenceCandidate(
+        name="profile_walk_contact_no_portrait",
+        pose_variant="strict_side",
+        seed_offset=10000,
+        positive_template=(
+            "animation production keyframe for a 2d side-scrolling game, exactly one full-body character, "
+            "right-facing profile only, not looking at viewer, no front-facing torso, no character sheet, no prop, "
+            "walk-cycle contact pose, front shoe forward and rear shoe back, both shoes planted on one ground line, "
+            "clear ankle gap, visible knees, readable shoe silhouettes, plain white background, crisp cel shaded sprite, {identity_traits}"
+        ),
+    ),
+    ReferenceCandidate(
+        name="small_stride_side_walk_sprite",
+        pose_variant="strict_side",
+        seed_offset=11000,
+        positive_template=(
+            "clean 2d game sprite start frame, one full-body anime girl only, right-facing side profile, "
+            "small stride walk-contact pose, nose points right, chest points right, shoulders side-on, "
+            "hands close to body, knees visible, ankles visible, two separated brown loafers readable, "
+            "no second figure, no model sheet, no bike, no object, plain white background, {identity_traits}"
         ),
     ),
 )

@@ -140,3 +140,48 @@ Updated conclusion:
 still adoption = deterministic gate pass + Agent visual pass
 action adoption = still adoption + motion gate pass + Agent action pass + LocalVL action pass
 ```
+
+## 2026-06-14 Start-Reference LocalVL
+
+Implemented a start-reference-specific LocalVL evaluator:
+
+```text
+scripts/evaluate_start_reference_with_ollama_vl.py
+```
+
+It evaluates still start-reference images for:
+
+- full-body framing;
+- right-facing side/profile;
+- walk-contact pose;
+- readable separated shoes;
+- single-character composition;
+- plain background;
+- model-sheet/turnaround or prop contamination.
+
+The evaluator is explicitly secondary:
+
+```text
+local_vl_role: secondary_start_reference_review
+```
+
+Proof run:
+
+```text
+outputs/20260614_002335/local_vl_eval/anima_start_reference_retake_vl/start_reference_vl_eval.json
+```
+
+Result:
+
+- LocalVL plus consistency rules marked the candidate `is_walk_ready_start_reference: false`.
+- Deterministic blockers were propagated:
+  - `deterministic_selection_not_candidate_ok`
+  - `deterministic_shoes_unreadable`
+- LocalVL also contributed semantic blockers:
+  - `local_vl_low_shoe_readability_score`
+  - `local_vl_low_side_view_score`
+  - `local_vl_low_walk_contact_score`
+
+Observation:
+
+The raw normalized booleans can still be over-permissive, but the numeric scores plus deterministic override produced the correct final decision. Keep LocalVL as a semantic secondary review, not a sole start-reference gate.

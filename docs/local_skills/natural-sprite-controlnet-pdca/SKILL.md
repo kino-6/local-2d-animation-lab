@@ -64,6 +64,13 @@ Lower-body/contact control update, 2026-06-13:
   - Selected candidate `slight_three_quarter_side` remained `manual_review_or_retake` with `extra_foreground_components_removed`, `large_secondary_component`, and `shoes_unreadable`.
   - Visual decision: blocked. It is a decent still illustration but too front-facing and not walk-ready.
   - Rule: if `generate_fullbody_reference_candidates.py` does not produce `candidate_ok`, do not run animation generation. Record `blocked_start_reference_quality` and improve start-reference generation first.
+- Start-reference retake + LocalVL update:
+  - 2026-06-14 retake: `outputs/20260614_001954/fullbody_reference/anima_00013/`.
+  - LocalVL: `outputs/20260614_002335/local_vl_eval/anima_start_reference_retake_vl/start_reference_vl_eval.json`.
+  - No `candidate_ok` start frame was found.
+  - Selected candidate `strict_side_profile` improved side-view composition but remained blocked by `shoes_unreadable`.
+  - LocalVL final decision: `is_walk_ready_start_reference: false`.
+  - Rule: do not keep text-only retaking after this without adding a stronger lower-body/foot structure mechanism to start-reference generation.
 
 ## Output Target
 

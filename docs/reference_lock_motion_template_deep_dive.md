@@ -467,6 +467,32 @@ blocked_start_reference_quality
 
 This confirms the prior interpretation: sidecar or ControlNet tuning should not continue until the start-reference generator can produce a true side-view walk-contact sprite frame.
 
+## 2026-06-14 Start-Reference Retake Result
+
+The retake added stricter side-profile/contact-pose prompt variants and a start-reference LocalVL review.
+
+Output:
+
+```text
+outputs/20260614_001954/fullbody_reference/anima_00013/
+```
+
+LocalVL:
+
+```text
+outputs/20260614_002335/local_vl_eval/anima_start_reference_retake_vl/start_reference_vl_eval.json
+```
+
+Result:
+
+- no `candidate_ok` start frame;
+- selected candidate: `strict_side_profile`;
+- selected issue: `shoes_unreadable`;
+- LocalVL final decision: `is_walk_ready_start_reference: false`;
+- animation probe was blocked.
+
+The retake improved side-view composition compared with the previous selected front/near-front candidate, but the shoe/contact region is still too weak. The next meaningful change should add lower-body/foot structure to start-reference generation itself. Text-only retakes are showing diminishing returns.
+
 ## Non-Goals For The Next Loop
 
 - Do not switch to InstantID/PuLID before the side-view motion control is clean; they mainly help face identity and add dependency complexity.

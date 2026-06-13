@@ -154,3 +154,65 @@ blocked_start_reference_quality
 ```
 
 Do not run animation generation from this selected candidate. The next improvement should target candidate generation itself: stricter side-profile prompt variants, fewer model-sheet cues, and stronger rejection of front-view full-body portraits before animation spend.
+
+## 2026-06-14 Start-Reference Retake + LocalVL
+
+Run:
+
+- Reference: `assets/reference/Anima_00013_.png`
+- Candidate generation report: `outputs/20260614_001954/fullbody_reference/anima_00013/reference_candidates_report.json`
+- Candidate contact sheet: `outputs/20260614_001954/fullbody_reference/anima_00013/contact_sheet.png`
+- Selected candidate: `outputs/20260614_001954/fullbody_reference/anima_00013/selected_reference/start_frame.png`
+- LocalVL review: `outputs/20260614_002335/local_vl_eval/anima_start_reference_retake_vl/start_reference_vl_eval.json`
+
+Changes:
+
+- Added stricter prompt variants:
+  - `profile_walk_contact_no_portrait`
+  - `small_stride_side_walk_sprite`
+- Strengthened negative prompt against props, bicycles, front-facing portraits, hidden shoes, and looking-at-viewer still portrait bias.
+- Added a start-reference LocalVL evaluator:
+  - `scripts/evaluate_start_reference_with_ollama_vl.py`
+  - role: `secondary_start_reference_review`
+  - output: `start_reference_vl_eval.json`
+
+Result:
+
+- 12 candidates were generated.
+- No candidate reached `candidate_ok`.
+- Auto-selected candidate: `strict_side_profile`.
+- Selected status: `manual_review_or_retake`.
+- Blocking issue: `shoes_unreadable`.
+- `animation_probe_allowed: false`.
+
+Lower-body metrics for the selected candidate:
+
+- `foot_component_count: 2`
+- `lower_leg_component_count: 1`
+- `foot_separation_ratio: 0.53111`
+- `foot_zone_coverage: 0.01584`
+- `lower_leg_visibility_ratio: 0.02355`
+
+Agent visual review:
+
+- Better side-view composition than the previous front/near-front selection.
+- Still not a walk-ready game start frame because the shoe/contact zone is unreliable and the stance is not a clear walk-contact pose.
+- Candidate `side_profile_shoes_apart` and `small_stride_side_walk_sprite` are visually interesting, but still carry deterministic issues, so they are evidence, not animation inputs.
+
+LocalVL result:
+
+- `is_walk_ready_start_reference: false`
+- blocking reasons:
+  - `deterministic_selection_not_candidate_ok`
+  - `deterministic_shoes_unreadable`
+  - `local_vl_low_shoe_readability_score`
+  - `local_vl_low_side_view_score`
+  - `local_vl_low_walk_contact_score`
+
+Decision:
+
+```text
+blocked_start_reference_quality
+```
+
+Do not run animation from this selected candidate. The retake improved side-view composition but did not solve the shoe/contact gate. The next useful change is to condition candidate generation directly on clearer lower-body/foot structure, not to keep asking text alone for shoes.
