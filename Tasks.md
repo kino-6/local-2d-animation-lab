@@ -1,12 +1,12 @@
-# Tasks: Foot-Contact Reference-Locked Walk Probe
+# Tasks: Lower-Body Sidecar Control Probe
 
 Archived checkpoint:
-`docs/archive/Tasks_20260613_lower_body_contact_control_completed.md`
+`docs/archive/Tasks_20260613_foot_contact_reference_locked_probe_completed.md`
 
 Detailed evidence:
 
-- `docs/reference_conditioned_regen_pdca.md`
 - `docs/reference_lock_motion_template_deep_dive.md`
+- `docs/reference_conditioned_regen_pdca.md`
 - `docs/walk_candidate_comparison.md`
 - `docs/local_skills/natural-sprite-controlnet-pdca/SKILL.md`
 
@@ -21,93 +21,96 @@ Detailed evidence:
 
 ## Current State
 
-- [x] Reference lock route exists:
-  - `scripts/regenerate_pose_sequence_controlnet.py`
-  - `IPAdapterAdvanced`
-  - `upper_body` attention mask
-  - novaOrangeXL checkpoint
-  - SDXL OpenPose ControlNet
-- [x] Best previous reference-locked short proof:
+- [x] Best previous reference-locked proof remains:
   - `outputs/20260613_214841/reference_pose_regen/walk_ipadv_style_precise_upper_mask_sideview_v2_8f/`
-  - Status: `selected_proof_only`, not adoption OK.
-  - Remaining blocker: foot/contact readability and lower-body local redraw stability.
-- [x] Best current lower-body/contact motion source:
-  - `outputs/20260613_222505/motion_source_video_pdca/motion_sources/sideview_walk_foot_contact_v3/`
-  - `sampled_min_ankle_x_separation: 0.204`
-  - `sampled_min_foot_box_x_gap: 0.11352`
-  - `unclear_ankle_separation_count: 0`
-  - `unclear_foot_box_count: 0`
-  - `max_stance_slide_delta: 0.00345`
+  - Status: `selected_proof_only`.
+- [x] Foot-contact v3 source is a better template, but did not improve generation through OpenPose-only:
+  - generated output: `outputs/20260613_223902/reference_pose_regen/walk_ipadv_upper_mask_foot_contact_v3_8f/`
+  - decision: `rejected_diagnostic`
+  - artifact hard failures: `3/8`
+  - region retake decisions: `2/8`
+  - span motion: `8.918`
+- [x] Local ControlNet models currently available:
+  - `SDXL\OpenPoseXL2.safetensors`
+  - `SDXL\t2i-adapter-openpose-sdxl-1.0.safetensors`
+  - `SD1.5\t2iadapter_openpose_sd14v1.pth`
+- [x] Local lineart/softedge/depth SDXL ControlNet was not found in the current ComfyUI model directory.
 
-## Completed PDCA: Use Foot-Contact Template In Generation
+## Plan
 
-- [x] Confirm ComfyUI queue capacity before generation.
-  - If queue is larger than the configured limit, wait instead of adding more jobs.
-  - Keep all output under `outputs/<timestamp>/...`.
-- [x] Run an 8-frame probe with the new foot-contact OpenPose source.
+The next mechanism test is not more OpenPose geometry. It is a two-control diagnostic:
+
+```text
+main OpenPose control = whole body phase and pose
+lower_body_sidecar control = separate foot/contact/lower-body constraint candidate
+IPAdapterAdvanced upper_body mask = identity lock
+```
+
+This is still diagnostic. Since the local second ControlNet choices are OpenPose-family models, it may not understand the sidecar perfectly. The purpose is to determine whether a separate sidecar channel helps at all before downloading or installing a more suitable lineart/softedge/depth model.
+
+## Active PDCA
+
+- [ ] Add optional secondary ControlNet support to `scripts/regenerate_pose_sequence_controlnet.py`.
+  - Inputs:
+    - `--sidecar-dir`
+    - `--sidecar-indices`
+    - `--sidecar-controlnet`
+    - `--sidecar-strength`
+    - `--sidecar-start`
+    - `--sidecar-end`
+  - Chain the second `ControlNetApplyAdvanced` after the main OpenPose apply.
+  - Keep the baseline path unchanged when no sidecar is provided.
+  - Record sidecar settings and copied sidecar frames in the run report.
+- [ ] Add unit tests for the secondary ControlNet workflow.
+  - Baseline workflow must remain unchanged without sidecar args.
+  - Sidecar workflow must load a second control image and apply a second ControlNet before KSampler.
+- [ ] Confirm ComfyUI queue capacity before generation.
+  - Use `/queue`.
+  - Do not submit if pending/running queue is above the configured limit.
+- [ ] Run one 8-frame sidecar diagnostic probe.
   - Source image:
     - `outputs/20260613_185524/background_normalize/prior_best_start_background_normalize/frames/frame_000.png`
-  - Pose source:
+  - Main pose:
     - `outputs/20260613_222505/motion_source_video_pdca/motion_sources/sideview_walk_foot_contact_v3/controlnet`
-  - Pose indices:
+  - Sidecar:
+    - `outputs/20260613_222505/motion_source_video_pdca/motion_sources/sideview_walk_foot_contact_v3/lower_body_sidecar`
+  - Pose/sidecar indices:
     - `0,15,30,45,60,75,90,105`
-  - Baseline settings:
+  - Reference settings:
     - checkpoint `novaOrangeXL_v120.safetensors`
-    - ControlNet `SDXL\OpenPoseXL2.safetensors`
+    - main ControlNet `SDXL\OpenPoseXL2.safetensors`
+    - sidecar ControlNet `SDXL\t2i-adapter-openpose-sdxl-1.0.safetensors`
     - denoise `0.78`
-    - ControlNet strength `0.92`
-    - ControlNet end `0.68`
+    - main ControlNet strength `0.92`
+    - main ControlNet end `0.68`
+    - sidecar strength start point `0.35`
+    - sidecar end start point `0.55`
     - IPAdapter mode `advanced`
     - IPAdapter weight type `style transfer precise`
     - IPAdapter weight `0.55`
     - IPAdapter end `0.62`
     - IPAdapter attention mask `upper_body`
-- [x] Gate the generated 8-frame probe.
+- [ ] Gate the sidecar probe.
   - `repair_frame_artifacts.py --mask-only --weapon none`
   - `select_best_span.py --action walk --motion-metric foreground --allow-hard-failures`
   - `analyze_sprite_regions.py`
-  - Agent visual review of `comparison_sheet.png`, `contact_sheet.png`, and `preview.gif`.
-  - Generated output:
-    - `outputs/20260613_223902/reference_pose_regen/walk_ipadv_upper_mask_foot_contact_v3_8f/`
-  - Gate outputs:
-    - artifact: `outputs/20260613_224018/artifact_repair/walk_ipadv_upper_mask_foot_contact_v3_8f_mask_gate/artifact_repair_report.json`
-    - span: `outputs/20260613_224018/span_selection/walk_ipadv_upper_mask_foot_contact_v3_8f_span/span_selection_report.json`
-    - region: `outputs/20260613_224018/region_diagnostics/walk_ipadv_upper_mask_foot_contact_v3_8f_regions/region_diagnostics_report.json`
-- [x] Compare against the previous upper-body-mask proof.
-  - Prior proof:
+  - Agent visual review of comparison/contact sheets.
+- [ ] Compare against both prior proofs.
+  - Previous best:
     - `outputs/20260613_214841/reference_pose_regen/walk_ipadv_style_precise_upper_mask_sideview_v2_8f/`
-  - Required improvement:
-    - region `retake_required` below `2/8`, or
-    - clear visual improvement in foot/contact readability without identity drift.
-  - Result:
-    - region retake stayed `2/8`, not below previous proof.
-    - artifact hard failures worsened from `0` to `3`.
-    - span motion dropped from previous `11.725` to `8.918`.
-    - lower-body/feet temporal deltas improved, but not enough to beat the prior proof overall.
-- [x] Decide promotion status.
-  - `rejected_diagnostic`: guide burn-in, duplicate lower limbs, severe identity drift, or worse foot/contact labels.
-  - `selected_proof_only`: clearer foot/contact but still not adoption OK.
-  - `adopted_animation_candidate`: only if short proof has artifact hard failures `0`, region retakes `0`, readable walk contact, and stable identity.
-  - Decision: `rejected_diagnostic`.
-  - Reason: the foot-contact template is better as a control source, but feeding it through the same OpenPose-only path did not improve generated sprite adoption quality. It increased duplicate-silhouette hard failures.
-- [x] Record result in reports and Skill.
-  - Update `docs/reference_lock_motion_template_deep_dive.md`.
-  - Update `docs/walk_candidate_comparison.md`.
-  - Update `docs/local_skills/natural-sprite-controlnet-pdca/SKILL.md` if the decision changes the workflow rule.
-
-## Failure Analysis
-
-- [x] Do not tune only prompts or scalar weights for a long loop.
-- [x] Inspect whether failure comes from:
-  - pose template still too exaggerated;
-  - ControlNet copying the guide;
-  - IPAdapter still freezing or recoloring the body;
-  - model unable to preserve lower-body structure frame-to-frame.
-  - Finding: the template itself is cleaner, but OpenPose-only does not carry foot-box semantics into generated shoes/contact. The failure is a mechanism limit, not only template geometry.
-- [x] If foot/contact remains poor, test lower-body sidecar as a separate control/mask candidate rather than visible overlay.
-  - Next route: use `lower_body_sidecar/` as a separate control/mask candidate, not as visible overlay.
-- [x] If identity drifts, compare upper-body mask strength and whole-character mask only as a short diagnostic.
-  - Finding: identity drift was not the primary blocker in this probe.
+  - Foot-contact OpenPose-only diagnostic:
+    - `outputs/20260613_223902/reference_pose_regen/walk_ipadv_upper_mask_foot_contact_v3_8f/`
+  - Improvement target:
+    - artifact hard failures `0`;
+    - region retake decisions below `2/8`;
+    - or clear visual foot/contact improvement without guide leakage or identity drift.
+- [ ] Decide the next mechanism.
+  - If sidecar improves: keep sidecar route and test better sidecar render styles or a more suitable ControlNet model.
+  - If sidecar worsens or no-ops: record that OpenPose-family secondary ControlNet is not enough and plan model acquisition for lineart/softedge/depth.
+- [ ] Update reports and Skill.
+  - `docs/reference_lock_motion_template_deep_dive.md`
+  - `docs/walk_candidate_comparison.md`
+  - `docs/local_skills/natural-sprite-controlnet-pdca/SKILL.md`
 
 ## Status Vocabulary
 
