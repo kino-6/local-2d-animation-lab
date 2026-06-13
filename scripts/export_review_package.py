@@ -12,12 +12,13 @@ from PIL import Image
 
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Export a compact review package for selected animation frames.")
     parser.add_argument("--frames-dir", required=True, type=Path)
-    parser.add_argument("--output-root", default=Path("review_packages"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--run-label", default=None)
     parser.add_argument("--action", default="unknown")
     parser.add_argument("--character-id", default="unknown")
@@ -85,7 +86,13 @@ def export_review_package(
         raise FileNotFoundError(f"No PNG frames found: {frames_dir}")
 
     label = _safe_label(run_label or f"{frames_dir.parent.name}_review")
-    review_dir = output_root / time.strftime(f"{label}_%Y%m%d_%H%M%S")
+    review_dir = build_timestamped_run_dir(output_root, "review_package", label)
+    write_run_profile(
+        review_dir,
+        category="review_package",
+        label=label,
+        extra={"action": action, "character_id": character_id, "visual_decision": visual_decision},
+    )
     review_frames = review_dir / "frames"
     reports_dir = review_dir / "reports"
     review_frames.mkdir(parents=True, exist_ok=True)

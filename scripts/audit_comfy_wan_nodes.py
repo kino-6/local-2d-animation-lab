@@ -8,6 +8,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
+
 
 INTERESTING_NODES = (
     "WanAnimateToVideo",
@@ -28,15 +30,15 @@ INTERESTING_NODES = (
 def main() -> None:
     parser = argparse.ArgumentParser(description="Audit local ComfyUI Wan video node inputs.")
     parser.add_argument("--comfy-url", default="http://127.0.0.1:8188")
-    parser.add_argument("--output-root", type=Path, default=Path("outputs_comfy_audit"))
+    parser.add_argument("--output-root", type=Path, default=Path("outputs"))
     parser.add_argument("--pattern", default=r"wan|video|control|inpaint|animate")
     args = parser.parse_args()
 
     object_info = _fetch_object_info(args.comfy_url.rstrip("/"))
     audit = build_audit(object_info, pattern=args.pattern)
 
-    run_dir = args.output_root / time.strftime("wan_node_audit_%Y%m%d_%H%M%S")
-    run_dir.mkdir(parents=True, exist_ok=True)
+    run_dir = build_timestamped_run_dir(args.output_root, "comfy_audit", "wan_node_audit")
+    write_run_profile(run_dir, category="comfy_audit", label="wan_node_audit", args=args)
     audit_path = run_dir / "wan_node_audit.json"
     summary_path = run_dir / "wan_node_audit_summary.md"
     audit_path.write_text(json.dumps(audit, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

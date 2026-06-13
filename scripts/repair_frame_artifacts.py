@@ -22,6 +22,7 @@ from natural_sprite_lab.progress import ProgressTimer
 from natural_sprite_lab.progress import progress_iter
 from natural_sprite_lab.quality import analyze_frame_quality
 from natural_sprite_lab.quality import prepare_analysis_frame
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 POSITIVE_PROMPT = (
@@ -43,7 +44,7 @@ def main() -> None:
     )
     parser.add_argument("--comfy-url", default="http://127.0.0.1:8188")
     parser.add_argument("--frames-dir", required=True, type=Path)
-    parser.add_argument("--output-root", default=Path("outputs_artifact_repair_pdca"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--run-label", default=None)
     parser.add_argument("--checkpoint", default="novaOrangeXL_v120.safetensors")
     parser.add_argument("--width", default=1024, type=int)
@@ -70,8 +71,26 @@ def main() -> None:
     )
     parser.add_argument("--weapon", choices=("none", "sword", "axe", "bow"), default="none")
     parser.add_argument("--mask-only", action="store_true")
+    parser.add_argument(
+        "--correction-plan",
+        default=None,
+        type=Path,
+        help="Optional masked correction plan. Only allowed plan actions may be inpainted.",
+    )
+    parser.add_argument("--allowed-plan-action", default="local_inpaint_candidate")
+    parser.add_argument(
+        "--only-plan-action",
+        default=None,
+        help="If set, process only frames whose correction-plan action matches this value.",
+    )
     parser.add_argument("--positive", default=POSITIVE_PROMPT)
     parser.add_argument("--negative", default=NEGATIVE_PROMPT)
+    parser.add_argument(
+        "--external-mask-dir",
+        default=None,
+        type=Path,
+        help="Optional directory of frame_###.png masks from region diagnostics.",
+    )
     add_queue_wait_arguments(parser)
     parser.add_argument("--timeout-seconds", default=900.0, type=float)
     args = parser.parse_args()
@@ -79,9 +98,20 @@ def main() -> None:
     frame_paths = sorted(args.frames_dir.glob("*.png"), key=_frame_index)
     if not frame_paths:
         raise FileNotFoundError(f"No PNG frames found: {args.frames_dir}")
+    plan_actions = _plan_action_by_index(args.correction_plan)
+    indexed_frames = _select_indexed_frames(frame_paths, plan_actions, args.only_plan_action)
+    if not indexed_frames:
+        raise ValueError(f"No frames matched only-plan-action={args.only_plan_action!r}")
 
     label = _safe_label(args.run_label or f"{args.frames_dir.parent.name}_artifact_repair")
-    run_dir = args.output_root / time.strftime(f"{label}_%Y%m%d_%H%M%S")
+    run_dir = build_timestamped_run_dir(args.output_root, "artifact_repair", label)
+    write_run_profile(
+        run_dir,
+        category="artifact_repair",
+        label=label,
+        args=args,
+        memo="Masked artifact analysis/repair run. Strong structural failures should remain quality-gate failures.",
+    )
     source_dir = run_dir / "source_frames"
     masks_dir = run_dir / "masks"
     person_masks_dir = run_dir / "person_masks"
@@ -119,6 +149,10 @@ def main() -> None:
             "analysis_max_size": args.analysis_max_size,
             "weapon": args.weapon,
             "mask_only": args.mask_only,
+            "correction_plan": str(args.correction_plan) if args.correction_plan else None,
+            "allowed_plan_action": args.allowed_plan_action,
+            "only_plan_action": args.only_plan_action,
+            "external_mask_dir": str(args.external_mask_dir) if args.external_mask_dir else None,
             "positive": args.positive,
             "negative": args.negative,
         },
@@ -136,7 +170,6 @@ def main() -> None:
         repaired_outputs: list[Path] = []
 
         previous_prepared: Path | None = None
-        indexed_frames = list(enumerate(frame_paths))
         for index, source in progress_iter(
             indexed_frames,
             total=len(indexed_frames),
@@ -145,6 +178,9 @@ def main() -> None:
         ):
             prepared = _prepare_source(source, source_dir / f"source_{index:03d}.png", args.width, args.height)
             analysis = _analyze_frame(prepared, args)
+            external_mask_path = _external_mask_path(args.external_mask_dir, index)
+            if external_mask_path:
+                _apply_external_repair_mask(analysis, external_mask_path, args)
             quality_source = prepare_analysis_frame(
                 prepared,
                 run_dir / "analysis_frames" / f"analysis_{index:03d}.png",
@@ -200,11 +236,22 @@ def main() -> None:
                     "quality_metrics": quality.to_dict(),
                 }
             )
+            plan_action = plan_actions.get(index)
+            if plan_action:
+                frame_report["correction_plan_action"] = plan_action
+                if plan_action == "retake_required":
+                    frame_report["gate"] = "retake_required"
+                    if "correction_plan_retake_required" not in frame_report["issue_codes"]:
+                        frame_report["issue_codes"].append("correction_plan_retake_required")
 
             repaired_path = repaired_dir / f"frame_{index:03d}.png"
             if args.mask_only or frame_report["mask_coverage"] < args.min_mask_coverage:
                 Image.open(prepared).save(repaired_path)
                 frame_report["repair_mode"] = "copied_no_inpaint"
+                frame_report["source_delta"] = 0.0
+            elif not _plan_allows_inpaint(plan_action, args.allowed_plan_action):
+                Image.open(prepared).save(repaired_path)
+                frame_report["repair_mode"] = "blocked_by_correction_plan"
                 frame_report["source_delta"] = 0.0
             elif frame_report["gate"] == "retake_required":
                 Image.open(prepared).save(repaired_path)
@@ -450,6 +497,43 @@ def _analyze_frame(path: Path, args: argparse.Namespace) -> dict[str, Any]:
         "review_labels": review_labels,
         "gate": gate,
     }
+
+
+def _external_mask_path(mask_dir: Path | None, index: int) -> Path | None:
+    if mask_dir is None:
+        return None
+    path = mask_dir / f"frame_{index:03d}.png"
+    return path if path.exists() else None
+
+
+def _apply_external_repair_mask(analysis: dict[str, Any], mask_path: Path, args: argparse.Namespace) -> None:
+    external = Image.open(mask_path).convert("L")
+    external = _restore_mask_size(external, analysis["repair_mask"].size)
+    external = _remove_low_mask_values(external, 128)
+    external = _grow_mask(external, args.mask_grow)
+    external = ImageChops.subtract(external, analysis["protected_mask"])
+    external = external.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.MaxFilter(3))
+    coverage = _mask_coverage(external)
+    analysis["repair_mask"] = external
+    analysis["mask_coverage"] = round(coverage, 5)
+    analysis["mask_pixels"] = _mask_pixels(external)
+    analysis["external_mask"] = str(mask_path)
+    analysis["issue_codes"] = [
+        code
+        for code in analysis["issue_codes"]
+        if code not in {"masked_ghost_or_small_artifact", "repair_mask_too_large"}
+    ]
+    if coverage >= args.min_mask_coverage:
+        analysis["issue_codes"].append("masked_ghost_or_small_artifact")
+        if analysis["gate"] == "no_repair_needed":
+            analysis["gate"] = "repair_candidate"
+    else:
+        hard_codes = {"double_foot_or_duplicate_leg_risk", "strong_duplicate_silhouette_risk"}
+        if not any(code in analysis["issue_codes"] for code in hard_codes):
+            analysis["gate"] = "no_repair_needed"
+    if coverage > args.max_mask_coverage:
+        analysis["issue_codes"].append("repair_mask_too_large")
+        analysis["gate"] = "retake_required"
 
 
 def _resize_for_analysis(image: Image.Image, max_size: int) -> Image.Image:
@@ -817,6 +901,33 @@ def _summarize_reports(reports: list[dict[str, Any]]) -> dict[str, Any]:
         "candidate_status": _candidate_status(gates, issue_counts, review_label_counts),
         "recommendation": _recommendation(gates, issue_counts, repaired),
     }
+
+
+def _plan_action_by_index(path: Path | None) -> dict[int, str]:
+    if path is None:
+        return {}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    actions: dict[int, str] = {}
+    for item in payload.get("frame_plans", []):
+        if "index" not in item:
+            continue
+        actions[int(item["index"])] = str(item.get("action", ""))
+    return actions
+
+
+def _select_indexed_frames(
+    frame_paths: list[Path],
+    plan_actions: dict[int, str],
+    only_plan_action: str | None,
+) -> list[tuple[int, Path]]:
+    indexed = list(enumerate(frame_paths))
+    if not only_plan_action:
+        return indexed
+    return [(index, path) for index, path in indexed if plan_actions.get(index) == only_plan_action]
+
+
+def _plan_allows_inpaint(plan_action: str | None, allowed_action: str) -> bool:
+    return not plan_action or plan_action == allowed_action
 
 
 def _candidate_status(

@@ -13,21 +13,28 @@ from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
 from natural_sprite_lab.quality import SpanSelection
 from natural_sprite_lab.quality import analyze_frame_quality
+from natural_sprite_lab.quality import analyze_motion_readability
 from natural_sprite_lab.quality import prepare_analysis_frame
 from natural_sprite_lab.quality import recommendation_table
 from natural_sprite_lab.quality import select_best_span
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Select the best contiguous animation span from generated frames.")
     parser.add_argument("--frames-dir", required=True, type=Path)
-    parser.add_argument("--output-root", default=Path("outputs_span_selection"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--run-label", default=None)
     parser.add_argument("--span-length", default=8, type=int)
     parser.add_argument("--fps", default=8, type=int)
     parser.add_argument("--allow-hard-failures", action="store_true")
     parser.add_argument("--foreground-mask-dir", default=None, type=Path)
+    parser.add_argument("--action", default="unknown")
     parser.add_argument("--min-mean-motion-delta", default=0.0, type=float)
+    parser.add_argument("--min-readable-motion-delta", default=None, type=float)
+    parser.add_argument("--active-frame-delta", default=None, type=float)
+    parser.add_argument("--min-active-frame-ratio", default=None, type=float)
+    parser.add_argument("--max-static-frame-run", default=None, type=int)
     parser.add_argument("--max-mean-foreground-mask-delta", default=None, type=float)
     parser.add_argument("--motion-metric", choices=("global", "foreground", "max"), default="global")
     parser.add_argument(
@@ -43,7 +50,8 @@ def main() -> None:
         raise FileNotFoundError(f"No PNG frames found: {args.frames_dir}")
 
     label = _safe_label(args.run_label or f"{args.frames_dir.parent.name}_best_span")
-    run_dir = args.output_root / time.strftime(f"{label}_%Y%m%d_%H%M%S")
+    run_dir = build_timestamped_run_dir(args.output_root, "span_selection", label)
+    write_run_profile(run_dir, category="span_selection", label=label, args=args)
     selected_dir = run_dir / "selected_frames"
     selected_dir.mkdir(parents=True, exist_ok=True)
 
@@ -76,6 +84,15 @@ def main() -> None:
         max_mean_foreground_mask_delta=args.max_mean_foreground_mask_delta,
         motion_metric=args.motion_metric,
     )
+    motion_readability = analyze_motion_readability(
+        qualities,
+        action=args.action,
+        motion_metric=args.motion_metric,
+        min_mean_motion_delta=args.min_readable_motion_delta,
+        active_frame_delta=args.active_frame_delta,
+        min_active_frame_ratio=args.min_active_frame_ratio,
+        max_static_frame_run=args.max_static_frame_run,
+    )
     selected_paths = []
     for output_index, source in enumerate(selection.frame_paths):
         source_path = Path(source)
@@ -93,13 +110,19 @@ def main() -> None:
             "fps": args.fps,
             "allow_hard_failures": args.allow_hard_failures,
             "foreground_mask_dir": str(args.foreground_mask_dir) if args.foreground_mask_dir else None,
+            "action": args.action,
             "min_mean_motion_delta": args.min_mean_motion_delta,
+            "min_readable_motion_delta": args.min_readable_motion_delta,
+            "active_frame_delta": args.active_frame_delta,
+            "min_active_frame_ratio": args.min_active_frame_ratio,
+            "max_static_frame_run": args.max_static_frame_run,
             "max_mean_foreground_mask_delta": args.max_mean_foreground_mask_delta,
             "motion_metric": args.motion_metric,
             "analysis_max_size": args.analysis_max_size,
         },
         "selection": selection.to_dict(),
-        "selection_review_labels": _selection_review_labels(selection),
+        "motion_readability": motion_readability.to_dict(),
+        "selection_review_labels": _selection_review_labels(selection, motion_readability),
         "retake_recommendations": recommendation_table(qualities),
         "selected_frames_dir": str(selected_dir),
         "span_contact_sheet": str(contact_sheet),
@@ -132,7 +155,7 @@ def _safe_label(value: str) -> str:
     return safe or "best_span"
 
 
-def _selection_review_labels(selection: SpanSelection) -> list[str]:
+def _selection_review_labels(selection: SpanSelection, motion_readability=None) -> list[str]:
     labels: list[str] = []
     penalties = set(selection.selection_penalties)
     if "mean_motion_delta_too_low" in penalties:
@@ -141,6 +164,8 @@ def _selection_review_labels(selection: SpanSelection) -> list[str]:
         labels.append("scale_or_silhouette_temporal_jitter_review")
     if selection.hard_failures:
         labels.append("structural_hard_failure_review")
+    if motion_readability is not None and motion_readability.status != "passed":
+        labels.append("motion_readability_retake_or_manual_review")
     return labels
 
 

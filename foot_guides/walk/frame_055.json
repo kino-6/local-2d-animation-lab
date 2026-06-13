@@ -1,0 +1,34 @@
+{
+  "action": "walk",
+  "frame_index": 55,
+  "phase": "down",
+  "ground_y": 0.83,
+  "left_foot": {
+    "center": [
+      0.52718,
+      0.83
+    ],
+    "size": [
+      0.075,
+      0.03
+    ],
+    "contact": true
+  },
+  "right_foot": {
+    "center": [
+      0.47282,
+      0.81835
+    ],
+    "size": [
+      0.075,
+      0.03
+    ],
+    "contact": false
+  },
+  "stride_envelope": {
+    "left": 0.35,
+    "right": 0.65,
+    "top": 0.73,
+    "bottom": 0.865
+  }
+}

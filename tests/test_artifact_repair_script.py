@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from argparse import Namespace
 from pathlib import Path
 
@@ -16,7 +17,11 @@ _analyze_frame = _MODULE._analyze_frame
 _candidate_status = _MODULE._candidate_status
 _mask_coverage = _MODULE._mask_coverage
 _overlap_pixels = _MODULE._overlap_pixels
+_plan_allows_inpaint = _MODULE._plan_allows_inpaint
+_plan_action_by_index = _MODULE._plan_action_by_index
 _recommendation = _MODULE._recommendation
+_select_indexed_frames = _MODULE._select_indexed_frames
+_apply_external_repair_mask = _MODULE._apply_external_repair_mask
 
 
 def _args() -> Namespace:
@@ -157,3 +162,72 @@ def test_candidate_status_stays_selected_proof_when_review_labels_remain() -> No
     )
 
     assert status == "selected_proof_only"
+
+
+def test_plan_action_by_index_loads_masked_correction_plan(tmp_path: Path) -> None:
+    plan = tmp_path / "plan.json"
+    plan.write_text(
+        json.dumps(
+            {
+                "frame_plans": [
+                    {"index": 0, "action": "local_inpaint_candidate"},
+                    {"index": 1, "action": "retake_required"},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert _plan_action_by_index(plan) == {
+        0: "local_inpaint_candidate",
+        1: "retake_required",
+    }
+
+
+def test_plan_allows_only_configured_inpaint_action() -> None:
+    assert _plan_allows_inpaint(None, "local_inpaint_candidate")
+    assert _plan_allows_inpaint("local_inpaint_candidate", "local_inpaint_candidate")
+    assert not _plan_allows_inpaint("retake_required", "local_inpaint_candidate")
+    assert not _plan_allows_inpaint("postprocess_only", "local_inpaint_candidate")
+
+
+def test_select_indexed_frames_can_limit_to_plan_action(tmp_path: Path) -> None:
+    frames = [tmp_path / f"frame_{index:03d}.png" for index in range(4)]
+    selected = _select_indexed_frames(
+        frames,
+        {
+            0: "local_inpaint_candidate",
+            1: "retake_required",
+            3: "local_inpaint_candidate",
+        },
+        "local_inpaint_candidate",
+    )
+
+    assert selected == [(0, frames[0]), (3, frames[3])]
+
+
+def test_apply_external_repair_mask_protects_main_body(tmp_path: Path) -> None:
+    mask_path = tmp_path / "frame_000.png"
+    external = Image.new("L", (64, 64), 0)
+    draw = ImageDraw.Draw(external)
+    draw.rectangle((20, 20, 40, 40), fill=255)
+    draw.rectangle((48, 48, 54, 54), fill=255)
+    external.save(mask_path)
+
+    protected = Image.new("L", (64, 64), 0)
+    ImageDraw.Draw(protected).rectangle((18, 18, 42, 42), fill=255)
+    analysis = {
+        "repair_mask": Image.new("L", (64, 64), 0),
+        "protected_mask": protected,
+        "issue_codes": [],
+        "gate": "no_repair_needed",
+    }
+
+    args = _args()
+    args.mask_grow = 0
+    _apply_external_repair_mask(analysis, mask_path, args)
+
+    assert analysis["mask_coverage"] > 0.0
+    assert analysis["gate"] == "repair_candidate"
+    assert analysis["repair_mask"].getpixel((30, 30)) == 0
+    assert analysis["repair_mask"].getpixel((50, 50)) == 255

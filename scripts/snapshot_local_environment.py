@@ -11,6 +11,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
+
 
 DEFAULT_COMFY_ROOT = Path("C:/LocalWork/StabilityMatrix/Data/Packages/ComfyUI")
 MODEL_DIRS = (
@@ -53,7 +55,7 @@ def main() -> None:
     )
     parser.add_argument("--comfy-url", default="http://127.0.0.1:8188")
     parser.add_argument("--comfy-root", default=DEFAULT_COMFY_ROOT, type=Path)
-    parser.add_argument("--output-root", default=Path("outputs_environment_snapshot"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--model-dir", action="append", default=None, choices=MODEL_DIRS)
     parser.add_argument("--important-pattern", action="append", default=None)
     parser.add_argument("--hash-all", action="store_true")
@@ -63,8 +65,8 @@ def main() -> None:
 
     model_dirs = tuple(args.model_dir or MODEL_DIRS)
     important_patterns = tuple(args.important_pattern or IMPORTANT_MODEL_PATTERNS)
-    run_dir = args.output_root / time.strftime("environment_snapshot_%Y%m%d_%H%M%S")
-    run_dir.mkdir(parents=True, exist_ok=True)
+    run_dir = build_timestamped_run_dir(args.output_root, "environment_snapshot", "environment_snapshot")
+    write_run_profile(run_dir, category="environment_snapshot", label="environment_snapshot", args=args)
 
     snapshot = build_snapshot(
         comfy_url=args.comfy_url.rstrip("/"),

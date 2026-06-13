@@ -22,6 +22,7 @@ from natural_sprite_lab.progress import progress_iter
 from natural_sprite_lab.quality import analyze_frame_quality
 from natural_sprite_lab.quality.start_frame import make_start_frame_debug_sheet
 from natural_sprite_lab.quality.start_frame import prepare_clean_start_frame
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 DEFAULT_IDENTITY_TRAITS = (
@@ -32,10 +33,13 @@ DEFAULT_IDENTITY_TRAITS = (
 
 NEGATIVE_PROMPT = (
     "low quality, blurry, jpeg artifacts, cropped head, cropped feet, missing feet, missing shoes, "
-    "extra limbs, extra legs, duplicate body, duplicate face, multiple characters, chibi, child body, "
+    "extra limbs, extra legs, duplicate body, duplicate face, multiple characters, chibi, child body, merged legs, "
     "front view when side view is requested, back view, character sheet, model sheet, turnaround sheet, "
     "multiple views, side-by-side figures, guide lines, red border lines, headgear, animal ears, helmet, "
-    "weapon, sword, bow, staff, background scenery, text, watermark, logo, motion blur, ghost trail, afterimage"
+    "weapon, sword, bow, staff, background scenery, text, watermark, logo, motion blur, ghost trail, afterimage, "
+    "long cloak covering legs, coat hiding legs, skirt hiding knees, shoes touching each other, single foot blob, "
+    "black shadow merged with shoes, unreadable lower legs, rear view, looking away from camera, "
+    "front-facing full-body portrait, fashion illustration pose, feet crossed, toes hidden, shoes hidden by skirt"
 )
 
 
@@ -55,8 +59,10 @@ CANDIDATES = (
         positive_template=(
             "masterpiece, best quality, polished anime game sprite animation start frame, one single character only, "
             "full body, strict right-facing side profile, profile face, one visible eye, nose points right, torso side-on, "
-            "feet fully visible, centered on canvas, clean white background, crisp cel shading, {identity_traits}, "
-            "neutral standing walk-ready pose, readable silhouette, complete hands and shoes, no model sheet"
+            "feet fully visible and separated, both shoes readable, lower legs unobstructed, centered on canvas, "
+            "clean white background, crisp cel shading, {identity_traits}, walk-cycle neutral contact pose, "
+            "both shoes on the ground, shoes separated by visible white space, side-view shoe silhouettes, "
+            "readable silhouette, complete hands and shoes, no model sheet"
         ),
     ),
     ReferenceCandidate(
@@ -66,8 +72,8 @@ CANDIDATES = (
         positive_template=(
             "masterpiece, best quality, polished anime game sprite animation start frame, one single character only, "
             "full body, slight 3/4 side view facing right, body turned to the right, not front-facing, "
-            "feet fully visible, centered on canvas, clean white background, crisp cel shading, {identity_traits}, "
-            "neutral standing walk-ready pose, readable silhouette, complete hands and shoes, no model sheet"
+            "feet fully visible and separated, two shoes readable, lower legs not hidden by clothes, centered on canvas, clean white background, crisp cel shading, {identity_traits}, "
+            "walk-cycle neutral contact pose, both shoes on the ground, side-view shoe silhouettes, readable silhouette, complete hands and shoes, no model sheet"
         ),
     ),
     ReferenceCandidate(
@@ -78,7 +84,7 @@ CANDIDATES = (
             "masterpiece, best quality, clean anime game sprite animation start frame, exactly one full-body girl, "
             "right-facing side view only, profile silhouette, profile face, one eye visible, nose and shoes point right, "
             "plain white background, no border, no guide line, crisp cel shading, {identity_traits}, "
-            "standing walk-ready pose with both shoes fully visible"
+            "walk-cycle neutral contact pose with both shoes fully visible and separated by white space, slim visible lower legs"
         ),
     ),
     ReferenceCandidate(
@@ -88,7 +94,75 @@ CANDIDATES = (
         positive_template=(
             "masterpiece, best quality, single full-body anime game character, right-facing side-view walk start frame, "
             "not a character sheet, not a turnaround, one figure centered, full body from head to shoes, profile face, "
-            "clean white background, crisp cel shading, {identity_traits}, readable feet and shoes"
+            "clean white background, crisp cel shading, {identity_traits}, readable separated feet and shoes, clear ankles, "
+            "both shoes planted on the ground as a walk-cycle contact frame"
+        ),
+    ),
+    ReferenceCandidate(
+        name="face_visible_side_sprite",
+        pose_variant="strict_side",
+        seed_offset=4000,
+        positive_template=(
+            "masterpiece, best quality, 2d game sprite animation start frame, exactly one full-body character only, "
+            "right-facing side view, face visible in profile, one blue eye visible, nose points right, chest points right, "
+            "not back view, not rear view, not front view, no second character, no turnaround sheet, centered full body, "
+            "head to shoes visible, plain white background, crisp cel shading, {identity_traits}, walk-cycle neutral contact pose, "
+            "two separated shoes, visible lower legs, no cloak or coat covering the legs"
+        ),
+    ),
+    ReferenceCandidate(
+        name="side_profile_single_sprite",
+        pose_variant="strict_side",
+        seed_offset=5000,
+        positive_template=(
+            "high quality anime 2d game sprite, one single full-body woman, right-facing clean side profile, "
+            "visible face and one visible eye, visible nose and mouth, complete hands and separated shoes, "
+            "no rear view, no back of head, no front-facing pose, no paired figures, no model sheet, no cropped limbs, "
+            "white background, sharp cel shaded silhouette, lower legs unobstructed, {identity_traits}"
+        ),
+    ),
+    ReferenceCandidate(
+        name="walk_ready_clear_lower_legs",
+        pose_variant="strict_side",
+        seed_offset=6000,
+        positive_template=(
+            "masterpiece, best quality, animation-ready 2d game sprite start frame, one full-body character only, "
+            "strict right-facing side profile, profile face visible, walk-cycle neutral contact pose, "
+            "both lower legs clearly visible, feet apart, shoes separated by white space, ankles readable, "
+            "no long coat, no cloak, no skirt covering knees, clean white background, crisp cel shading, {identity_traits}"
+        ),
+    ),
+    ReferenceCandidate(
+        name="side_profile_shoes_apart",
+        pose_variant="strict_side",
+        seed_offset=7000,
+        positive_template=(
+            "high quality anime game sprite start frame, full body single character, right-facing side profile, "
+            "head to shoes visible, face in profile, one eye visible, torso side-on, legs slim and readable, "
+            "left shoe and right shoe separated, clear contact shadows under each shoe, plain white background, "
+            "no cape, no robe, no model sheet, {identity_traits}"
+        ),
+    ),
+    ReferenceCandidate(
+        name="walk_sprite_no_leg_occlusion",
+        pose_variant="strict_side",
+        seed_offset=8000,
+        positive_template=(
+            "polished 2d game walk animation start frame, single full-body character, right-facing side view, "
+            "walk-cycle neutral contact pose, profile face, visible hands, visible knees, visible ankles, "
+            "two distinct feet, two distinct shoes, clothing does not overlap the lower legs, clean white background, "
+            "crisp line art and cel shading, {identity_traits}"
+        ),
+    ),
+    ReferenceCandidate(
+        name="compact_side_game_sprite",
+        pose_variant="three_quarter_side",
+        seed_offset=9000,
+        positive_template=(
+            "compact anime 2d game sprite start frame, one full-body character, slight side view facing right, "
+            "not front view, not rear view, face partly visible, clean readable silhouette, "
+            "feet shoulder-width apart, shoes separated and fully visible, lower legs not hidden by outfit, "
+            "plain white background, no panel, no guide lines, {identity_traits}"
         ),
     ),
 )
@@ -99,7 +173,7 @@ def main() -> None:
         description="Generate 1024 full-body side-view reference candidates for local Wan animation."
     )
     parser.add_argument("--input", required=True, type=Path)
-    parser.add_argument("--output-root", default=Path("outputs_fullbody_reference"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--comfy-url", default="http://127.0.0.1:8188")
     parser.add_argument("--checkpoint", default="novaOrangeXL_v120.safetensors")
     parser.add_argument("--controlnet", default="SDXL\\OpenPoseXL2.safetensors")
@@ -117,7 +191,9 @@ def main() -> None:
     args = parser.parse_args()
 
     server = args.comfy_url.rstrip("/")
-    run_dir = args.output_root / time.strftime(f"{_safe_label(args.input.stem)}_%Y%m%d_%H%M%S")
+    label = _safe_label(args.input.stem)
+    run_dir = build_timestamped_run_dir(args.output_root, "fullbody_reference", label)
+    write_run_profile(run_dir, category="fullbody_reference", label=label, args=args)
     source_dir = run_dir / "generated"
     cleaned_dir = run_dir / "cleaned"
     pose_dir = run_dir / "control_pose"
@@ -173,7 +249,15 @@ def main() -> None:
             Image.open(BytesIO(image_bytes)).convert("RGB").save(source_path)
 
             cleaned_path = cleaned_dir / f"{index:02d}_{candidate.name}.png"
-            start_report = prepare_clean_start_frame(source_path, cleaned_path, width=args.width, height=args.height)
+            start_report = prepare_clean_start_frame(
+                source_path,
+                cleaned_path,
+                width=args.width,
+                height=args.height,
+                require_profile_detail=True,
+                require_lower_body_readiness=True,
+                max_background_contamination_ratio=0.08,
+            )
             quality = analyze_frame_quality(cleaned_path, index=index)
             debug_sheet = make_start_frame_debug_sheet(source_path, cleaned_path, review_dir / f"{candidate.name}_debug.png")
             assessment = _assess_candidate(start_report.to_dict(), quality.to_dict(), args.width, args.height)
@@ -203,6 +287,7 @@ def main() -> None:
         Image.open(selected["cleaned"]).save(selected_path)
         report["status"] = "completed"
         report["selected"] = {
+            "asset_status": "start_frame_candidate_only",
             "name": selected["name"],
             "source": selected["source"],
             "cleaned": selected["cleaned"],
@@ -210,6 +295,13 @@ def main() -> None:
             "selection_score": selected["assessment"]["selection_score"],
             "selection_status": selected["assessment"]["status"],
             "issue_codes": selected["assessment"]["issue_codes"],
+            "lower_body_readiness": selected["start_frame_report"].get("lower_body_readiness", {}),
+            "agent_review_checklist": {
+                "side_view_confidence": "manual_review_required",
+                "foot_readability": "manual_review_required",
+                "lower_leg_occlusion": "manual_review_required",
+                "expected_walk_suitability": "manual_review_required",
+            },
         }
         report["contact_sheet"] = str(
             make_contact_sheet([Path(item["cleaned"]) for item in report["candidates"]], run_dir / "contact_sheet.png", columns=2)
@@ -219,6 +311,14 @@ def main() -> None:
         )
         summary_path = run_dir / "reference_review_summary.md"
         summary_path.write_text(_summary(report), encoding="utf-8")
+        memo_path = run_dir / "memo.md"
+        with memo_path.open("a", encoding="utf-8") as memo:
+            memo.write("\n## Start-Frame Review Checklist\n\n")
+            memo.write("- selected asset status: `start_frame_candidate_only`\n")
+            memo.write("- side-view confidence: manual review required\n")
+            memo.write("- foot readability: manual review required\n")
+            memo.write("- lower-leg occlusion: manual review required\n")
+            memo.write("- expected walk suitability: manual review required\n")
         report["summary"] = str(summary_path)
         report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         print(json.dumps({"run_dir": str(run_dir), "selected_reference": str(selected_path), "report": str(report_path)}, indent=2))
@@ -358,6 +458,13 @@ def _assess_candidate(
             "lower_body_blob_count_high",
             "not_full_body_enough",
             "feet_not_near_canvas_bottom",
+            "guide_or_panel_residue",
+            "background_contamination_high",
+            "possible_back_view_or_missing_profile_detail",
+            "feet_not_separated",
+            "shoes_unreadable",
+            "lower_legs_occluded",
+            "foot_zone_merged",
         }
     )
     score = float(quality.get("score", 0.0)) + bbox_score

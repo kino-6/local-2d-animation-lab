@@ -13,7 +13,7 @@ from natural_sprite_lab.backends import ComfyBackend
 from natural_sprite_lab.pipeline import run_pipeline
 from natural_sprite_lab.planning import WalkCycleDirector
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
-from natural_sprite_lab.utils.paths import normalize_name
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, normalize_name, write_run_profile
 
 
 @dataclass(frozen=True)
@@ -37,7 +37,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run novaOrangeXL + OpenPose ControlNet PDCA for sprite assets.")
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--action", default="attack_sword")
-    parser.add_argument("--output-root", default=Path("outputs_controlnet_pdca"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--pose-template-root", default=Path("pose_templates"), type=Path)
     parser.add_argument("--comfy-url", default="http://127.0.0.1:8188")
     parser.add_argument("--checkpoint", default="novaOrangeXL_v120.safetensors")
@@ -48,12 +48,14 @@ def main() -> None:
     parser.add_argument("--retakes", default=3, type=int)
     args = parser.parse_args()
 
+    session_dir = build_timestamped_run_dir(args.output_root, "controlnet_pdca", args.action)
+    write_run_profile(session_dir, category="controlnet_pdca", label=args.action, args=args)
     recipe = _recipe(args.action, args.frame_count)
     director = WalkCycleDirector(use_ollama=False)
     results = []
     for retake_index, retake in enumerate(RETAKES[: args.retakes], start=1):
         character_id = normalize_name(args.input.stem)
-        run_dir = args.output_root / character_id / _action_group(args.action) / f"{args.action}_{retake.name}"
+        run_dir = session_dir / character_id / _action_group(args.action) / f"{args.action}_{retake.name}"
         if (run_dir / "evaluation_report.json").exists() and (run_dir / "manifest.json").exists():
             outputs = _existing_outputs(run_dir)
         else:
@@ -75,7 +77,7 @@ def main() -> None:
                 source_image=args.input,
                 prompt=recipe,
                 backend=backend,
-                output_root=args.output_root,
+                output_root=session_dir,
                 retake=retake_index,
                 run_id=f"{args.action}_{retake.name}",
                 director=director,
@@ -119,11 +121,11 @@ def main() -> None:
         ],
         "results": results,
     }
-    args.output_root.mkdir(parents=True, exist_ok=True)
-    log_path = args.output_root / f"{args.action}_pdca_log.json"
+    session_dir.mkdir(parents=True, exist_ok=True)
+    log_path = session_dir / f"{args.action}_pdca_log.json"
     log_path.write_text(json.dumps(pdca_log, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     summary = {"best_by_asset": {args.action: adopted}, "results": results, "pdca_log": str(log_path)}
-    summary_path = args.output_root / f"{args.action}_controlnet_summary.json"
+    summary_path = session_dir / f"{args.action}_controlnet_summary.json"
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"PDCA log: {log_path}")
     print(f"Summary: {summary_path}")

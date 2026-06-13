@@ -15,11 +15,14 @@ from PIL import Image, ImageFilter
 
 from natural_sprite_lab.comfy_queue import add_queue_wait_arguments
 from natural_sprite_lab.comfy_queue import wait_for_queue_capacity_from_args
+from natural_sprite_lab.foot_guides import render_foot_guide, walk_foot_guide_for
 from natural_sprite_lab.pose_templates import load_pose_sequence, render_pose_frame
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
 from natural_sprite_lab.progress import ProgressTimer
 from natural_sprite_lab.progress import progress_iter
+from natural_sprite_lab.quality.start_frame import prepare_clean_start_frame
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 from natural_sprite_lab.weapon_guides import render_weapon_guide, weapon_guide_for
 
 
@@ -71,7 +74,7 @@ def main() -> None:
         ),
         default="i2v",
     )
-    parser.add_argument("--output-root", default=Path("outputs_wan_walk_i2v"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--pose-root", default=Path("pose_templates"), type=Path)
     parser.add_argument("--pose-template", default="walk")
     parser.add_argument("--pose-phase", default=0, type=int)
@@ -106,7 +109,17 @@ def main() -> None:
     parser.add_argument("--character-mask-blur", default=3, type=int)
     parser.add_argument("--invert-character-mask", action="store_true")
     parser.add_argument("--weapon-guide", choices=("none", "sword", "axe", "bow"), default="none")
+    parser.add_argument(
+        "--foot-guide",
+        choices=("none", "walk"),
+        default="none",
+        help="Overlay a lower-body-only foot/contact guide on control-video frames.",
+    )
     parser.add_argument("--run-label", default=None)
+    parser.add_argument("--normalize-start-frame", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--reject-bad-start-frame", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--require-start-profile-detail", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--require-start-lower-body-readiness", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--width", default=512, type=int)
     parser.add_argument("--height", default=512, type=int)
     parser.add_argument("--length", default=9, type=int)
@@ -133,13 +146,36 @@ def main() -> None:
     args = parser.parse_args()
 
     run_label = args.run_label or f"{args.pose_template}_{args.mode}"
-    run_dir = args.output_root / time.strftime(f"{_safe_label(run_label)}_%Y%m%d_%H%M%S")
+    run_dir = build_timestamped_run_dir(args.output_root, "wan_walk_i2v", _safe_label(run_label))
+    write_run_profile(
+        run_dir,
+        category="wan_walk_i2v",
+        label=run_label,
+        args=args,
+        memo="Wan I2V/action probe output. Keep workflow, generated frames, preview, and quality notes together.",
+    )
     frames_dir = run_dir / "frames"
     workflow_dir = run_dir / "workflow"
     frames_dir.mkdir(parents=True, exist_ok=True)
     workflow_dir.mkdir(parents=True, exist_ok=True)
 
-    start_image = _prepare_image(args.start_image, run_dir / "start_image.png", args.width, args.height)
+    start_report_path = run_dir / "start_frame_report.json"
+    if args.normalize_start_frame:
+        start_report = prepare_clean_start_frame(
+            args.start_image,
+            run_dir / "start_image.png",
+            width=args.width,
+            height=args.height,
+            require_profile_detail=args.require_start_profile_detail,
+            require_lower_body_readiness=args.require_start_lower_body_readiness,
+        )
+        start_report_path.write_text(json.dumps(start_report.to_dict(), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        if args.reject_bad_start_frame and start_report.status == "rejected":
+            raise RuntimeError(f"Start frame rejected before Wan: {start_report.issue_codes}")
+        start_image = run_dir / "start_image.png"
+    else:
+        start_image = _prepare_image(args.start_image, run_dir / "start_image.png", args.width, args.height)
+        start_report_path = None
     image_name = _upload_image(args.comfy_url.rstrip("/"), start_image)
     character_mask = None
     character_mask_name = None
@@ -191,6 +227,7 @@ def main() -> None:
         "run_label": run_label,
         "mode": args.mode,
         "start_image": str(start_image),
+        "start_frame_report": str(start_report_path) if start_report_path else None,
         "end_image": str(end_image) if end_image else None,
         "workflow": str(workflow_path),
         "settings": {
@@ -219,6 +256,7 @@ def main() -> None:
             "pose_sample_span": args.pose_sample_span,
             "pose_render_style": args.pose_render_style,
             "weapon_guide": args.weapon_guide,
+            "foot_guide": args.foot_guide,
             "character_mask": str(character_mask) if character_mask else None,
             "auto_character_mask": args.auto_character_mask,
             "character_mask_threshold": args.character_mask_threshold,
@@ -659,13 +697,20 @@ def _render_control_frame(
     pose_count: int,
 ) -> Image.Image:
     image = render_pose_frame(pose_frame, args.width, args.height, style=args.pose_render_style)
-    if getattr(args, "weapon_guide", "none") == "none":
-        return image
-    guide = weapon_guide_for(args.weapon_guide, source_index, pose_count)
-    guide_image = render_weapon_guide(guide, args.width, args.height).convert("RGB")
-    mask = guide_image.convert("L").point(lambda value: 255 if value > 10 else 0)
-    image = image.copy()
-    image.paste(guide_image, (0, 0), mask)
+    if getattr(args, "weapon_guide", "none") != "none":
+        guide = weapon_guide_for(args.weapon_guide, source_index, pose_count)
+        image = _paste_nonblack(image, render_weapon_guide(guide, args.width, args.height))
+    if getattr(args, "foot_guide", "none") == "walk":
+        guide = walk_foot_guide_for(source_index, pose_count)
+        image = _paste_nonblack(image, render_foot_guide(guide, args.width, args.height))
+    return image
+
+
+def _paste_nonblack(base: Image.Image, overlay: Image.Image) -> Image.Image:
+    overlay = overlay.convert("RGB")
+    mask = overlay.convert("L").point(lambda value: 255 if value > 10 else 0)
+    image = base.copy()
+    image.paste(overlay, (0, 0), mask)
     return image
 
 

@@ -9,6 +9,7 @@ from natural_sprite_lab.action_catalog import DEFAULT_ASSET_RECIPES
 from natural_sprite_lab.backends import RiggedSpriteBackend
 from natural_sprite_lab.pipeline import run_pipeline
 from natural_sprite_lab.planning import WalkCycleDirector
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 @dataclass(frozen=True)
@@ -28,11 +29,13 @@ CONFIGS = [
 def main() -> None:
     parser = argparse.ArgumentParser(description="PDCA sweep for SFC-style limited 2D animation motion.")
     parser.add_argument("--input", required=True, type=Path)
-    parser.add_argument("--output-root", default=Path("outputs_sfc_motion_pdca"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--width", default=512, type=int)
     parser.add_argument("--height", default=512, type=int)
     args = parser.parse_args()
 
+    session_dir = build_timestamped_run_dir(args.output_root, "sfc_motion_pdca", "sfc_motion")
+    write_run_profile(session_dir, category="sfc_motion_pdca", label="sfc_motion", args=args)
     results = []
     director = WalkCycleDirector(use_ollama=False)
     for config in CONFIGS:
@@ -48,7 +51,7 @@ def main() -> None:
                 source_image=args.input,
                 prompt=recipe.prompt,
                 backend=backend,
-                output_root=args.output_root,
+                output_root=session_dir,
                 run_id=run_id,
                 director=director,
             )
@@ -88,8 +91,8 @@ def main() -> None:
         "best_by_asset": best_by_asset,
         "results": results,
     }
-    args.output_root.mkdir(parents=True, exist_ok=True)
-    summary_path = args.output_root / "sfc_motion_pdca_summary.json"
+    session_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = session_dir / "sfc_motion_pdca_summary.json"
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Summary: {summary_path}")
 

@@ -2,7 +2,13 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from natural_sprite_lab.quality import FrameQuality, analyze_frame_quality, foreground_normalized_delta, select_best_span
+from natural_sprite_lab.quality import (
+    FrameQuality,
+    analyze_frame_quality,
+    analyze_motion_readability,
+    foreground_normalized_delta,
+    select_best_span,
+)
 
 
 def test_analyze_frame_quality_flags_duplicate_silhouette(tmp_path: Path) -> None:
@@ -106,6 +112,27 @@ def test_select_best_span_can_use_foreground_motion_metric() -> None:
     assert global_selection.selection_penalties == ("mean_motion_delta_too_low",)
     assert foreground_selection.frame_indices == (0, 1)
     assert foreground_selection.selection_penalties == ()
+
+
+def test_motion_readability_rejects_near_static_walk() -> None:
+    qualities = [_quality(0, score=0.95, motion=0.0)]
+    qualities.extend(_quality(index, score=0.95, motion=0.3, foreground_motion=0.5) for index in range(1, 12))
+
+    report = analyze_motion_readability(qualities, action="walk", motion_metric="foreground")
+
+    assert report.status == "needs_retake_or_manual_review"
+    assert "motion_readability_mean_delta_too_low" in report.issue_codes
+    assert "motion_readability_static_run_too_long" in report.issue_codes
+
+
+def test_motion_readability_accepts_active_walk() -> None:
+    qualities = [_quality(0, score=0.95, motion=0.0)]
+    qualities.extend(_quality(index, score=0.95, motion=5.0, foreground_motion=5.0) for index in range(1, 12))
+
+    report = analyze_motion_readability(qualities, action="walk", motion_metric="foreground")
+
+    assert report.status == "passed"
+    assert report.issue_codes == ()
 
 
 def test_analyze_frame_quality_reports_background_and_lower_body_issues(tmp_path: Path) -> None:

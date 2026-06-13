@@ -10,11 +10,12 @@ from natural_sprite_lab.pose_alignment import align_pose_frames_to_target, pose_
 from natural_sprite_lab.pose_templates import PoseFrame, render_pose_frame, validate_pose_frame
 from natural_sprite_lab.pose_templates import load_pose_sequence
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a clean synthetic side-view walk/run pose source.")
-    parser.add_argument("--output-root", default=Path("outputs_motion_source_video_pdca"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--template-name", default="run_synthetic_sideview_walk_v1")
     parser.add_argument("--action", default="run")
     parser.add_argument("--variant", default="synthetic_sideview_walk_v1")
@@ -44,7 +45,7 @@ def main() -> None:
     args = parser.parse_args()
 
     report = build_synthetic_sideview_motion_source(
-        output_root=args.output_root,
+        output_root=build_timestamped_run_dir(args.output_root, "motion_source_video_pdca", "motion_sources"),
         template_name=args.template_name,
         action=args.action,
         variant=args.variant,
@@ -79,6 +80,12 @@ def build_synthetic_sideview_motion_source(
 ) -> dict[str, Any]:
     if frame_count < 8:
         raise ValueError("frame_count must be at least 8")
+    write_run_profile(
+        output_root,
+        category="motion_source_video_pdca",
+        label=template_name,
+        extra={"action": action, "variant": variant, "frame_count": frame_count},
+    )
     output_dir = output_root / template_name
     render_dir = output_dir / "controlnet"
     output_dir.mkdir(parents=True, exist_ok=True)

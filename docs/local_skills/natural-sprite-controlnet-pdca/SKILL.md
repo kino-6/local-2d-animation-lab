@@ -13,6 +13,33 @@ Use `novaOrangeXL + ControlNet(OpenPose)` as the main generation path. Treat the
 
 Generate 120-frame action assets. Do not downsample to 8-12 frames in this workflow. Frame reduction belongs to a separate thinning/export skill.
 
+Frame-count rule: the requested asset source is 120 frames. Some local Wan/video workflows have historically produced 121-frame sources because the model path is friendlier to odd temporal lengths or loop-closure endpoints. Treat that as an implementation detail, not the asset target. If a workflow emits 121 frames, trim or normalize it to a 120-frame source before adoption; thinning/downsampling remains a separate skill.
+
+All new generated artifacts must live under a timestamp session:
+
+```text
+outputs/<YYYYMMDD_HHMMSS>/<category>/<run-label>/
+```
+
+Do not create new top-level `outputs_*`, `review_packages`, or `source_probe_packages` roots. Keep `run_profile.json`, `memo.md`, workflow JSON, quality reports, previews, and packaged assets inside the same timestamp session so the selected/best run can be audited later.
+
+Motion readability is a first-class gate. Use the deterministic motion-readability report before treating a low-jitter clip as successful; near-static clips must be `needs_retake_or_manual_review` even if artifact jitter is low.
+
+Wan start frames must be normalized and screened before queueing video generation. Reject or retake start frames with likely back-view/profile-detail failure, guide/panel residue, or high background contamination.
+
+`prompt E` remains the best current i2v walk wording, but it is not promotion-ready unless a seed-repeat short probe passes motion readability and lower-body/foot checks.
+
+Do not revisit `WanAnimateToVideo` until the control video is calibrated enough that it does not turn the subject into a silhouette or erase identity.
+
+Start-frame-first PDCA note, 2026-06-13:
+
+- Run: `outputs/20260613_170538/fullbody_reference/comfyui2025_131891_trim/reference_candidates_report.json`.
+- Report: `docs/start_frame_first_walk_pdca.md`.
+- Ten 1024px novaOrangeXL candidates were generated from `ComfyUI2025_131891_trim.png`; none passed as `candidate_ok`.
+- Best-ranked candidate `walk_ready_clear_lower_legs` was still `manual_review_or_retake` because shoes remained unreadable and the pose was front-biased rather than a strict side-view walk start.
+- Stronger next prompt should avoid "standing pose" and use "walk-cycle neutral contact pose", "both shoes on ground separated by white space", "side-view shoe silhouettes", and "knees/lower legs visible".
+- Do not run Wan from a selected start frame unless the start-frame gate has no lower-body hard issue such as `feet_not_separated`, `shoes_unreadable`, `lower_legs_occluded`, or `foot_zone_merged`.
+
 Each adopted run must produce:
 
 - `frames/*.png`
@@ -252,6 +279,15 @@ uv run python scripts/run_wan_walk_i2v.py \
 - Strong semantic but failed quality: `review_packages/comfy2025_hit_heavy_len33_generalization_review_20260612_203118`. Hit reactions need tighter duration or key-pose guidance to avoid smearing through large rotations.
 - Weapon actions are a separate class. `review_packages/comfy2025_attack_sword_len33_generalization_review_20260612_203324` invented a readable glowing blade, but failed full-gate quality and needs weapon/action sidecar control rather than prompt-only generation.
 - If the user-provided image is bust-up or cropped, do not pass it directly to Wan for game assets. First generate or select a full-body side-view keyframe, then run i2v.
+- 2026-06-13 retake from `assets/reference/ComfyUI2025_131891_trim.png`: direct Wan i2v produced a 121-frame upper-body-only failure because the reference was bust-up. Treat this as a blocked route for 2D game walking assets.
+- 2026-06-13 full-body start-frame route: generated candidates at `outputs_game_asset_pdca/fullbody_reference/ComfyUI2025_131891_trim_20260613_011006`, cleaned with BiRefNet at `outputs_game_asset_pdca/fullbody_reference_cutout/comfy2025_fullbody_candidate_cutout_20260613_011316`, then ran 121-frame Wan i2v at `outputs_game_asset_pdca/comfy2025_fullbody_walk_i2v_len121_game_candidate_20260613_011410`.
+- The resulting game package is `outputs_game_assets/comfy2025_fullbody_walk_len121_sprite_asset_rejected_with_vl_20260613_014008`, status `rejected_animation_candidate`. It is visibly closer to walk than the bust-up run, but still has foot blur/contact artifacts and repeated lower-body pale afterimages.
+- Gate evidence: `outputs_game_asset_pdca/quality_gates/comfy2025_fullbody_walk_len121_gate_20260613_013130` reports `retake_required: 2`, `repair_candidate: 65`, `lower_body_pale_afterimage_review: 120`, and `foot_shadow_or_contact_artifact_review: 62`.
+- LocalVL evidence: `outputs_local_vl_eval/comfy2025_fullbody_walk_len121_sprite_asset_rejected_vl_20260613_013916` over-accepted the contact sheet as adoptable. Do not use LocalVL alone for adoption until it is calibrated against lower-body afterimage and contact-artifact labels.
+- Full-body reference auto-selection is not sufficient. Manually reject back-view, front-view, model-sheet, multiple-character, and bust-up candidates before Wan, even if automatic quality scores prefer them.
+- Postprocess evidence: `scripts/stabilize_sprite_sequence.py` can reduce deterministic brightness/saturation drift and simple anchor jitter. On `outputs_game_assets/comfy2025_fullbody_walk_len121_sprite_asset_rejected_with_vl_20260613_014008/frames`, it produced `outputs_sprite_postprocess/comfy2025_walk_len121_stabilized_color_20260613_074307`.
+- The postprocess improved foreground luma stdev `5.94115 -> 1.15325`, saturation stdev `4.91264 -> 2.81892`, foot/contact labels `62 -> 7`, and lower-body pale-afterimage labels `120 -> 72`.
+- Do not treat that as adoption. The corrected candidate still gates as `rejected`; the remaining jitter is mostly internal redraw/silhouette instability, not global canvas-anchor jitter.
 - First/last-frame probing is implemented via `scripts/generate_action_keyframe_candidates.py` plus `scripts/run_wan_walk_i2v.py --mode first_last`.
 - Use first/last only when the endpoint keyframe is conservative, side-view, sprite-like, and close to the start framing. The 2026-06-12 ComfyUI2025 probe showed that dramatic endpoints can force Wan into slow buildup plus smeared warp frames even when the artifact gate reports `no_repair_needed`.
 - Negative first/last evidence:
@@ -626,6 +662,61 @@ Do not adopt a candidate just because the heuristic score is high. Treat `qualit
 
 When exporting a review package, record comparable fields in `manifest.json`: `motion_score`, `artifact_gate_summary`, `visual_decision`, `visual_labels`, and `godot_status`. Use visual labels such as `endpoint_warp_or_pose_teleport_review`, `side_to_front_view_drift_review`, `background_tone_drift_review`, and `lower_body_pale_afterimage_review`.
 
+## Still-Image Quality Refinement
+
+Use still-image img2img refinement only after a generated frame already has acceptable action semantics.
+
+Current 2026-06-12 recipe for noise/detail/background cleanup:
+
+```bash
+uv run python scripts/refine_wan_frames_img2img.py \
+  --frames-dir <candidate_frames> \
+  --output-root outputs_image_quality_pdca \
+  --run-label <label> \
+  --width 1024 \
+  --height 1024 \
+  --steps 24 \
+  --cfg 5.4 \
+  --denoise 0.35 \
+  --background-cleanup-threshold 160 \
+  --background-cleanup-min-channel 170
+```
+
+Gate the refined result with `scripts/repair_frame_artifacts.py --mask-only`. The proof run `outputs_image_quality_pdca/run_endpoint_quality_d035_bgclean160_20260612_234849` moved the still frames from `rejected` to `adopted_full_source` by cleaning the beige panel and improving line/color quality.
+
+Do not treat this as motion control. It can improve noise, line crispness, small defects, and plain-background cleanup, but it does not make a neutral pose read as `run`, `hit`, or `attack`.
+
+## Local VL Semantic Evaluation
+
+Use local VLM evaluation as a semantic check after deterministic artifact gates, not as the only quality gate.
+
+Current helper:
+
+```bash
+uv run python scripts/evaluate_sprite_with_ollama_vl.py \
+  --image <contact_sheet_or_comparison_sheet.png> \
+  --action run \
+  --run-label <label> \
+  --output-root outputs_local_vl_eval
+```
+
+The current local vision model (`huihui_ai/qwen3-vl-abliterated:8b`) can recognize high-level issues, but does not reliably return valid JSON by itself. The helper saves raw VLM notes, normalizes them through `huihui_ai/qwen3-abliterated:8b`, and applies consistency rules.
+
+Proof: `outputs_local_vl_eval/best_still_run_endpoint_eval_20260613_000100/local_vl_eval.json` correctly marks the current best still-image proof as `is_adoptable_as_still_sprite_proof: true` and `is_adoptable_as_animation_or_run_endpoint: false` because it is clean but not readable as a run.
+
+Multi-candidate check:
+
+- `outputs_local_vl_eval/source_rejected_run_endpoint_eval_fixed_20260613_000852/local_vl_eval.json`
+- `outputs_local_vl_eval/best_still_run_endpoint_eval_20260613_000100/local_vl_eval.json`
+- `outputs_local_vl_eval/d050_run_endpoint_eval_fixed_20260613_000955/local_vl_eval.json`
+
+LocalVL caught the shared semantic failure (`run` not readable) across all three. It did not reliably catch deterministic structural quality differences: the rejected source endpoint still received high still-image scores. Therefore, use LocalVL for semantic/action review and deterministic gates for artifact/structure review.
+
+Use this adoption rule:
+
+- Still-image proof: deterministic gate passes, Agent/visual review passes, LocalVL does not report structural/identity issues.
+- Action/animation proof: still-image proof passes, motion gate passes, and both Agent/visual review and LocalVL say the requested action is readable.
+
 ## Artifact Repair Gate
 
 After Wan/Image2Image produces plausible motion, run explicit artifact repair before adoption:
@@ -641,6 +732,19 @@ uv run python scripts/repair_frame_artifacts.py \
 ```
 
 Use `--mask-only` first when tuning thresholds. Review `comparison_sheet.png`, `overlay_contact_sheet.png`, and `artifact_repair_report.json`.
+
+When a masked correction plan exists, pass it to block all non-local frames from inpaint:
+
+```bash
+uv run python scripts/repair_frame_artifacts.py \
+  --frames-dir <stabilized_frames> \
+  --output-root outputs_artifact_repair_pdca \
+  --run-label <label> \
+  --correction-plan <masked_correction_plan.json> \
+  --allowed-plan-action local_inpaint_candidate \
+  --width 1024 \
+  --height 1024
+```
 
 Repair is allowed only for small masked artifacts such as pale ghost specks, background streaks, or detached tiny fragments. Do not use inpaint to hide structural failures. If the mask resembles a limb-shaped silhouette, leg, hand, weapon, or large shadow, review before repair; the 2026-06-11 run reproduction showed low-denoise inpaint can add a worse gray duplicate silhouette.
 
@@ -670,6 +774,95 @@ Treat these issue codes as retake/retrim blockers:
 Broad repair masks are blockers even in `--mask-only` quality-gate runs. If `repair_mask_too_large` appears, the recommendation should be `retake_or_retrim_span_before_refine`; do not interpret a broad mask-only result as a polishable frame.
 
 For sword, axe, and bow outputs, pass `--weapon sword`, `--weapon axe`, or `--weapon bow`. If the weapon gate fails, return to weapon-specific generation control instead of polishing the broken frame.
+
+## Masked Quality Loop
+
+Use the standardized quality wrapper before final packaging:
+
+```bash
+uv run python scripts/run_sprite_asset_quality_flow.py \
+  --frames-dir <generated_frames> \
+  --asset-name <asset_name> \
+  --animation <action> \
+  --artifact-report <artifact_repair_report.json> \
+  --local-vl-report <local_vl_eval.json> \
+  --source-generation-report <generation_report.json> \
+  --output-root outputs_standardized_sprite_flow \
+  --run-label <label>
+```
+
+Then run region diagnostics:
+
+```bash
+uv run python scripts/analyze_sprite_regions.py \
+  --frames-dir <standardized_or_stabilized_frames> \
+  --output-root outputs_region_diagnostics \
+  --run-label <label>
+```
+
+This also writes `artifact_masks/frame_###.png`. Use those masks when the default repair mask is too conservative:
+
+```bash
+uv run python scripts/repair_frame_artifacts.py \
+  --frames-dir <stabilized_frames> \
+  --output-root outputs_masked_correction_practice \
+  --run-label <label> \
+  --correction-plan <masked_correction_plan.json> \
+  --only-plan-action local_inpaint_candidate \
+  --allowed-plan-action local_inpaint_candidate \
+  --external-mask-dir <region_diagnostics_run>/artifact_masks \
+  --width 768 \
+  --height 768
+```
+
+Use `--mask-only` first. If ComfyUI has a large queue, do not add the inpaint job; record the ready command and run after queue capacity is available.
+
+Then build a dry-run correction plan:
+
+```bash
+uv run python scripts/plan_masked_corrections.py \
+  --region-report <region_diagnostics_report.json> \
+  --artifact-report <artifact_repair_report.json> \
+  --output-root outputs_masked_correction_plans \
+  --run-label <label>
+```
+
+2026-06-13 walk recheck:
+
+- Standardized flow: `outputs_standardized_sprite_flow/comfy2025_walk_len121_standardized_flow_v2_20260613_092150`.
+- Region diagnostics: `outputs_region_diagnostics/comfy2025_walk_len121_standardized_regions_20260613_092417`.
+- Masked plan: `outputs_masked_correction_plans/comfy2025_walk_len121_standardized_plan_v2_20260613_092758`.
+- Region-mask practice: `outputs_masked_correction_practice/comfy2025_walk_len121_local_candidates_region_masks_mask_only_20260613_095314`.
+- Status remains `rejected_animation_candidate`.
+- Postprocess reduced luma stdev `5.94115 -> 1.6201` and saturation stdev `4.91264 -> 2.84352`.
+- Region diagnostics still found `foot_shadow_or_contact_artifact_review: 121`, `lower_body_pale_afterimage_review: 120`, and `silhouette_redraw_jitter_review: 95`.
+- The corrected masked planner classified `local_inpaint_candidate: 19` and `retake_required: 102`.
+- Default repair masks were mostly empty on the 19 local candidates. Region-derived artifact masks made all 19 candidates bounded repair candidates with mean mask coverage `0.03563`.
+- Actual ComfyUI masked inpaint with those region masks failed: `outputs_masked_correction_practice/comfy2025_walk_len121_local_candidates_region_masks_inpaint_d035_20260613_100605` added gray silhouette outlines and must not be promoted.
+- Deterministic white cleanup with eroded region masks is safer but still not adoptable: `outputs_masked_correction_practice/comfy2025_walk_len121_local_candidates_region_mask_white_cleanup_erode1_20260613_101231`.
+- Full-sequence recheck after eroded white cleanup reduced lower-body afterimage labels `120 -> 102`, but foot/contact stayed `121`, silhouette jitter worsened `95 -> 112`, and retake decisions worsened `95 -> 112`.
+
+Operational rule:
+
+- Use postprocess for color/brightness jitter.
+- Use local inpaint only for frames classified as `local_inpaint_candidate`.
+- Treat `silhouette_redraw_jitter_review`, broad artifact masks, high temporal delta, duplicate silhouette labels, and artifact-gate `retake_required` as generation-side retake problems.
+- Do not use region foreground coverage as a proxy for repair-mask size. Use local artifact coverage such as pale-afterimage, contact-shadow, and trail coverage.
+- Do not use the current region-mask ComfyUI inpaint recipe for walk afterimages; it creates gray outline artifacts.
+- Do not use white mask cleanup as an adoption path when it chips the feet/body outline or raises silhouette jitter.
+- After the 2026-06-13 masked repair PDCA, return to generation-side retake for this walk problem. The lower-body artifacts are entangled with the generated body/cloak/feet silhouette, not just removable background noise.
+- Run short Wan setting probes before another 120-frame source spend. If a Wan route emits 121 frames for model or loop-endpoint reasons, normalize the adopted source back to 120 frames. Do not compare `continue_motion_max_frames` on plain `WanImageToVideo`; it is not used by that node route. Use cmf only on routes such as `WanAnimateToVideo` after confirming the generated workflow contains the setting.
+- For plain Wan i2v walk probes, the best current wording is the slow walk-in-place / separated feet / sharp lower legs / no cloak-leg blending prompt variant, but it is still rejected until it is seed-stable and foot/contact artifacts drop.
+- Route priority: for walk, return to the `single-keyframe Wan i2v` route before adding stronger visible control. The phase10 single-keyframe proof preserved identity and readable walk motion better than VACE/Wan22Fun control-map experiments. Treat `review_packages/phase10_single_keyframe_wan_i2v_len121_strict_selected_proof_review_20260612_130832` as the current historical benchmark, while normalizing any future adopted source to 120 frames.
+- Treat low temporal jitter as insufficient by itself. A near-static clip can look clean to deterministic region gates while failing motion readability.
+- Promote a setting to a 120-frame source only when a short probe lowers lower-body/feet artifacts without increasing silhouette redraw jitter.
+- If setting probes fail, generate a cleaner walk-ready full-body start keyframe: side-view, separated feet, visible shoes, readable lower legs, less cloak covering both legs, and clean white background.
+- Do not trust automatic start-frame selection alone; reject back views, guide/panel residue, and background contamination before Wan. A side-looking but dirty start frame can amplify guide/background leakage through the whole clip.
+- Current local `WanVaceToVideo` and `WanAnimateToVideo` probes are not adopted: VACE over-whitened/translucent frames, and AnimatePose collapsed into dark silhouettes with the tested lower-body control.
+- Keep LocalVL as `secondary_only` when deterministic artifact or region gates reject.
+- Use `--foot-guide walk` only as a lower-body/contact sidecar on control-video routes. It is a weak guide for shoe target zones, ground contact, and stride envelope; it must be compared against a no-guide probe with the same start frame and seed before adoption.
+- 2026-06-13 foot-guide result: current visible overlay is rejected. VACE produced byte-identical near-white outputs with or without the guide. Wan22Fun reacted to the guide, but rendered guide/control pixels into the output and worsened foot/contact labels. Do not adopt visible guide overlays; move foot constraints into a non-rendered mask/latent/control channel or a better reference-preserving video-control route.
+- Improvement boundary: use postprocess for luma/saturation jitter, dirty background cleanup, minor specks, and still-image polish after the action already reads correctly. Use retake or a route change for double feet, duplicated lower legs, guide/control burn-in, identity loss, silhouette collapse, major lower-body redraw, or motion that does not read as walking.
 
 ## Retake Policy
 

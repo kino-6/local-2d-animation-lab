@@ -11,12 +11,13 @@ from PIL import Image, ImageFilter
 
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keep the main character component and replace outside background with white.")
     parser.add_argument("--frames-dir", required=True, type=Path)
-    parser.add_argument("--output-root", default=Path("outputs_person_cutout_background"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--run-label", default=None)
     parser.add_argument("--fps", default=8, type=int)
     parser.add_argument("--subject-threshold", default=92, type=int)
@@ -29,7 +30,8 @@ def main() -> None:
         raise FileNotFoundError(f"No PNG frames found: {args.frames_dir}")
 
     label = _safe_label(args.run_label or f"{args.frames_dir.parent.name}_person_cutout_background")
-    run_dir = args.output_root / time.strftime(f"{label}_%Y%m%d_%H%M%S")
+    run_dir = build_timestamped_run_dir(args.output_root, "person_cutout_background", label)
+    write_run_profile(run_dir, category="person_cutout_background", label=label, args=args)
     frames_out = run_dir / "frames"
     masks_out = run_dir / "person_masks"
     frames_out.mkdir(parents=True, exist_ok=True)

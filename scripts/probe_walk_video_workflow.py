@@ -10,6 +10,7 @@ from PIL import Image
 
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 def main() -> None:
@@ -20,12 +21,13 @@ def main() -> None:
         default=Path("outputs_controlnet_pdca/anima_00013/walk/walk_baseline"),
         type=Path,
     )
-    parser.add_argument("--output-root", default=Path("outputs_video_walk_probe"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--keyframes", default=12, type=int)
     parser.add_argument("--target-frames", default=120, type=int)
     args = parser.parse_args()
 
-    args.output_root.mkdir(parents=True, exist_ok=True)
+    run_dir = build_timestamped_run_dir(args.output_root, "video_walk_probe", "video_walk_probe")
+    write_run_profile(run_dir, category="video_walk_probe", label="video_walk_probe", args=args)
     object_info = _object_info(args.comfy_url)
     readiness = _readiness(object_info)
 
@@ -34,9 +36,9 @@ def main() -> None:
         raise FileNotFoundError(f"No walk frames found: {args.walk_run / 'frames'}")
 
     selected = _select_keyframes(frames, args.keyframes)
-    keyframe_dir = args.output_root / "keyframes"
-    hold_dir = args.output_root / "hold_frames"
-    crossfade_dir = args.output_root / "crossfade_frames"
+    keyframe_dir = run_dir / "keyframes"
+    hold_dir = run_dir / "hold_frames"
+    crossfade_dir = run_dir / "crossfade_frames"
     keyframe_dir.mkdir(parents=True, exist_ok=True)
     hold_dir.mkdir(parents=True, exist_ok=True)
     crossfade_dir.mkdir(parents=True, exist_ok=True)
@@ -46,9 +48,9 @@ def main() -> None:
     crossfade_paths = _make_crossfade_frames(keyframe_paths, crossfade_dir, args.target_frames)
 
     outputs = {
-        "keyframe_contact_sheet": str(make_contact_sheet(keyframe_paths, args.output_root / "keyframe_contact_sheet.png")),
-        "hold_preview_gif": str(make_preview_gif(hold_paths, args.output_root / "hold_preview.gif", loop=True)),
-        "crossfade_preview_gif": str(make_preview_gif(crossfade_paths, args.output_root / "crossfade_preview.gif", loop=True)),
+        "keyframe_contact_sheet": str(make_contact_sheet(keyframe_paths, run_dir / "keyframe_contact_sheet.png")),
+        "hold_preview_gif": str(make_preview_gif(hold_paths, run_dir / "hold_preview.gif", loop=True)),
+        "crossfade_preview_gif": str(make_preview_gif(crossfade_paths, run_dir / "crossfade_preview.gif", loop=True)),
     }
 
     report = {
@@ -61,7 +63,7 @@ def main() -> None:
         "outputs": outputs,
         "finding": _finding(readiness),
     }
-    report_path = args.output_root / "walk_video_probe_report.json"
+    report_path = run_dir / "walk_video_probe_report.json"
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(report_path)
     print(json.dumps(report["finding"], indent=2, ensure_ascii=False))

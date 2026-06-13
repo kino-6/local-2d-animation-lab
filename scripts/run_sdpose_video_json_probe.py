@@ -9,6 +9,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
+
 
 DEFAULT_COMFY_ROOT = Path("C:/LocalWork/StabilityMatrix/Data/Packages/ComfyUI")
 
@@ -20,7 +22,7 @@ def main() -> None:
     parser.add_argument("--comfy-url", default="http://127.0.0.1:8188")
     parser.add_argument("--comfy-root", default=DEFAULT_COMFY_ROOT, type=Path)
     parser.add_argument("--video", required=True, type=Path)
-    parser.add_argument("--output-root", default=Path("outputs_sdpose_video_json_probe"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--run-label", default="sdpose_video_json_probe")
     parser.add_argument("--checkpoint", default="sdpose_wholebody_fp16.safetensors")
     parser.add_argument("--vae", default="sdxl_vae.safetensors")
@@ -56,7 +58,8 @@ def main() -> None:
         raise FileNotFoundError(args.video)
 
     run_label = _safe_label(args.run_label)
-    run_dir = args.output_root / time.strftime(f"{run_label}_%Y%m%d_%H%M%S")
+    run_dir = build_timestamped_run_dir(args.output_root, "sdpose_video_json_probe", run_label)
+    write_run_profile(run_dir, category="sdpose_video_json_probe", label=run_label, args=args)
     workflow_dir = run_dir / "workflow"
     workflow_dir.mkdir(parents=True, exist_ok=True)
 

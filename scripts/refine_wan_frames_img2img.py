@@ -19,6 +19,7 @@ from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
 from natural_sprite_lab.progress import ProgressTimer
 from natural_sprite_lab.progress import progress_iter
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 POSITIVE_PROMPT = (
@@ -39,7 +40,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Refine Wan-generated frames through local SDXL img2img.")
     parser.add_argument("--comfy-url", default="http://127.0.0.1:8188")
     parser.add_argument("--frames-dir", required=True, type=Path)
-    parser.add_argument("--output-root", default=Path("outputs_wan_img2img_refine"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--run-label", default=None)
     parser.add_argument("--checkpoint", default="novaOrangeXL_v120.safetensors")
     parser.add_argument("--width", default=1024, type=int)
@@ -65,7 +66,8 @@ def main() -> None:
         raise FileNotFoundError(f"No png frames found: {args.frames_dir}")
 
     label = _safe_label(args.run_label or f"{args.frames_dir.parent.name}_img2img_d{args.denoise:.2f}")
-    run_dir = args.output_root / time.strftime(f"{label}_%Y%m%d_%H%M%S")
+    run_dir = build_timestamped_run_dir(args.output_root, "wan_img2img_refine", label)
+    write_run_profile(run_dir, category="wan_img2img_refine", label=label, args=args)
     frames_dir = run_dir / "frames"
     source_dir = run_dir / "source_frames"
     workflow_dir = run_dir / "workflow"

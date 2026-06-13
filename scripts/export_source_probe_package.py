@@ -7,11 +7,13 @@ import time
 from pathlib import Path
 from typing import Any
 
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Export a compact source-motion probe package.")
     parser.add_argument("--source-label", required=True)
-    parser.add_argument("--output-root", default=Path("source_probe_packages"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--source-video", type=Path)
     parser.add_argument("--source-contact-sheet", type=Path)
     parser.add_argument("--sdpose-report", type=Path)
@@ -57,7 +59,13 @@ def export_source_probe_package(
     reasons: list[str] | None = None,
 ) -> dict[str, Any]:
     label = _safe_label(source_label)
-    package_dir = output_root / time.strftime(f"{label}_%Y%m%d_%H%M%S")
+    package_dir = build_timestamped_run_dir(output_root, "source_probe_package", label)
+    write_run_profile(
+        package_dir,
+        category="source_probe_package",
+        label=label,
+        extra={"decision": decision, "reasons": reasons or []},
+    )
     evidence_dir = package_dir / "evidence"
     reports_dir = package_dir / "reports"
     evidence_dir.mkdir(parents=True, exist_ok=True)

@@ -13,6 +13,8 @@ _MODULE = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_MODULE)
 
 _cleanup_frame = _MODULE._cleanup_frame
+_flatten_on_white = _MODULE._flatten_on_white
+_select_indexed_frames = _MODULE._select_indexed_frames
 
 
 def test_cleanup_frame_whitens_only_masked_pixels(tmp_path: Path) -> None:
@@ -25,7 +27,7 @@ def test_cleanup_frame_whitens_only_masked_pixels(tmp_path: Path) -> None:
     mask.putpixel((2, 3), 255)
     mask.save(mask_path)
 
-    report = _cleanup_frame(frame_path, mask_path, output_path, threshold=128, max_coverage=0.5)
+    report = _cleanup_frame(frame_path, mask_path, output_path, threshold=128, erode=0, max_coverage=0.5)
 
     output = Image.open(output_path).convert("RGB")
     assert report["mode"] == "white_mask_cleanup"
@@ -40,7 +42,28 @@ def test_cleanup_frame_copies_when_mask_too_large(tmp_path: Path) -> None:
     Image.new("RGB", (8, 8), (10, 20, 30)).save(frame_path)
     Image.new("L", (8, 8), 255).save(mask_path)
 
-    report = _cleanup_frame(frame_path, mask_path, output_path, threshold=128, max_coverage=0.5)
+    report = _cleanup_frame(frame_path, mask_path, output_path, threshold=128, erode=0, max_coverage=0.5)
 
     assert report["mode"] == "copied_mask_too_large"
     assert Image.open(output_path).convert("RGB").getpixel((2, 3)) == (10, 20, 30)
+
+
+def test_flatten_on_white_preserves_transparent_background_as_white() -> None:
+    image = Image.new("RGBA", (4, 4), (0, 0, 0, 0))
+    image.putpixel((1, 1), (10, 20, 30, 255))
+
+    flattened = _flatten_on_white(image)
+
+    assert flattened.getpixel((0, 0)) == (255, 255, 255)
+    assert flattened.getpixel((1, 1)) == (10, 20, 30)
+
+
+def test_select_indexed_frames_limits_to_plan_action(tmp_path: Path) -> None:
+    frames = [tmp_path / f"frame_{index:03d}.png" for index in range(4)]
+    selected = _select_indexed_frames(
+        frames,
+        {0: "local_inpaint_candidate", 2: "retake_required", 3: "local_inpaint_candidate"},
+        "local_inpaint_candidate",
+    )
+
+    assert selected == [(0, frames[0]), (3, frames[3])]

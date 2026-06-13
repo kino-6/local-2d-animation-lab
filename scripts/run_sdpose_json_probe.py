@@ -9,6 +9,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -20,7 +22,7 @@ def main() -> None:
         default=Path("outputs_next_phase_startframe/auto_cleaned_run_strong_pose_20260611_032832/start_frame.png"),
         type=Path,
     )
-    parser.add_argument("--output-root", default=Path("outputs_sdpose_json_probe"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--run-label", default="sdpose_json_probe")
     parser.add_argument("--checkpoint", default="sdpose_wholebody_fp16.safetensors")
     parser.add_argument("--vae", default="sdxl_vae.safetensors")
@@ -43,7 +45,9 @@ def main() -> None:
         print(json.dumps(status, indent=2, ensure_ascii=False))
         return
 
-    run_dir = args.output_root / time.strftime(f"{_safe_label(args.run_label)}_%Y%m%d_%H%M%S")
+    label = _safe_label(args.run_label)
+    run_dir = build_timestamped_run_dir(args.output_root, "sdpose_json_probe", label)
+    write_run_profile(run_dir, category="sdpose_json_probe", label=label, args=args)
     workflow_dir = run_dir / "workflow"
     workflow_dir.mkdir(parents=True, exist_ok=True)
     image_name = _upload_image(server, args.input)

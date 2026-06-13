@@ -45,7 +45,7 @@ def test_analysis_resize_keeps_original_selected_frame_resolution(tmp_path: Path
 
     _MODULE.main()
 
-    selected = sorted(output_root.glob("resize_keeps_original_*/selected_frames/frame_*.png"))
+    selected = sorted(output_root.rglob("resize_keeps_original/selected_frames/frame_*.png"))
     assert selected
     assert Image.open(selected[0]).size == (768, 768)
 
@@ -78,9 +78,12 @@ def test_report_labels_low_motion_selection_for_review(tmp_path: Path, monkeypat
 
     _MODULE.main()
 
-    report_path = next(output_root.glob("low_motion_label_*/span_selection_report.json"))
+    report_path = next(output_root.rglob("low_motion_label/span_selection_report.json"))
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["selection_review_labels"] == ["weak_motion_or_foot_sliding_review"]
+    assert report["selection_review_labels"] == [
+        "weak_motion_or_foot_sliding_review",
+        "motion_readability_retake_or_manual_review",
+    ]
 
 
 def _draw_frame(path: Path, offset: int) -> None:

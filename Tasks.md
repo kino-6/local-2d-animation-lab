@@ -1,104 +1,74 @@
-# Tasks: General 2D Game Action Asset Quality
+# Tasks: Reference-Locked 2D Game Sprite Animation
 
-This is the active checklist for the next phase.
-
-Archive of the completed previous phase:
-`docs/archive/Tasks_20260612_completed_research_grounded_general_action_workflow.md`
+Archived checkpoint:
+`docs/archive/Tasks_20260613_reference_identity_lock_checkpoint.md`
 
 Detailed evidence:
 
-- `docs/action_generalization_pdca_report.md`
-- `docs/next_phase_run_generation_pdca_report.md`
+- `docs/reference_conditioned_regen_pdca.md`
+- `docs/walk_candidate_comparison.md`
 - `docs/local_skills/natural-sprite-controlnet-pdca/SKILL.md`
 
-## Top Rule
+## Rules
 
 - [x] Generate local-first 2D game animation assets from a character reference image plus a natural-language action request.
-- [x] Treat the input image as a design reference, not pixels to directly puppet or shake.
-- [x] Keep the primary route on generated video workflows, not rig/cutout animation.
-- [x] Prefer single-keyframe Wan i2v for first action proof and subject preservation.
-- [x] Use first/last keyframes only when the endpoint is conservative, side-view, sprite-like, and close to the start framing.
-- [x] Use weapon/action sidecar control for weapon attacks; do not rely on prompt-only weapon generation.
-- [x] Keep generated outputs ignored; commit durable scripts, Tasks, reports, and compact references only.
+- [x] Treat the input image as a design reference, not pixels to directly puppet.
+- [x] Save generated run artifacts only under `outputs/<timestamp>/...`.
+- [x] Target adopted source length is 120 frames; short probes are evidence only.
+- [x] Long-running ComfyUI scripts must expose queue controls and progress visibility.
+  - Use `add_queue_wait_arguments()` for `--max-queue-size` and `--queue-wait-timeout-seconds`.
+  - Use `progress_iter()` for frame/batch loops.
+  - Use `ProgressTimer` for ComfyUI queue/history waits.
+- [x] Do not promote outputs where guide lines, duplicate lower limbs, broken feet, strong afterimages, or identity drift are visible.
 
-## Current Baseline
+## Current Finding
 
-- [x] Walk: current best is `review_packages/phase10_single_keyframe_wan_i2v_len121_strict_selected_proof_review_20260612_130832`.
-- [x] Walk remains `selected_proof_only` because `lower_body_pale_afterimage_review: 12` blocks adoption.
-- [x] Run: current best proof is `review_packages/comfy2025_run_len33_generalization_review_20260612_202914`.
-- [x] Run first/last probe is not adopted: `review_packages/comfy2025_run_len33_first_last_review_20260612_213101` passed heuristic gate but visually warped into the endpoint.
-- [x] Hit heavy: current semantic proof is `review_packages/comfy2025_hit_heavy_len33_generalization_review_20260612_203118`.
-- [x] Hit heavy first/last probe is rejected: `review_packages/comfy2025_hit_heavy_len33_first_last_review_20260612_213306` had `retake_required: 4/33`.
-- [x] Attack sword: prompt-only proof is rejected and needs sidecar weapon control.
+- [x] Local IPAdapter identity lock is installed and verified.
+  - ComfyUI custom node: `comfyorg/comfyui-ipadapter`.
+  - Model: `sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors`.
+  - CLIP-Vision expected name: `CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors`.
+  - Script route: `scripts/regenerate_pose_sequence_controlnet.py`.
+- [x] IPAdapter improves reference identity and outfit stability.
+- [x] OpenPose-only or front-facing/ambiguous pose controls are not enough for 2D game walking.
+- [x] Best current short proof:
+  - `outputs/20260613_212815/reference_pose_regen/walk_ipadapter_sideview_pose_mid_8f/`
+  - Status: `promising_probe`, not adoption OK.
+  - Reason: visual direction improved, but artifact gate still reports `retake_required: 5/8`.
 
-## Non-Goals
+## Next PDCA
 
-- [x] Do not call a candidate adopted only because artifact gates pass.
-- [x] Do not optimize broad 120-frame generation before 33-frame probes show clean action quality.
-- [x] Do not use dramatic illustration-like endpoint keyframes for first/last Wan interpolation.
-- [x] Do not hide duplicate legs, strong afterimages, or structural weapon failures with Image2Image.
-- [x] Do not pursue universal action generation before `run` and `hit` quality stabilize.
+- [ ] Build cleaner side-view walk motion controls.
+  - Reduce arm/hand ambiguity.
+  - Increase readable lower-body phase separation.
+  - Keep control frames clean enough to avoid guide burn-in.
+- [ ] Run 8-17 frame IPAdapter + side-view pose probes before any 120-frame spend.
+  - Start from the current promising settings:
+    - denoise `0.78`
+    - ControlNet strength `0.92`
+    - ControlNet end `0.68`
+    - IPAdapter preset `PLUS (high strength)`
+    - IPAdapter weight `0.50`
+    - IPAdapter weight type `prompt is more important`
+    - IPAdapter end `0.62`
+- [ ] Gate every short probe.
+  - `repair_frame_artifacts.py --mask-only --weapon none`
+  - `select_best_span.py --action walk --motion-metric foreground`
+  - `analyze_sprite_regions.py`
+  - Agent visual review of `comparison_sheet.png`, `contact_sheet.png`, and `preview.gif`.
+- [ ] Promote only after a short proof passes all adoption blockers.
+  - No visible guide/control burn-in.
+  - No duplicate or vanishing lower limbs.
+  - Feet/contact read as walking.
+  - Identity, outfit, and sprite-style background remain stable.
+  - Artifact hard failures `0`.
+- [ ] If the side-view pose route still fails after cleaner controls, compare mechanism changes instead of more scalar tuning.
+  - Try `IPAdapterAdvanced` scheduling/weight types.
+  - Try InstantID/PuLID/reference-only equivalent only after pose controls are clean.
+  - Consider Wan/BiRefNet output only as a non-rendered motion guide, not as final pixels.
 
-## Phase 1: Conservative Endpoint Keyframes
+## Status Vocabulary
 
-- [x] Add or tune conservative endpoint templates for `run`: low stride, clear side view, no high kick, no extreme hair spread.
-- [x] Add or tune conservative endpoint templates for `hit_light`: small stagger, one foot shift, limited torso bend.
-- [x] Add or tune conservative endpoint templates for `hit_heavy`: recoil endpoint that stays near the start framing.
-- [x] Generate endpoint candidates and reject any endpoint with multiple characters, cropped limbs, front view, or illustration-style pose.
-- [x] Record endpoint keyframe acceptance criteria in the Skill.
-
-Result: conservative txt2img + OpenPoseXL endpoint generation is not reliable enough for first/last Wan. It still produced front-view poses, high-kick/run illustration poses, cropped crouches, and secondary fragments. Do not pass these endpoints into first/last Wan.
-
-## Phase 1.5: Reference-Conditioned Endpoint Keyframes
-
-- [x] Add a reference-conditioned endpoint generation path that starts from the selected full-body side-view start frame instead of pure txt2img.
-- [x] Use smaller pose deltas for `run`, `hit_light`, and `hit_heavy` than the rejected endpoint candidates.
-- [x] Add endpoint review labels for front-view drift, secondary fragments, crop, high-kick pose, and endpoint too far from the start frame.
-- [x] Re-run endpoint candidates for `run`, `hit_light`, and `hit_heavy`.
-- [x] Use first/last Wan only if at least one endpoint passes the visual endpoint criteria.
-
-Result: rerun roots are `outputs_general_action_quality/action_keyframes_refcond_rerun/ComfyUI2025_131891_trim_run_keyframes_20260612_231436`, `outputs_general_action_quality/action_keyframes_refcond_rerun/ComfyUI2025_131891_trim_hit_light_keyframes_20260612_233040`, and `outputs_general_action_quality/action_keyframes_refcond_rerun/ComfyUI2025_131891_trim_hit_heavy_keyframes_20260612_233101`. The automatic gate reported `candidate_ok`, but visual review rejected all three for first/last use because they remain too neutral/front-facing to read as action endpoints. No first/last Wan was run from these endpoints.
-
-## Phase 1.6: Stronger Pose Transfer Without Breaking Identity
-
-- [x] Try a stronger pose-transfer setting or node stack that lets OpenPose dominate more than basic img2img while preserving the reference design.
-- [x] Try localized lower-body img2img/masking so run leg motion can change without redrawing the entire character.
-- [x] Keep the `endpoint_delta_too_low` blocker and do not run first/last Wan from neutral-looking endpoints.
-- [x] Only expand to `hit_light` and `hit_heavy` after `run` produces a clean, visibly action-bearing endpoint.
-
-Result: stronger img2img/control settings were already tested through `0.72/0.90` and still did not create a readable run endpoint. `--source-edit-region lower_body` was added and tested in `outputs_general_action_quality/action_keyframes_refcond_lower_body/ComfyUI2025_131891_trim_run_keyframes_20260612_233937`; it localized the edit but failed with `duplicate_silhouette_area_high` and visible lower-body/outfit redraw. This path remains diagnostic only.
-
-## Phase 2: Short-Stage Action Generation
-
-- [x] Run `run` with single-keyframe i2v using the best current ComfyUI2025 full-body keyframe as the baseline comparator.
-- [x] Run `run` with conservative first/last endpoint and compare against first-frame-only.
-- [x] Split `hit_heavy` into short stages: neutral -> recoil and recoil -> recovery.
-- [x] Generate each `hit_heavy` stage as a short first/last probe rather than one far endpoint.
-- [x] Export Godot review packages for every candidate.
-
-Result: current baseline remains `review_packages/comfy2025_run_len33_generalization_review_20260612_202914`. Conservative first/last endpoint generation was compared and rejected before Wan because no endpoint passed visual criteria. `hit_heavy` stage planning is documented, but stage generation is gated until `run` endpoint control produces a clean action-bearing endpoint. Existing review packages are recorded in `docs/general_action_comparison.md`.
-
-## Phase 3: Quality Gates
-
-- [x] Add visual review labels for endpoint warp or sudden pose teleporting.
-- [x] Add visual review labels for view drift from side-view into front-view.
-- [x] Add visual review labels for background tone drift after first/last generation.
-- [x] Keep `lower_body_pale_afterimage_review` as a blocker for fast leg actions.
-- [x] Compare first-frame-only and first/last candidates with the same report fields: motion score, artifact gate, visual decision, Godot status.
-
-Result: `scripts/export_review_package.py` now records `visual_decision`, `visual_labels`, `motion_score`, `artifact_gate_summary`, and `godot_status` in the review manifest. The Skill now names `endpoint_warp_or_pose_teleport_review`, `side_to_front_view_drift_review`, and `background_tone_drift_review`; `lower_body_pale_afterimage_review` remains blocking.
-
-## Phase 4: Weapon Sidecar Planning
-
-- [x] Define the minimum sidecar for `attack_sword`: hand positions, blade line, slash arc, and weapon mask.
-- [x] Add a weapon consistency gate: weapon exists, weapon is connected to hand, weapon does not fragment.
-- [x] Run one short `attack_sword` sidecar probe only after `run` or `hit` quality improves.
-
-Result: minimum sidecar is documented in `docs/action_generalization_pdca_report.md` and `docs/general_action_comparison.md`. Weapon gate issue codes already exist in `scripts/repair_frame_artifacts.py`: `weapon_missing`, `weapon_fragmented`, `weapon_not_elongated`, and `weapon_detached`. The sidecar probe was intentionally not run because `run`/`hit` endpoint quality did not improve enough to satisfy the prerequisite.
-
-## Phase 5: Documentation And Handoff
-
-- [x] Update `docs/action_generalization_pdca_report.md` with the next probe results.
-- [x] Update `docs/local_skills/natural-sprite-controlnet-pdca/SKILL.md` with accepted and rejected patterns.
-- [x] Keep `docs/walk_candidate_comparison.md` focused on walk; create or update a general action comparison table separately.
-- [x] Commit and push after each coherent PDCA checkpoint.
+- [x] `adopted_animation_candidate`: 120-frame source passes deterministic gates and Agent visual review.
+- [x] `selected_proof_only`: useful short proof exists but full adoption blockers remain.
+- [x] `promising_probe`: direction is better but gates still reject.
+- [x] `rejected_diagnostic`: route/settings fail structurally or semantically.

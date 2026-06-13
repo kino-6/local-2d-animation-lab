@@ -14,6 +14,7 @@ from PIL import Image, ImageChops, ImageFilter, ImageStat
 
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 def main() -> None:
@@ -22,7 +23,7 @@ def main() -> None:
     )
     parser.add_argument("--comfy-url", default="http://127.0.0.1:8188")
     parser.add_argument("--frames-dir", required=True, type=Path)
-    parser.add_argument("--output-root", default=Path("outputs_birefnet_foreground"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--run-label", default=None)
     parser.add_argument("--model", default="birefnet.safetensors")
     parser.add_argument("--background", default="white", choices=("white", "transparent"))
@@ -37,7 +38,8 @@ def main() -> None:
         raise FileNotFoundError(f"No PNG frames found: {args.frames_dir}")
 
     label = _safe_label(args.run_label or f"{args.frames_dir.parent.name}_birefnet")
-    run_dir = args.output_root / time.strftime(f"{label}_%Y%m%d_%H%M%S")
+    run_dir = build_timestamped_run_dir(args.output_root, "birefnet_foreground", label)
+    write_run_profile(run_dir, category="birefnet_foreground", label=label, args=args)
     frames_out = run_dir / "frames"
     masks_out = run_dir / "foreground_masks"
     rgba_out = run_dir / "rgba_frames"

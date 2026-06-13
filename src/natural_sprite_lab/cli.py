@@ -6,6 +6,7 @@ from pathlib import Path
 from natural_sprite_lab.backends import ComfyBackend, CutoutWalkBackend, DummyBackend, RiggedSpriteBackend
 from natural_sprite_lab.pipeline import run_pipeline
 from natural_sprite_lab.planning import WalkCycleDirector
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -127,11 +128,13 @@ def main(argv: list[str] | None = None) -> None:
             ollama_model=args.ollama_model,
             timeout_seconds=args.director_timeout,
         )
+    session_dir = build_timestamped_run_dir(args.output_root, "cli_pipeline", args.backend)
+    write_run_profile(session_dir, category="cli_pipeline", label=args.backend, args=args)
     outputs = run_pipeline(
         source_image=args.input,
         prompt=args.prompt,
         backend=backend,
-        output_root=args.output_root,
+        output_root=session_dir,
         retake=args.retake,
         director=director,
     )

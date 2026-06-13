@@ -7,10 +7,11 @@ import time
 from pathlib import Path
 from typing import Any
 
-from PIL import Image
+from PIL import Image, ImageFilter
 
 from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 def main() -> None:
@@ -19,34 +20,43 @@ def main() -> None:
     )
     parser.add_argument("--frames-dir", required=True, type=Path)
     parser.add_argument("--masks-dir", required=True, type=Path)
-    parser.add_argument("--output-root", default=Path("outputs_mask_cleanup"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--run-label", default=None)
     parser.add_argument("--fps", default=8, type=int)
     parser.add_argument("--mask-threshold", default=128, type=int)
+    parser.add_argument("--mask-erode", default=0, type=int)
     parser.add_argument("--max-coverage", default=0.65, type=float)
+    parser.add_argument("--correction-plan", default=None, type=Path)
+    parser.add_argument("--only-plan-action", default=None)
     args = parser.parse_args()
 
     frame_paths = sorted(args.frames_dir.glob("*.png"), key=_frame_index)
-    mask_paths = sorted(args.masks_dir.glob("*.png"), key=_frame_index)
+    mask_by_index = {_frame_index(path): path for path in args.masks_dir.glob("*.png")}
+    plan_actions = _plan_action_by_index(args.correction_plan)
     if not frame_paths:
         raise FileNotFoundError(f"No PNG frames found: {args.frames_dir}")
-    if len(frame_paths) != len(mask_paths):
-        raise ValueError(f"Frame/mask count mismatch: {len(frame_paths)} frames, {len(mask_paths)} masks")
+    indexed_frames = _select_indexed_frames(frame_paths, plan_actions, args.only_plan_action)
+    missing_masks = [index for index, _ in indexed_frames if index not in mask_by_index]
+    if missing_masks:
+        raise ValueError(f"Missing masks for frame indices: {missing_masks[:8]}")
 
     label = _safe_label(args.run_label or f"{args.frames_dir.parent.name}_mask_cleanup")
-    run_dir = args.output_root / time.strftime(f"{label}_%Y%m%d_%H%M%S")
+    run_dir = build_timestamped_run_dir(args.output_root, "mask_cleanup", label)
+    write_run_profile(run_dir, category="mask_cleanup", label=label, args=args)
     frames_out = run_dir / "frames"
     frames_out.mkdir(parents=True, exist_ok=True)
 
     frame_reports: list[dict[str, Any]] = []
     output_paths: list[Path] = []
-    for index, (frame_path, mask_path) in enumerate(zip(frame_paths, mask_paths)):
+    for index, frame_path in indexed_frames:
+        mask_path = mask_by_index[index]
         output_path = frames_out / f"frame_{index:03d}.png"
         report = _cleanup_frame(
             frame_path,
             mask_path,
             output_path,
             threshold=args.mask_threshold,
+            erode=args.mask_erode,
             max_coverage=args.max_coverage,
         )
         output_paths.append(output_path)
@@ -63,8 +73,11 @@ def main() -> None:
         "preview_gif": str(preview),
         "settings": {
             "mask_threshold": args.mask_threshold,
+            "mask_erode": args.mask_erode,
             "max_coverage": args.max_coverage,
             "fps": args.fps,
+            "correction_plan": str(args.correction_plan) if args.correction_plan else None,
+            "only_plan_action": args.only_plan_action,
         },
         "summary": _summarize(frame_reports),
         "frame_reports": frame_reports,
@@ -81,11 +94,14 @@ def _cleanup_frame(
     output_path: Path,
     *,
     threshold: int,
+    erode: int,
     max_coverage: float,
 ) -> dict[str, Any]:
-    frame = Image.open(frame_path).convert("RGB")
+    frame = _flatten_on_white(Image.open(frame_path))
     mask = Image.open(mask_path).convert("L").resize(frame.size, Image.Resampling.NEAREST)
     binary = mask.point(lambda value: 255 if value >= threshold else 0)
+    for _ in range(max(0, erode)):
+        binary = binary.filter(ImageFilter.MinFilter(3))
     coverage = _mask_coverage(binary)
     if coverage > max_coverage:
         shutil.copy2(frame_path, output_path)
@@ -108,12 +124,41 @@ def _cleanup_frame(
     }
 
 
+def _flatten_on_white(image: Image.Image) -> Image.Image:
+    rgba = image.convert("RGBA")
+    background = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
+    background.alpha_composite(rgba)
+    return background.convert("RGB")
+
+
 def _summarize(frame_reports: list[dict[str, Any]]) -> dict[str, Any]:
     modes: dict[str, int] = {}
     for report in frame_reports:
         modes[report["mode"]] = modes.get(report["mode"], 0) + 1
     mean_coverage = sum(float(report["mask_coverage"]) for report in frame_reports) / len(frame_reports)
     return {"modes": modes, "mean_mask_coverage": round(mean_coverage, 5)}
+
+
+def _plan_action_by_index(path: Path | None) -> dict[int, str]:
+    if path is None:
+        return {}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    actions: dict[int, str] = {}
+    for item in payload.get("frame_plans", []):
+        if "index" in item:
+            actions[int(item["index"])] = str(item.get("action", ""))
+    return actions
+
+
+def _select_indexed_frames(
+    frame_paths: list[Path],
+    plan_actions: dict[int, str],
+    only_plan_action: str | None,
+) -> list[tuple[int, Path]]:
+    indexed = [(_frame_index(path), path) for path in frame_paths]
+    if not only_plan_action:
+        return indexed
+    return [(index, path) for index, path in indexed if plan_actions.get(index) == only_plan_action]
 
 
 def _mask_coverage(mask: Image.Image) -> float:

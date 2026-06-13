@@ -28,6 +28,7 @@ from natural_sprite_lab.progress import progress_iter
 from natural_sprite_lab.quality import analyze_frame_quality
 from natural_sprite_lab.quality.start_frame import make_start_frame_debug_sheet
 from natural_sprite_lab.quality.start_frame import prepare_clean_start_frame
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 DEFAULT_IDENTITY_TRAITS = (
@@ -144,7 +145,7 @@ def main() -> None:
     )
     parser.add_argument("--action", required=True, choices=tuple(ACTION_CANDIDATES))
     parser.add_argument("--input", required=True, type=Path)
-    parser.add_argument("--output-root", default=Path("outputs_action_keyframes"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--comfy-url", default="http://127.0.0.1:8188")
     parser.add_argument("--checkpoint", default="novaOrangeXL_v120.safetensors")
     parser.add_argument("--controlnet", default="SDXL\\OpenPoseXL2.safetensors")
@@ -187,7 +188,8 @@ def main() -> None:
 
     server = args.comfy_url.rstrip("/")
     label = _safe_label(f"{args.input.stem}_{args.action}_keyframes")
-    run_dir = args.output_root / time.strftime(f"{label}_%Y%m%d_%H%M%S")
+    run_dir = build_timestamped_run_dir(args.output_root, "action_keyframes", label)
+    write_run_profile(run_dir, category="action_keyframes", label=label, args=args)
     source_dir = run_dir / "generated"
     cleaned_dir = run_dir / "cleaned"
     pose_dir = run_dir / "control_pose"

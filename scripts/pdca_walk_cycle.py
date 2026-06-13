@@ -7,13 +7,14 @@ from pathlib import Path
 from natural_sprite_lab.backends import ComfyBackend
 from natural_sprite_lab.pipeline import run_pipeline
 from natural_sprite_lab.planning import WalkCycleDirector
+from natural_sprite_lab.utils.paths import build_timestamped_run_dir, write_run_profile
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a local PDCA sweep for reference walk-cycle generation.")
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--prompt", required=True)
-    parser.add_argument("--output-root", default=Path("outputs_pdca"), type=Path)
+    parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--checkpoint", default="novaOrangeXL_v120.safetensors")
     parser.add_argument("--checkpoint-sweep", action="store_true", help="Try all locally known anime checkpoints.")
     parser.add_argument("--controlnet", default="SDXL\\OpenPoseXL2.safetensors")
@@ -22,6 +23,8 @@ def main() -> None:
     parser.add_argument("--height", default=768, type=int)
     args = parser.parse_args()
 
+    session_dir = build_timestamped_run_dir(args.output_root, "walk_cycle_pdca", "walk_cycle")
+    write_run_profile(session_dir, category="walk_cycle_pdca", label="walk_cycle", args=args)
     checkpoints = [args.checkpoint]
     if args.checkpoint_sweep:
         checkpoints = [
@@ -55,7 +58,7 @@ def main() -> None:
                 source_image=args.input,
                 prompt=args.prompt,
                 backend=backend,
-                output_root=args.output_root,
+                output_root=session_dir,
                 run_id=run_name,
                 director=WalkCycleDirector(use_ollama=False),
             )
@@ -75,8 +78,8 @@ def main() -> None:
 
     best = max(results, key=lambda result: result["score"])
     summary = {"best": best, "results": results}
-    args.output_root.mkdir(parents=True, exist_ok=True)
-    summary_path = args.output_root / "pdca_summary.json"
+    session_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = session_dir / "pdca_summary.json"
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"PDCA summary: {summary_path}")
     print(f"Best: {best['name']} score={best['score']} contact_sheet={best['contact_sheet']}")

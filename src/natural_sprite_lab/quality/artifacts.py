@@ -45,6 +45,26 @@ class SpanSelection:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class MotionReadabilityReport:
+    status: str
+    action: str
+    motion_metric: str
+    mean_motion_delta: float
+    max_motion_delta: float
+    active_frame_ratio: float
+    max_static_frame_run: int
+    min_mean_motion_delta: float
+    active_frame_delta: float
+    min_active_frame_ratio: float
+    max_allowed_static_frame_run: int
+    issue_codes: tuple[str, ...]
+    recommendation: str
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
 def analyze_frame_quality(
     path: Path,
     index: int,
@@ -215,6 +235,64 @@ def select_best_span(
     )
 
 
+def analyze_motion_readability(
+    qualities: list[FrameQuality],
+    *,
+    action: str = "unknown",
+    motion_metric: str = "foreground",
+    min_mean_motion_delta: float | None = None,
+    active_frame_delta: float | None = None,
+    min_active_frame_ratio: float | None = None,
+    max_static_frame_run: int | None = None,
+) -> MotionReadabilityReport:
+    if not qualities:
+        raise ValueError("qualities must not be empty")
+    action_key = action.lower().strip() or "unknown"
+    thresholds = _motion_thresholds(action_key)
+    min_mean = thresholds["min_mean"] if min_mean_motion_delta is None else min_mean_motion_delta
+    active_delta = thresholds["active_delta"] if active_frame_delta is None else active_frame_delta
+    min_active = thresholds["min_active_ratio"] if min_active_frame_ratio is None else min_active_frame_ratio
+    max_static = (
+        max(1, round((len(qualities) - 1) * thresholds["max_static_ratio"]))
+        if max_static_frame_run is None
+        else max_static_frame_run
+    )
+    deltas = [_frame_motion_delta(frame, motion_metric) for frame in qualities[1:]]
+    active = [delta >= active_delta for delta in deltas]
+    mean_motion = _mean(deltas)
+    max_motion = max(deltas) if deltas else 0.0
+    active_ratio = sum(1 for value in active if value) / max(1, len(active))
+    static_run = _max_false_run(active)
+    issue_codes: list[str] = []
+    if action_key not in {"idle", "breath", "breathing"} and mean_motion < min_mean:
+        issue_codes.append("motion_readability_mean_delta_too_low")
+    if action_key not in {"idle", "breath", "breathing"} and active_ratio < min_active:
+        issue_codes.append("motion_readability_active_ratio_too_low")
+    if len(deltas) >= 4 and static_run > max_static:
+        issue_codes.append("motion_readability_static_run_too_long")
+    status = "passed" if not issue_codes else "needs_retake_or_manual_review"
+    recommendation = (
+        "motion_readability_ok"
+        if status == "passed"
+        else "retake_with_clearer_action_motion_before_120_frame_promotion"
+    )
+    return MotionReadabilityReport(
+        status=status,
+        action=action_key,
+        motion_metric=motion_metric,
+        mean_motion_delta=round(mean_motion, 3),
+        max_motion_delta=round(max_motion, 3),
+        active_frame_ratio=round(active_ratio, 5),
+        max_static_frame_run=static_run,
+        min_mean_motion_delta=round(min_mean, 3),
+        active_frame_delta=round(active_delta, 3),
+        min_active_frame_ratio=round(min_active, 5),
+        max_allowed_static_frame_run=max_static,
+        issue_codes=tuple(issue_codes),
+        recommendation=recommendation,
+    )
+
+
 def recommendation_table(qualities: list[FrameQuality]) -> list[dict[str, object]]:
     issue_counts: dict[str, int] = {}
     for quality in qualities:
@@ -371,6 +449,28 @@ def _frame_motion_delta(frame: FrameQuality, motion_metric: str) -> float:
     if motion_metric == "max":
         return max(frame.motion_delta_prev, frame.foreground_motion_delta_prev)
     raise ValueError(f"Unknown motion metric: {motion_metric}")
+
+
+def _motion_thresholds(action: str) -> dict[str, float]:
+    if action in {"idle", "breath", "breathing"}:
+        return {"min_mean": 0.4, "active_delta": 0.6, "min_active_ratio": 0.12, "max_static_ratio": 0.70}
+    if action.startswith("attack") or action.startswith("hit"):
+        return {"min_mean": 3.5, "active_delta": 2.8, "min_active_ratio": 0.32, "max_static_ratio": 0.42}
+    if action in {"walk", "run"}:
+        return {"min_mean": 4.0, "active_delta": 3.0, "min_active_ratio": 0.45, "max_static_ratio": 0.34}
+    return {"min_mean": 3.0, "active_delta": 2.5, "min_active_ratio": 0.35, "max_static_ratio": 0.40}
+
+
+def _max_false_run(values: list[bool]) -> int:
+    longest = 0
+    current = 0
+    for value in values:
+        if value:
+            current = 0
+            continue
+        current += 1
+        longest = max(longest, current)
+    return longest
 
 
 def _main_component_mask(mask: Image.Image) -> Image.Image:

@@ -104,6 +104,38 @@ def test_render_control_frame_can_overlay_weapon_guide() -> None:
     assert with_sword.tobytes() != base.tobytes()
 
 
+def test_render_control_frame_can_overlay_foot_guide() -> None:
+    args = _minimal_args()
+    frame = {
+        "action": "walk",
+        "variant": "neutral",
+        "frame_index": 30,
+        "phase": "passing",
+        "keypoints": {
+            "nose": [0.50, 0.20],
+            "neck": [0.50, 0.31],
+            "right_shoulder": [0.58, 0.35],
+            "right_elbow": [0.64, 0.48],
+            "right_wrist": [0.68, 0.60],
+            "left_shoulder": [0.42, 0.35],
+            "left_elbow": [0.36, 0.48],
+            "left_wrist": [0.32, 0.60],
+            "right_hip": [0.55, 0.57],
+            "right_knee": [0.60, 0.74],
+            "right_ankle": [0.63, 0.89],
+            "left_hip": [0.45, 0.57],
+            "left_knee": [0.40, 0.74],
+            "left_ankle": [0.37, 0.89],
+        },
+    }
+
+    base = _render_control_frame(args, frame, source_index=30, pose_count=120)
+    args.foot_guide = "walk"
+    with_foot_guide = _render_control_frame(args, frame, source_index=30, pose_count=120)
+
+    assert with_foot_guide.tobytes() != base.tobytes()
+
+
 def _minimal_args() -> SimpleNamespace:
     return SimpleNamespace(
         unet="wan.safetensors",
@@ -126,4 +158,5 @@ def _minimal_args() -> SimpleNamespace:
         vace_strength=1.0,
         pose_render_style="wan_balanced",
         weapon_guide="none",
+        foot_guide="none",
     )
