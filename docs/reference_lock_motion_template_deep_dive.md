@@ -309,6 +309,67 @@ But OpenPose-only does not carry toe/heel/foot-box semantics into generated shoe
 
 Next mechanism should use `lower_body_sidecar/` as a separate non-visible control or mask candidate. Do not keep tuning only OpenPose geometry, text prompts, or scalar ControlNet/IPAdapter weights.
 
+## 2026-06-13 Secondary Sidecar ControlNet Probe
+
+Implemented optional secondary ControlNet support in:
+
+- `scripts/regenerate_pose_sequence_controlnet.py`
+
+The new diagnostic inputs are:
+
+- `--sidecar-dir`
+- `--sidecar-indices`
+- `--sidecar-controlnet`
+- `--sidecar-strength`
+- `--sidecar-start`
+- `--sidecar-end`
+
+The second `ControlNetApplyAdvanced` is chained after the main OpenPose ControlNet. If no sidecar is provided, or if sidecar strength is `0`, the baseline workflow remains unchanged.
+
+Probe:
+
+```text
+outputs/20260613_225444/reference_pose_regen/walk_ipadv_upper_mask_foot_contact_v3_sidecar035_8f/
+```
+
+Settings:
+
+- main ControlNet: `SDXL\OpenPoseXL2.safetensors`
+- sidecar ControlNet: `SDXL\t2i-adapter-openpose-sdxl-1.0.safetensors`
+- sidecar source: `outputs/20260613_222505/motion_source_video_pdca/motion_sources/sideview_walk_foot_contact_v3/lower_body_sidecar/`
+- sidecar strength: `0.35`
+- sidecar end: `0.55`
+- IPAdapterAdvanced: `style transfer precise`, `upper_body` attention mask
+
+Gate reports:
+
+- artifact: `outputs/20260613_225559/artifact_repair/walk_ipadv_upper_mask_foot_contact_v3_sidecar035_8f_mask_gate/artifact_repair_report.json`
+- span: `outputs/20260613_225559/span_selection/walk_ipadv_upper_mask_foot_contact_v3_sidecar035_8f_span/span_selection_report.json`
+- region: `outputs/20260613_225559/region_diagnostics/walk_ipadv_upper_mask_foot_contact_v3_sidecar035_8f_regions/region_diagnostics_report.json`
+
+Result:
+
+| Metric | Previous upper-body mask | Foot-contact v3 OpenPose-only | Foot-contact v3 + sidecar035 |
+| --- | ---: | ---: | ---: |
+| Artifact hard failures | `0/8` | `3/8` | `2/8` |
+| Region retake decisions | `2/8` | `2/8` | `3/8` |
+| Span motion | `11.725` | `8.918` | `10.505` |
+| Mean lower-body temporal delta | `0.07925` | `0.06004` | `0.08048` |
+| Mean feet/contact temporal delta | `0.04478` | `0.02694` | `0.0582` |
+
+Decision: `rejected_diagnostic`.
+
+The sidecar is not a no-op. It reduced artifact hard failures compared with the OpenPose-only foot-contact v3 probe and recovered some motion. However, it worsened region retakes and feet/contact temporal instability. Agent visual review also found shoe/leg recolor, lower-body ghosting, and unstable foot rendering.
+
+Takeaway:
+
+```text
+Secondary sidecar control is a useful mechanism boundary.
+But an OpenPose-family adapter is not the right carrier for toe/heel/foot-box semantics.
+```
+
+Do not continue with scalar tuning of this OpenPose-family sidecar as the mainline. If the lower-body sidecar route continues, the next meaningful test needs a more suitable local control model such as lineart, softedge, depth, segmentation, or a mask/evaluation use of the sidecar rather than another OpenPose-like pose adapter.
+
 ## Non-Goals For The Next Loop
 
 - Do not switch to InstantID/PuLID before the side-view motion control is clean; they mainly help face identity and add dependency complexity.

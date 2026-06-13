@@ -50,7 +50,7 @@ This is still diagnostic. Since the local second ControlNet choices are OpenPose
 
 ## Active PDCA
 
-- [ ] Add optional secondary ControlNet support to `scripts/regenerate_pose_sequence_controlnet.py`.
+- [x] Add optional secondary ControlNet support to `scripts/regenerate_pose_sequence_controlnet.py`.
   - Inputs:
     - `--sidecar-dir`
     - `--sidecar-indices`
@@ -61,15 +61,18 @@ This is still diagnostic. Since the local second ControlNet choices are OpenPose
   - Chain the second `ControlNetApplyAdvanced` after the main OpenPose apply.
   - Keep the baseline path unchanged when no sidecar is provided.
   - Record sidecar settings and copied sidecar frames in the run report.
-- [ ] Add unit tests for the secondary ControlNet workflow.
+- [x] Add unit tests for the secondary ControlNet workflow.
   - Baseline workflow must remain unchanged without sidecar args.
   - Sidecar workflow must load a second control image and apply a second ControlNet before KSampler.
-- [ ] Confirm ComfyUI queue capacity before generation.
+- [x] Confirm ComfyUI queue capacity before generation.
   - Use `/queue`.
   - Do not submit if pending/running queue is above the configured limit.
-- [ ] Run one 8-frame sidecar diagnostic probe.
+- [x] Run one 8-frame sidecar diagnostic probe.
   - Source image:
-    - `outputs/20260613_185524/background_normalize/prior_best_start_background_normalize/frames/frame_000.png`
+    - planned source was missing locally:
+      - `outputs/20260613_185524/background_normalize/prior_best_start_background_normalize/frames/frame_000.png`
+    - actual fallback source:
+      - `outputs/20260613_223902/reference_pose_regen/walk_ipadv_upper_mask_foot_contact_v3_8f/source_reference/source_image.png`
   - Main pose:
     - `outputs/20260613_222505/motion_source_video_pdca/motion_sources/sideview_walk_foot_contact_v3/controlnet`
   - Sidecar:
@@ -90,12 +93,12 @@ This is still diagnostic. Since the local second ControlNet choices are OpenPose
     - IPAdapter weight `0.55`
     - IPAdapter end `0.62`
     - IPAdapter attention mask `upper_body`
-- [ ] Gate the sidecar probe.
+- [x] Gate the sidecar probe.
   - `repair_frame_artifacts.py --mask-only --weapon none`
   - `select_best_span.py --action walk --motion-metric foreground --allow-hard-failures`
   - `analyze_sprite_regions.py`
   - Agent visual review of comparison/contact sheets.
-- [ ] Compare against both prior proofs.
+- [x] Compare against both prior proofs.
   - Previous best:
     - `outputs/20260613_214841/reference_pose_regen/walk_ipadv_style_precise_upper_mask_sideview_v2_8f/`
   - Foot-contact OpenPose-only diagnostic:
@@ -104,13 +107,38 @@ This is still diagnostic. Since the local second ControlNet choices are OpenPose
     - artifact hard failures `0`;
     - region retake decisions below `2/8`;
     - or clear visual foot/contact improvement without guide leakage or identity drift.
-- [ ] Decide the next mechanism.
+- [x] Decide the next mechanism.
   - If sidecar improves: keep sidecar route and test better sidecar render styles or a more suitable ControlNet model.
   - If sidecar worsens or no-ops: record that OpenPose-family secondary ControlNet is not enough and plan model acquisition for lineart/softedge/depth.
-- [ ] Update reports and Skill.
+- [x] Update reports and Skill.
   - `docs/reference_lock_motion_template_deep_dive.md`
   - `docs/walk_candidate_comparison.md`
   - `docs/local_skills/natural-sprite-controlnet-pdca/SKILL.md`
+
+## Result
+
+- [x] Sidecar diagnostic output:
+  - `outputs/20260613_225444/reference_pose_regen/walk_ipadv_upper_mask_foot_contact_v3_sidecar035_8f/`
+- [x] Gate outputs:
+  - artifact: `outputs/20260613_225559/artifact_repair/walk_ipadv_upper_mask_foot_contact_v3_sidecar035_8f_mask_gate/artifact_repair_report.json`
+  - span: `outputs/20260613_225559/span_selection/walk_ipadv_upper_mask_foot_contact_v3_sidecar035_8f_span/span_selection_report.json`
+  - region: `outputs/20260613_225559/region_diagnostics/walk_ipadv_upper_mask_foot_contact_v3_sidecar035_8f_regions/region_diagnostics_report.json`
+- [x] Metrics:
+  - artifact hard failures: `2/8`
+  - region retake decisions: `3/8`
+  - span motion: `10.505`
+  - mean lower-body temporal delta: `0.08048`
+  - mean feet/contact temporal delta: `0.0582`
+- [x] Decision:
+  - `rejected_diagnostic`
+- [x] Reason:
+  - secondary OpenPose-family sidecar had an effect, but not the desired foot-contact effect.
+  - It improved artifact hard failures against the OpenPose-only foot-contact v3 probe (`3/8 -> 2/8`) and recovered some motion (`8.918 -> 10.505`).
+  - It worsened region retakes (`2/8 -> 3/8`) and feet/contact temporal instability (`0.02694 -> 0.0582`), and visual review found shoe/leg recolor plus lower-body ghosting.
+- [x] Next mechanism:
+  - Do not continue scalar tuning of an OpenPose-family secondary ControlNet as the main route.
+  - If lower-body sidecar is continued, acquire or test a sidecar-suitable local model such as lineart, softedge, depth, segmentation, or use the sidecar as a non-generation mask/evaluation channel.
+  - Keep the previous `IPAdapterAdvanced style transfer precise + upper_body mask` proof as the best current reference-locked ControlNet proof.
 
 ## Status Vocabulary
 

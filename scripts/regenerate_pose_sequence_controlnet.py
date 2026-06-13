@@ -47,6 +47,12 @@ def main() -> None:
     parser.add_argument("--source-image", required=True, type=Path)
     parser.add_argument("--pose-dir", default=Path("pose_templates/walk/controlnet"), type=Path)
     parser.add_argument("--pose-indices", default="0,15,30,45,60,75,90,105")
+    parser.add_argument("--sidecar-dir", default=None, type=Path)
+    parser.add_argument("--sidecar-indices", default=None)
+    parser.add_argument("--sidecar-controlnet", default="SDXL\\t2i-adapter-openpose-sdxl-1.0.safetensors")
+    parser.add_argument("--sidecar-strength", default=0.0, type=float)
+    parser.add_argument("--sidecar-start", default=0.0, type=float)
+    parser.add_argument("--sidecar-end", default=0.55, type=float)
     parser.add_argument("--output-root", default=Path("outputs"), type=Path)
     parser.add_argument("--run-label", default=None)
     parser.add_argument("--checkpoint", default="novaOrangeXL_v120.safetensors")
@@ -88,6 +94,15 @@ def main() -> None:
     missing = [path for path in pose_paths if not path.exists()]
     if missing:
         raise FileNotFoundError(f"Missing pose frames: {missing}")
+    sidecar_indices = _parse_indices(args.sidecar_indices) if args.sidecar_indices else pose_indices
+    if args.sidecar_dir and len(sidecar_indices) != len(pose_indices):
+        raise ValueError("--sidecar-indices must have the same count as --pose-indices")
+    sidecar_paths: list[Path] = []
+    if args.sidecar_dir:
+        sidecar_paths = [args.sidecar_dir / f"frame_{index:03d}.png" for index in sidecar_indices]
+        missing_sidecars = [path for path in sidecar_paths if not path.exists()]
+        if missing_sidecars:
+            raise FileNotFoundError(f"Missing sidecar frames: {missing_sidecars}")
 
     label = _safe_label(args.run_label or f"{args.source_image.stem}_pose_regen")
     run_dir = build_timestamped_run_dir(args.output_root, "reference_pose_regen", label)
@@ -104,9 +119,12 @@ def main() -> None:
     frames_dir = run_dir / "frames"
     source_dir = run_dir / "source_reference"
     pose_out_dir = run_dir / "control_pose"
+    sidecar_out_dir = run_dir / "lower_body_sidecar" if args.sidecar_dir else None
     workflow_dir = run_dir / "workflow"
     for path in (frames_dir, source_dir, pose_out_dir, workflow_dir):
         path.mkdir(parents=True, exist_ok=True)
+    if sidecar_out_dir:
+        sidecar_out_dir.mkdir(parents=True, exist_ok=True)
 
     prepared_source = _prepare_source(args.source_image, source_dir / "source_image.png", args.width, args.height)
     server = args.comfy_url.rstrip("/")
@@ -148,6 +166,12 @@ def main() -> None:
             "denoise": args.denoise,
             "controlnet_strength": args.controlnet_strength,
             "controlnet_end": args.controlnet_end,
+            "sidecar_dir": str(args.sidecar_dir) if args.sidecar_dir else None,
+            "sidecar_indices": sidecar_indices if args.sidecar_dir else None,
+            "sidecar_controlnet": args.sidecar_controlnet if args.sidecar_dir else None,
+            "sidecar_strength": args.sidecar_strength if args.sidecar_dir else None,
+            "sidecar_start": args.sidecar_start if args.sidecar_dir else None,
+            "sidecar_end": args.sidecar_end if args.sidecar_dir else None,
             "sampler": args.sampler,
             "scheduler": args.scheduler,
             "seed": args.seed,
@@ -162,6 +186,7 @@ def main() -> None:
 
     output_paths: list[Path] = []
     copied_pose_paths: list[Path] = []
+    copied_sidecar_paths: list[Path] = []
     try:
         for out_index, pose_path in progress_iter(
             list(enumerate(pose_paths)),
@@ -173,7 +198,21 @@ def main() -> None:
             _prepare_pose(pose_path, copied_pose, args.width, args.height)
             copied_pose_paths.append(copied_pose)
             pose_name = _upload_image(server, copied_pose)
-            workflow = _workflow(args, source_name, pose_name, out_index, attn_mask_name=attn_mask_name)
+            sidecar_name = None
+            copied_sidecar = None
+            if sidecar_paths and sidecar_out_dir:
+                copied_sidecar = sidecar_out_dir / f"sidecar_{out_index:03d}_src_{sidecar_indices[out_index]:03d}.png"
+                _prepare_pose(sidecar_paths[out_index], copied_sidecar, args.width, args.height)
+                copied_sidecar_paths.append(copied_sidecar)
+                sidecar_name = _upload_image(server, copied_sidecar)
+            workflow = _workflow(
+                args,
+                source_name,
+                pose_name,
+                out_index,
+                attn_mask_name=attn_mask_name,
+                sidecar_image_name=sidecar_name,
+            )
             workflow_path = workflow_dir / f"frame_{out_index:03d}.json"
             workflow_path.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             prompt_id = _queue_prompt(server, workflow, args=args)
@@ -187,6 +226,8 @@ def main() -> None:
                     "index": out_index,
                     "pose_index": pose_indices[out_index],
                     "pose": str(copied_pose),
+                    "sidecar_index": sidecar_indices[out_index] if copied_sidecar else None,
+                    "sidecar": str(copied_sidecar) if copied_sidecar else None,
                     "workflow": str(workflow_path),
                     "prompt_id": prompt_id,
                     "output": str(output_path),
@@ -198,6 +239,13 @@ def main() -> None:
         preview = make_preview_gif(output_paths, run_dir / "preview.gif", duration_ms=round(1000 / args.fps), loop=True)
         contact_sheet = make_contact_sheet(output_paths, run_dir / "contact_sheet.png", columns=min(8, len(output_paths)))
         pose_sheet = make_contact_sheet(copied_pose_paths, run_dir / "pose_contact_sheet.png", columns=min(8, len(copied_pose_paths)))
+        sidecar_sheet = None
+        if copied_sidecar_paths:
+            sidecar_sheet = make_contact_sheet(
+                copied_sidecar_paths,
+                run_dir / "sidecar_contact_sheet.png",
+                columns=min(8, len(copied_sidecar_paths)),
+            )
         comparison = _make_comparison_sheet(prepared_source, copied_pose_paths, output_paths, run_dir / "comparison_sheet.png")
         report.update(
             {
@@ -207,6 +255,7 @@ def main() -> None:
                 "preview_gif": str(preview),
                 "contact_sheet": str(contact_sheet),
                 "pose_contact_sheet": str(pose_sheet),
+                "sidecar_contact_sheet": str(sidecar_sheet) if sidecar_sheet else None,
                 "comparison_sheet": str(comparison),
                 "motion_metrics": _motion_metrics(output_paths),
                 "mean_source_delta": round(
@@ -232,6 +281,7 @@ def main() -> None:
                 "preview_gif": report["preview_gif"],
                 "contact_sheet": report["contact_sheet"],
                 "comparison_sheet": report["comparison_sheet"],
+                "sidecar_contact_sheet": report.get("sidecar_contact_sheet"),
                 "motion_metrics": report["motion_metrics"],
                 "mean_source_delta": report["mean_source_delta"],
             },
@@ -248,6 +298,7 @@ def _workflow(
     index: int,
     *,
     attn_mask_name: str | None = None,
+    sidecar_image_name: str | None = None,
 ) -> dict[str, Any]:
     seed = args.seed + index * args.seed_step
     model_ref: list[Any] = ["1", 0]
@@ -290,6 +341,26 @@ def _workflow(
             },
             **mask_nodes,
         }
+    conditioning_ref: tuple[list[Any], list[Any]] = (["9", 0], ["9", 1])
+    sidecar_nodes: dict[str, Any] = {}
+    if sidecar_image_name and args.sidecar_strength > 0:
+        conditioning_ref = (["19", 0], ["19", 1])
+        sidecar_nodes = {
+            "17": {"class_type": "LoadImage", "inputs": {"image": sidecar_image_name}},
+            "18": {"class_type": "ControlNetLoader", "inputs": {"control_net_name": args.sidecar_controlnet}},
+            "19": {
+                "class_type": "ControlNetApplyAdvanced",
+                "inputs": {
+                    "positive": ["9", 0],
+                    "negative": ["9", 1],
+                    "control_net": ["18", 0],
+                    "image": ["17", 0],
+                    "strength": args.sidecar_strength,
+                    "start_percent": args.sidecar_start,
+                    "end_percent": args.sidecar_end,
+                },
+            },
+        }
     return {
         "1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": args.checkpoint}},
         "2": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["1", 1], "text": args.positive}},
@@ -324,8 +395,8 @@ def _workflow(
             "class_type": "KSampler",
             "inputs": {
                 "model": model_ref,
-                "positive": ["9", 0],
-                "negative": ["9", 1],
+                "positive": conditioning_ref[0],
+                "negative": conditioning_ref[1],
                 "latent_image": ["6", 0],
                 "seed": seed,
                 "steps": args.steps,
@@ -341,6 +412,7 @@ def _workflow(
             "inputs": {"images": ["11", 0], "filename_prefix": f"reference_pose_regen_{index:03d}"},
         },
         **ipadapter_nodes,
+        **sidecar_nodes,
     }
 
 

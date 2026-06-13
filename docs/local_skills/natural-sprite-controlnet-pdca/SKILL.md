@@ -45,6 +45,13 @@ Lower-body/contact control update, 2026-06-13:
   - region retake decisions `2/8`
   - span motion `8.918`
 - Lesson: foot/contact metadata improves template validation, but OpenPose-only does not carry toe/heel/foot-box semantics into generated shoes/contact. If this route stalls, test `lower_body_sidecar/` as a separate non-visible control or mask candidate rather than adding more foot semantics to OpenPose alone.
+- Secondary sidecar probe:
+  - `outputs/20260613_225444/reference_pose_regen/walk_ipadv_upper_mask_foot_contact_v3_sidecar035_8f/`
+  - sidecar ControlNet `SDXL\t2i-adapter-openpose-sdxl-1.0.safetensors`
+  - decision `rejected_diagnostic`
+  - artifact hard failures improved versus OpenPose-only foot-contact v3 (`3/8 -> 2/8`), but region retakes worsened (`2/8 -> 3/8`) and feet/contact temporal instability worsened (`0.02694 -> 0.0582`).
+  - Visual review found shoe/leg recolor, lower-body ghosting, and unstable foot rendering.
+- Rule: do not continue scalar tuning of an OpenPose-family secondary sidecar ControlNet as the mainline. If lower-body sidecar control is pursued, use a more suitable local model such as lineart, softedge, depth, segmentation, or use the sidecar as a gate/mask signal instead of a second OpenPose-like adapter.
 
 ## Output Target
 

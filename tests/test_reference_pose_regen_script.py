@@ -36,6 +36,35 @@ def test_workflow_keeps_simple_ipadapter_baseline() -> None:
     assert "attn_mask" not in workflow["14"]["inputs"]
 
 
+def test_workflow_can_chain_secondary_sidecar_controlnet() -> None:
+    module = _load_module()
+    args = _args(sidecar_strength=0.35)
+
+    workflow = module._workflow(args, "source.png", "pose.png", 0, sidecar_image_name="sidecar.png")
+
+    assert workflow["17"]["class_type"] == "LoadImage"
+    assert workflow["17"]["inputs"]["image"] == "sidecar.png"
+    assert workflow["18"]["class_type"] == "ControlNetLoader"
+    assert workflow["18"]["inputs"]["control_net_name"] == "SDXL\\t2i-adapter-openpose-sdxl-1.0.safetensors"
+    assert workflow["19"]["class_type"] == "ControlNetApplyAdvanced"
+    assert workflow["19"]["inputs"]["positive"] == ["9", 0]
+    assert workflow["19"]["inputs"]["negative"] == ["9", 1]
+    assert workflow["19"]["inputs"]["strength"] == 0.35
+    assert workflow["10"]["inputs"]["positive"] == ["19", 0]
+    assert workflow["10"]["inputs"]["negative"] == ["19", 1]
+
+
+def test_workflow_ignores_sidecar_when_strength_is_zero() -> None:
+    module = _load_module()
+    args = _args(sidecar_strength=0.0)
+
+    workflow = module._workflow(args, "source.png", "pose.png", 0, sidecar_image_name="sidecar.png")
+
+    assert "17" not in workflow
+    assert workflow["10"]["inputs"]["positive"] == ["9", 0]
+    assert workflow["10"]["inputs"]["negative"] == ["9", 1]
+
+
 def test_ipadapter_attention_mask_generation_writes_soft_mask(tmp_path: Path) -> None:
     module = _load_module()
     path = module._make_ipadapter_attn_mask("upper_body", tmp_path / "mask.png", 128, 128)
@@ -65,6 +94,10 @@ def _args(**overrides):
         "height": 768,
         "controlnet_strength": 0.92,
         "controlnet_end": 0.68,
+        "sidecar_controlnet": "SDXL\\t2i-adapter-openpose-sdxl-1.0.safetensors",
+        "sidecar_strength": 0.0,
+        "sidecar_start": 0.0,
+        "sidecar_end": 0.55,
         "seed": 123,
         "seed_step": 0,
         "steps": 18,
