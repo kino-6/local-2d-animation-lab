@@ -1,15 +1,15 @@
-# Tasks: Sidecar-Suitable Lower-Body Control Probe
+# Tasks: Walk-Ready Full-Body Start Reference Gate
 
 Archived checkpoint:
 
 ```text
-docs/archive/Tasks_20260613_lower_body_sidecar_control_probe_completed.md
+docs/archive/Tasks_20260614_sidecar_suitable_lower_body_control_probe_completed.md
 ```
 
 Cleanup report:
 
 ```text
-docs/output_cleanup_20260613_sidecar_probe.md
+docs/output_cleanup_20260614_lineart_sidecar_probe.md
 ```
 
 ## Rules
@@ -17,140 +17,107 @@ docs/output_cleanup_20260613_sidecar_probe.md
 - [x] Generate local-first 2D game animation assets from a character reference image plus a natural-language action request.
 - [x] Treat the input image as a design reference, not pixels to directly puppet.
 - [x] Save all new generated run artifacts only under `outputs/<timestamp>/...`.
-- [x] Target adopted source length is 120 frames; short probes are evidence only.
+- [x] Target adopted animation source length is 120 frames; short probes are evidence only.
 - [x] Long-running ComfyUI scripts must expose queue controls and progress visibility.
-- [x] Do not promote outputs where guide lines, duplicate lower limbs, broken feet, strong afterimages, shoe recolor, or identity drift are visible.
+- [x] Do not promote outputs where guide lines, duplicate lower limbs, broken feet, strong afterimages, shoe recolor, composition collapse, or identity drift are visible.
 
 ## Current Interpretation
 
-- [x] `IPAdapterAdvanced style transfer precise + upper_body mask` remains the best reference-lock ControlNet route, but only as `selected_proof_only`.
-- [x] Foot-contact metadata and foot-box diagnostics are useful before generation.
-- [x] OpenPose-only does not carry toe, heel, or foot-box semantics into generated shoes/contact.
-- [x] Secondary OpenPose-family sidecar is not the mainline:
-  - artifact hard failures improved from `3/8` to `2/8`;
-  - motion improved from `8.918` to `10.505`;
-  - region retakes worsened from `2/8` to `3/8`;
-  - feet/contact temporal instability worsened from `0.02694` to `0.0582`;
-  - visual review found shoe/leg recolor and lower-body ghosting.
+- [x] OpenPose-only cannot carry toe, heel, or foot-box semantics into generated shoes/contact.
+- [x] OpenPose-family secondary sidecar is not enough.
+- [x] Lineart sidecar is installable and active, but does not fix walk quality when the reference/start composition is not already sprite-compatible.
+- [x] The next bottleneck is start/reference suitability:
+  - full-body;
+  - side-view or near side-view;
+  - walk-cycle contact pose;
+  - separated readable shoes;
+  - clean white or transparent background;
+  - no model-sheet/turnaround/secondary-character artifacts.
 
 ## Plan
 
-The next mechanism is a sidecar carrier probe:
+The next mechanism is not another sidecar strength sweep. It is a stricter start-reference gate:
 
 ```text
-main OpenPose = whole-body walk phase
-IPAdapterAdvanced upper_body mask = identity/reference lock
-sidecar carrier = lower-body outline/contact signal, not another OpenPose-like skeleton
-gate = artifact + span + region diagnostics + Agent visual review
+input design reference
+-> generate multiple full-body side-view walk-ready start candidates
+-> deterministic start-frame gate
+-> Agent visual review
+-> only then run short walk animation probe
 ```
 
-Do not assume new models work because the filename looks right. First inventory local ComfyUI models, then acquire one narrow candidate, then run a short 8-frame proof.
+If no candidate passes the start-frame gate, do not run animation generation. Record the blocker and improve candidate generation/gating.
 
-Primary candidate direction:
+Primary input for this loop:
 
-- T2I Adapter SDXL lineart/sketch, because it is closer to foot-box outline and lower-leg shape than OpenPose.
+- `assets/reference/Anima_00013_.png`
 
-Fallback candidates:
+Secondary input only if needed:
 
-- SDXL softedge or canny if lineart/sketch cannot be loaded.
-- SDXL union only after local loader/control-type behavior is confirmed.
-- If no model can be acquired or loaded, use the sidecar as a mask/evaluation channel and record the blocker.
+- `assets/reference/ComfyUI2025_131891_trim.png`
 
 ## Active PDCA
 
-- [x] Cleanup stale local outputs.
+- [ ] Cleanup stale local outputs.
   - Archive old `Tasks.md`.
-  - Write `docs/output_cleanup_20260613_sidecar_probe.md`.
-  - Delete stale local `outputs/20260613_*` sessions after durable findings are recorded.
-  - Delete stale `source_probe_packages/` unless it is needed by tracked docs.
-- [x] Add model inventory support.
-  - Add a small script or reusable command path that reports local ControlNet/T2I Adapter candidates.
-  - Record whether lineart, sketch, canny, softedge, depth, segmentation, or union candidates are present.
-- [x] Add model acquisition support for one sidecar-suitable candidate.
-  - Prefer `t2i-adapter_diffusers_xl_lineart.safetensors` from `lllyasviel/sd_control_collection`.
-  - Save under the existing ComfyUI controlnet model directory, preferably `SDXL/`.
-  - Do not redownload if the file already exists.
-  - Record source URL, target path, file size, and decision in a report.
-- [x] Add or verify a lower-body sidecar render style suitable for lineart/sketch.
-  - It should be grayscale/outline-oriented, not colored pose bones.
-  - It should encode hip/knee/ankle leg line, shoe boxes, toe/heel direction, and contact line.
-  - Add unit coverage for the new render mode.
-- [x] Generate a fresh 8-frame sidecar-carrier diagnostic.
-  - Rebuild the synthetic side-view walk source from code, do not depend on deleted `outputs/`.
-  - Use 8 sampled frames: `0,15,30,45,60,75,90,105`.
-  - Main ControlNet: `SDXL\OpenPoseXL2.safetensors`.
-  - Sidecar candidate: the newly acquired lineart/sketch/softedge/canny model.
-  - Use `IPAdapterAdvanced style transfer precise`, `upper_body` mask.
+  - Write `docs/output_cleanup_20260614_lineart_sidecar_probe.md`.
+  - Delete stale lineart sidecar `outputs/20260613_*` sessions after durable findings are recorded.
+- [ ] Review the existing start-frame generation route.
+  - `scripts/generate_fullbody_reference_candidates.py`.
+  - `natural_sprite_lab.quality.start_frame.prepare_clean_start_frame`.
+  - Existing tests around full-body/reference/start-frame readiness.
+- [ ] Tighten start-reference assessment if needed.
+  - Require full-body bbox height and foot-near-bottom checks.
+  - Penalize too-wide/front-view/model-sheet compositions.
+  - Keep lower-body hard issues blocking:
+    - `feet_not_separated`
+    - `shoes_unreadable`
+    - `lower_legs_occluded`
+    - `foot_zone_merged`
+    - `possible_back_view_or_missing_profile_detail`
+    - `guide_or_panel_residue`
+    - `background_contamination_high`
+  - Add unit tests for any changed gate behavior.
+- [ ] Generate fresh full-body side-view start candidates.
+  - Use `novaOrangeXL_v120.safetensors`.
+  - Use `SDXL\OpenPoseXL2.safetensors`.
   - Check ComfyUI `/queue` before submitting.
-- [x] Gate and visually review the diagnostic.
-  - `repair_frame_artifacts.py --mask-only --weapon none`.
-  - `select_best_span.py --action walk --motion-metric foreground --allow-hard-failures`.
-  - `analyze_sprite_regions.py`.
-  - Agent visual review of `comparison_sheet.png`, `contact_sheet.png`, and `sidecar_contact_sheet.png`.
-- [x] Decide whether the sidecar-suitable model route is worth deeper PDCA.
-  - Continue only if it improves foot/contact readability without guide leakage, recolor, or lower-body ghosting.
-  - Reject if it behaves like the OpenPose-family sidecar or causes visible line/control leakage.
-- [x] Update durable knowledge.
+  - Generate under `outputs/<timestamp>/fullbody_reference/...`.
+  - Do not reuse deleted `outputs/` paths.
+- [ ] Agent visual review of candidate sheets.
+  - Inspect `contact_sheet.png`, `source_contact_sheet.png`, and selected `start_frame.png`.
+  - Record:
+    - side-view confidence;
+    - foot readability;
+    - lower-leg occlusion;
+    - background cleanliness;
+    - expected walk suitability.
+- [ ] Decide whether animation probing is allowed.
+  - If no candidate is visually walk-ready, stop at `blocked_start_reference_quality`.
+  - If one candidate is plausible but gated with minor warnings, run one short 8-frame diagnostic only.
+  - Do not run 120 frames in this loop.
+- [ ] Optional short diagnostic if allowed.
+  - Rebuild synthetic side-view walk source from code.
+  - Use the selected start frame as the reference.
+  - Run either:
+    - plain IPAdapterAdvanced + OpenPose upper-body-mask route; or
+    - lineart sidecar at low strength only if the start frame already passes visual review.
+  - Gate and visually review.
+- [ ] Update durable knowledge.
+  - `docs/start_frame_first_walk_pdca.md`.
   - `docs/reference_lock_motion_template_deep_dive.md`.
   - `docs/walk_candidate_comparison.md`.
   - `docs/local_skills/natural-sprite-controlnet-pdca/SKILL.md`.
-  - `Tasks.md` with final result and next mechanism.
+  - `Tasks.md` final result.
 
 ## Success Criteria
 
-- [x] Script/test changes pass local tests.
-- [x] Generated diagnostic exists under one timestamped `outputs/<timestamp>/...` session.
-- [x] No stale pre-plan local outputs remain after durable knowledge was recorded.
-- [x] Result is labeled honestly as one of:
+- [ ] Old output clutter is removed after knowledge capture.
+- [ ] Tests pass for touched code.
+- [ ] A fresh start-reference report exists under `outputs/<timestamp>/...`, or a blocker is recorded.
+- [ ] No animation generation is run from an obviously bad start/reference.
+- [ ] Result is labeled honestly as one of:
+  - `start_reference_candidate_only`;
   - `selected_proof_only`;
-  - `rejected_diagnostic`;
-  - `blocked_model_compatibility`.
-
-## Result
-
-- [x] Added model management:
-  - `scripts/manage_sidecar_control_models.py`
-  - inventory report before download:
-    - `outputs/20260613_234244/model_management/sidecar_control_model_inventory/model_inventory_report.json`
-  - acquisition report:
-    - `outputs/20260613_234258/model_management/t2i_lineart_sdxl_acquisition/model_acquisition_report.json`
-  - inventory report after download:
-    - `outputs/20260613_234308/model_management/sidecar_control_model_inventory_after_download/model_inventory_report.json`
-- [x] Downloaded model:
-  - `C:\LocalWork\StabilityMatrix\Data\Packages\ComfyUI\models\controlnet\SDXL\t2i-adapter_diffusers_xl_lineart.safetensors`
-  - bytes: `158060416`
-  - ComfyUI `ControlNetLoader` listed the model after download.
-- [x] Added lower-body sidecar style:
-  - `foot_contact_lineart`
-  - output source:
-    - `outputs/20260613_234318/motion_source_video_pdca/motion_sources/sideview_walk_lineart_sidecar_v1/`
-  - diagnostics passed:
-    - `sampled_min_ankle_x_separation: 0.1205`
-    - `sampled_min_foot_box_x_gap: 0.03002`
-    - `unclear_ankle_separation_count: 0`
-    - `unclear_foot_box_count: 0`
-- [x] Probe A: original `Anima_00013_.png` reference + lineart sidecar strength `0.35`.
-  - output: `outputs/20260613_234423/reference_pose_regen/walk_ipadv_upper_mask_lineart_sidecar035_8f/`
-  - gates: `outputs/20260613_234634/`
-  - artifact: `retake_required: 8/8`
-  - span hard failures: `8/8`
-  - region retake decisions: `7/8`
-  - visual decision: `rejected_diagnostic`
-  - reason: guide/line leakage, duplicate-silhouette risk, tiny character fragments, and no usable walk asset.
-- [x] Probe B: `ComfyUI2025_131891_trim.png` reference + lineart sidecar strength `0.15`.
-  - output: `outputs/20260613_234732/reference_pose_regen/comfy2025_walk_ipadv_upper_mask_lineart_sidecar015_8f/`
-  - gates: `outputs/20260613_234839/`
-  - artifact: `retake_required: 8/8`
-  - span hard failures: `8/8`
-  - region retake decisions: `8/8`
-  - mean lower-body temporal delta: `0.06158`
-  - mean feet/contact temporal delta: `0.01064`
-  - visual decision: `rejected_diagnostic`
-  - reason: fewer explicit line leaks than Probe A, but not a readable 2D walk asset; composition/action collapses around the reference instead of becoming a sprite walk.
-- [x] Decision:
-  - `rejected_diagnostic`
-- [x] Interpretation:
-  - The lineart model is installable and loadable.
-  - A lineart sidecar is not automatically a better foot/contact carrier in this reference-locked img2img workflow.
-  - The current failure is no longer only "OpenPose cannot carry foot boxes"; it is also "the reference image and identity lock can dominate the action composition".
-  - The next mainline should generate or select a walk-ready full-body side-view start/reference first, then use sidecar controls only after the reference already has sprite-compatible framing.
+  - `blocked_start_reference_quality`;
+  - `rejected_diagnostic`.
