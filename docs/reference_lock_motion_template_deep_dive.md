@@ -431,6 +431,42 @@ Next mainline:
 - Do not use bust-up or non-sprite-framed references for this ControlNet regeneration path.
 - Do not spend on 120 frames until the short proof is already a readable game walk.
 
+## 2026-06-14 Start-Reference Gate Result
+
+The next loop followed the "start/reference first" rule and generated fresh full-body candidates from:
+
+```text
+assets/reference/Anima_00013_.png
+```
+
+Output:
+
+```text
+outputs/20260614_000549/fullbody_reference/anima_00013/
+```
+
+Result:
+
+- no `candidate_ok` start frame;
+- selected candidate: `slight_three_quarter_side`;
+- selected status: `manual_review_or_retake`;
+- selected issues: `extra_foreground_components_removed`, `large_secondary_component`, `shoes_unreadable`.
+
+Visual review:
+
+```text
+The selected image is a decent still illustration, but it is not a walk-ready 2D game start reference.
+It is too front-facing, and the lower body/shoes are not reliable enough for animation.
+```
+
+Decision:
+
+```text
+blocked_start_reference_quality
+```
+
+This confirms the prior interpretation: sidecar or ControlNet tuning should not continue until the start-reference generator can produce a true side-view walk-contact sprite frame.
+
 ## Non-Goals For The Next Loop
 
 - Do not switch to InstantID/PuLID before the side-view motion control is clean; they mainly help face identity and add dependency complexity.

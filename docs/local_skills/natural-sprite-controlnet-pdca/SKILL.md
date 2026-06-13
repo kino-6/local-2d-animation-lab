@@ -58,6 +58,12 @@ Lower-body/contact control update, 2026-06-13:
   - Probe A: `outputs/20260613_234423/reference_pose_regen/walk_ipadv_upper_mask_lineart_sidecar035_8f/`, decision `rejected_diagnostic`, artifact `retake_required: 8/8`, visible guide leakage `7/8`.
   - Probe B: `outputs/20260613_234732/reference_pose_regen/comfy2025_walk_ipadv_upper_mask_lineart_sidecar015_8f/`, decision `rejected_diagnostic`, artifact `retake_required: 8/8`, region retake `8/8`.
   - Lesson: lineart sidecar can influence the image, but it does not solve walk quality if the reference image/composition is not already walk-ready and full-body side-view. Do not keep scalar-sweeping sidecar strength before fixing the start/reference framing.
+- Start-reference gate update:
+  - 2026-06-14 Anima candidate generation: `outputs/20260614_000549/fullbody_reference/anima_00013/`.
+  - No `candidate_ok` start frame was found.
+  - Selected candidate `slight_three_quarter_side` remained `manual_review_or_retake` with `extra_foreground_components_removed`, `large_secondary_component`, and `shoes_unreadable`.
+  - Visual decision: blocked. It is a decent still illustration but too front-facing and not walk-ready.
+  - Rule: if `generate_fullbody_reference_candidates.py` does not produce `candidate_ok`, do not run animation generation. Record `blocked_start_reference_quality` and improve start-reference generation first.
 
 ## Output Target
 

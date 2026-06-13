@@ -107,3 +107,22 @@ def test_select_candidate_prefers_ok_status_then_score() -> None:
     }
 
     assert _select_candidate([rejected, accepted]) is accepted
+
+
+def test_assess_candidate_rejects_too_wide_side_reference() -> None:
+    assessment = _assess_candidate(
+        {
+            "main_bbox": [150, 70, 850, 940],
+            "issue_codes": [],
+        },
+        {
+            "score": 0.9,
+            "hard_failure": False,
+            "issue_codes": [],
+        },
+        1024,
+        1024,
+    )
+
+    assert assessment["status"] == "manual_review_or_retake"
+    assert "foreground_too_wide_for_side_reference" in assessment["issue_codes"]

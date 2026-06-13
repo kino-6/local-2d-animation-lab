@@ -285,6 +285,8 @@ def main() -> None:
         selected_dir.mkdir(parents=True, exist_ok=True)
         selected_path = selected_dir / "start_frame.png"
         Image.open(selected["cleaned"]).save(selected_path)
+        selection_status = selected["assessment"]["status"]
+        animation_probe_allowed = selection_status == "candidate_ok"
         report["status"] = "completed"
         report["selected"] = {
             "asset_status": "start_frame_candidate_only",
@@ -293,7 +295,9 @@ def main() -> None:
             "cleaned": selected["cleaned"],
             "selected_reference": str(selected_path),
             "selection_score": selected["assessment"]["selection_score"],
-            "selection_status": selected["assessment"]["status"],
+            "selection_status": selection_status,
+            "animation_probe_allowed": animation_probe_allowed,
+            "blocking_status": None if animation_probe_allowed else "blocked_start_reference_quality",
             "issue_codes": selected["assessment"]["issue_codes"],
             "lower_body_readiness": selected["start_frame_report"].get("lower_body_readiness", {}),
             "agent_review_checklist": {
@@ -315,6 +319,9 @@ def main() -> None:
         with memo_path.open("a", encoding="utf-8") as memo:
             memo.write("\n## Start-Frame Review Checklist\n\n")
             memo.write("- selected asset status: `start_frame_candidate_only`\n")
+            memo.write(f"- animation probe allowed: `{animation_probe_allowed}`\n")
+            if not animation_probe_allowed:
+                memo.write("- blocking status: `blocked_start_reference_quality`\n")
             memo.write("- side-view confidence: manual review required\n")
             memo.write("- foot readability: manual review required\n")
             memo.write("- lower-leg occlusion: manual review required\n")
@@ -458,6 +465,7 @@ def _assess_candidate(
             "lower_body_blob_count_high",
             "not_full_body_enough",
             "feet_not_near_canvas_bottom",
+            "foreground_too_wide_for_side_reference",
             "guide_or_panel_residue",
             "background_contamination_high",
             "possible_back_view_or_missing_profile_detail",

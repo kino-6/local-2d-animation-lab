@@ -103,3 +103,54 @@ Current working interpretation:
 - Rejected side route: visible foot-guide/control overlays, because they either did not affect output or became visible artifacts.
 
 Next work should reproduce and improve the single-keyframe route under the current `outputs/<timestamp>/...` layout, then apply postprocess only to the parts postprocess can actually fix: luma/saturation jitter, background cleanup, small residual ghosts, and 1024 img2img polish after action readability is already acceptable.
+
+## 2026-06-14 Anima Start-Reference Gate
+
+Run:
+
+- Reference: `assets/reference/Anima_00013_.png`
+- Candidate generation report: `outputs/20260614_000549/fullbody_reference/anima_00013/reference_candidates_report.json`
+- Candidate contact sheet: `outputs/20260614_000549/fullbody_reference/anima_00013/contact_sheet.png`
+- Selected candidate: `outputs/20260614_000549/fullbody_reference/anima_00013/selected_reference/start_frame.png`
+
+Operational note:
+
+- The first attempt waited for ComfyUI queue capacity and timed out at queue size `17`; no prompt was submitted.
+- The second attempt waited until queue capacity was acceptable and completed.
+- The failed queue-wait session was deleted; only the successful evidence session remains.
+
+Result:
+
+- All 10 candidates were `manual_review_or_retake`; no `candidate_ok` start frame was found.
+- Auto-selected candidate: `slight_three_quarter_side`.
+- Selected issues:
+  - `extra_foreground_components_removed`
+  - `large_secondary_component`
+  - `shoes_unreadable`
+- Lower-body metrics:
+  - `foot_component_count: 2`
+  - `lower_leg_component_count: 2`
+  - `foot_separation_ratio: 0.22305`
+  - `foot_zone_coverage: 0.0135`
+  - `lower_leg_visibility_ratio: 0.02585`
+
+Agent visual review:
+
+- The selected candidate is clean enough as an illustration, but not walk-ready.
+- It is front-facing/near-front rather than side-view.
+- Shoes and lower legs are present, but not readable enough for a game walk start.
+- Several visually side-facing candidates exist in the sheet, but they have model-sheet/secondary-component residue, foot ambiguity, or non-walk composition.
+
+Implementation update:
+
+- `scripts/generate_fullbody_reference_candidates.py` now records `animation_probe_allowed`.
+- If the selected candidate is not `candidate_ok`, the report marks `blocked_start_reference_quality`.
+- `foreground_too_wide_for_side_reference` is now a blocking assessment issue.
+
+Decision:
+
+```text
+blocked_start_reference_quality
+```
+
+Do not run animation generation from this selected candidate. The next improvement should target candidate generation itself: stricter side-profile prompt variants, fewer model-sheet cues, and stronger rejection of front-view full-body portraits before animation spend.

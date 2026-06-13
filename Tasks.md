@@ -58,15 +58,15 @@ Secondary input only if needed:
 
 ## Active PDCA
 
-- [ ] Cleanup stale local outputs.
+- [x] Cleanup stale local outputs.
   - Archive old `Tasks.md`.
   - Write `docs/output_cleanup_20260614_lineart_sidecar_probe.md`.
   - Delete stale lineart sidecar `outputs/20260613_*` sessions after durable findings are recorded.
-- [ ] Review the existing start-frame generation route.
+- [x] Review the existing start-frame generation route.
   - `scripts/generate_fullbody_reference_candidates.py`.
   - `natural_sprite_lab.quality.start_frame.prepare_clean_start_frame`.
   - Existing tests around full-body/reference/start-frame readiness.
-- [ ] Tighten start-reference assessment if needed.
+- [x] Tighten start-reference assessment if needed.
   - Require full-body bbox height and foot-near-bottom checks.
   - Penalize too-wide/front-view/model-sheet compositions.
   - Keep lower-body hard issues blocking:
@@ -78,13 +78,13 @@ Secondary input only if needed:
     - `guide_or_panel_residue`
     - `background_contamination_high`
   - Add unit tests for any changed gate behavior.
-- [ ] Generate fresh full-body side-view start candidates.
+- [x] Generate fresh full-body side-view start candidates.
   - Use `novaOrangeXL_v120.safetensors`.
   - Use `SDXL\OpenPoseXL2.safetensors`.
   - Check ComfyUI `/queue` before submitting.
   - Generate under `outputs/<timestamp>/fullbody_reference/...`.
   - Do not reuse deleted `outputs/` paths.
-- [ ] Agent visual review of candidate sheets.
+- [x] Agent visual review of candidate sheets.
   - Inspect `contact_sheet.png`, `source_contact_sheet.png`, and selected `start_frame.png`.
   - Record:
     - side-view confidence;
@@ -92,18 +92,18 @@ Secondary input only if needed:
     - lower-leg occlusion;
     - background cleanliness;
     - expected walk suitability.
-- [ ] Decide whether animation probing is allowed.
+- [x] Decide whether animation probing is allowed.
   - If no candidate is visually walk-ready, stop at `blocked_start_reference_quality`.
   - If one candidate is plausible but gated with minor warnings, run one short 8-frame diagnostic only.
   - Do not run 120 frames in this loop.
-- [ ] Optional short diagnostic if allowed.
+- [x] Optional short diagnostic if allowed.
   - Rebuild synthetic side-view walk source from code.
   - Use the selected start frame as the reference.
   - Run either:
     - plain IPAdapterAdvanced + OpenPose upper-body-mask route; or
     - lineart sidecar at low strength only if the start frame already passes visual review.
   - Gate and visually review.
-- [ ] Update durable knowledge.
+- [x] Update durable knowledge.
   - `docs/start_frame_first_walk_pdca.md`.
   - `docs/reference_lock_motion_template_deep_dive.md`.
   - `docs/walk_candidate_comparison.md`.
@@ -112,12 +112,56 @@ Secondary input only if needed:
 
 ## Success Criteria
 
-- [ ] Old output clutter is removed after knowledge capture.
-- [ ] Tests pass for touched code.
-- [ ] A fresh start-reference report exists under `outputs/<timestamp>/...`, or a blocker is recorded.
-- [ ] No animation generation is run from an obviously bad start/reference.
-- [ ] Result is labeled honestly as one of:
+- [x] Old output clutter is removed after knowledge capture.
+- [x] Tests pass for touched code.
+- [x] A fresh start-reference report exists under `outputs/<timestamp>/...`, or a blocker is recorded.
+- [x] No animation generation is run from an obviously bad start/reference.
+- [x] Result is labeled honestly as one of:
   - `start_reference_candidate_only`;
   - `selected_proof_only`;
   - `blocked_start_reference_quality`;
   - `rejected_diagnostic`.
+
+## Result
+
+- [x] Queue behavior:
+  - First generation attempt waited `120s` and timed out at queue size `17`.
+  - No prompt was submitted during that failed wait.
+  - The stale failed-wait output session was deleted.
+  - Second attempt waited until queue capacity was acceptable and completed.
+- [x] Tests:
+  - `uv run pytest tests\test_fullbody_reference_candidates_script.py tests\test_start_frame_quality.py tests\test_output_layout_policy.py`
+  - `17 passed`
+- [x] Implementation:
+  - `scripts/generate_fullbody_reference_candidates.py` now records `animation_probe_allowed`.
+  - If selected candidate is not `candidate_ok`, the selected report records `blocking_status: blocked_start_reference_quality`.
+  - `foreground_too_wide_for_side_reference` is now a blocking assessment issue.
+- [x] Fresh start-reference run:
+  - `outputs/20260614_000549/fullbody_reference/anima_00013/`
+  - report: `outputs/20260614_000549/fullbody_reference/anima_00013/reference_candidates_report.json`
+  - contact sheet: `outputs/20260614_000549/fullbody_reference/anima_00013/contact_sheet.png`
+  - selected: `outputs/20260614_000549/fullbody_reference/anima_00013/selected_reference/start_frame.png`
+- [x] Candidate result:
+  - no `candidate_ok` among 10 candidates.
+  - selected candidate: `slight_three_quarter_side`
+  - selected status: `manual_review_or_retake`
+  - selected issues:
+    - `extra_foreground_components_removed`
+    - `large_secondary_component`
+    - `shoes_unreadable`
+  - lower-body readiness:
+    - `foot_component_count: 2`
+    - `lower_leg_component_count: 2`
+    - `foot_separation_ratio: 0.22305`
+    - `foot_zone_coverage: 0.0135`
+    - `lower_leg_visibility_ratio: 0.02585`
+- [x] Agent visual review:
+  - selected candidate is a decent still illustration;
+  - not walk-ready because it is front-facing/near-front;
+  - shoes and lower legs are not reliable enough for 2D walk animation;
+  - several side-facing candidates in the sheet still have model-sheet residue, secondary components, foot ambiguity, or non-walk composition.
+- [x] Decision:
+  - `blocked_start_reference_quality`
+- [x] Next action:
+  - Do not run animation from this selected candidate.
+  - Improve candidate generation prompts and/or add a reference-gate LocalVL pass before any animation spend.
