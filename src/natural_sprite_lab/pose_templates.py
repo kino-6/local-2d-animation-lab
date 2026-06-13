@@ -52,6 +52,7 @@ class PoseFrame:
     phase: str
     keypoints: dict[str, list[float]]
     confidence: dict[str, float] | None = None
+    foot_contact: dict[str, Any] | None = None
     notes: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -65,6 +66,8 @@ class PoseFrame:
         }
         if self.confidence is not None:
             data["confidence"] = self.confidence
+        if self.foot_contact is not None:
+            data["foot_contact"] = self.foot_contact
         return data
 
 

@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFilter
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
@@ -50,11 +52,19 @@ def main() -> None:
     parser.add_argument("--checkpoint", default="novaOrangeXL_v120.safetensors")
     parser.add_argument("--controlnet", default="SDXL\\OpenPoseXL2.safetensors")
     parser.add_argument("--ipadapter-model", default=None)
+    parser.add_argument("--ipadapter-mode", choices=("simple", "advanced"), default="simple")
     parser.add_argument("--ipadapter-preset", default="PLUS (high strength)")
     parser.add_argument("--ipadapter-weight", default=0.0, type=float)
     parser.add_argument("--ipadapter-weight-type", default="style transfer")
+    parser.add_argument("--ipadapter-combine-embeds", default="concat")
+    parser.add_argument("--ipadapter-embeds-scaling", default="V only")
     parser.add_argument("--ipadapter-start", default=0.0, type=float)
     parser.add_argument("--ipadapter-end", default=0.78, type=float)
+    parser.add_argument(
+        "--ipadapter-attn-mask",
+        choices=("none", "upper_body", "whole_character", "head_hair"),
+        default="none",
+    )
     parser.add_argument("--width", default=768, type=int)
     parser.add_argument("--height", default=768, type=int)
     parser.add_argument("--steps", default=18, type=int)
@@ -101,6 +111,16 @@ def main() -> None:
     prepared_source = _prepare_source(args.source_image, source_dir / "source_image.png", args.width, args.height)
     server = args.comfy_url.rstrip("/")
     source_name = _upload_image(server, prepared_source)
+    attn_mask_name = None
+    attn_mask_path = None
+    if args.ipadapter_weight > 0 and args.ipadapter_attn_mask != "none":
+        attn_mask_path = _make_ipadapter_attn_mask(
+            args.ipadapter_attn_mask,
+            source_dir / f"ipadapter_attn_mask_{args.ipadapter_attn_mask}.png",
+            args.width,
+            args.height,
+        )
+        attn_mask_name = _upload_image(server, attn_mask_path)
 
     report: dict[str, Any] = {
         "status": "started",
@@ -111,11 +131,16 @@ def main() -> None:
             "checkpoint": args.checkpoint,
             "controlnet": args.controlnet,
             "ipadapter_model": args.ipadapter_model,
+            "ipadapter_mode": args.ipadapter_mode,
             "ipadapter_preset": args.ipadapter_preset,
             "ipadapter_weight": args.ipadapter_weight,
             "ipadapter_weight_type": args.ipadapter_weight_type,
+            "ipadapter_combine_embeds": args.ipadapter_combine_embeds,
+            "ipadapter_embeds_scaling": args.ipadapter_embeds_scaling,
             "ipadapter_start": args.ipadapter_start,
             "ipadapter_end": args.ipadapter_end,
+            "ipadapter_attn_mask": args.ipadapter_attn_mask,
+            "ipadapter_attn_mask_path": str(attn_mask_path) if attn_mask_path else None,
             "width": args.width,
             "height": args.height,
             "steps": args.steps,
@@ -148,7 +173,7 @@ def main() -> None:
             _prepare_pose(pose_path, copied_pose, args.width, args.height)
             copied_pose_paths.append(copied_pose)
             pose_name = _upload_image(server, copied_pose)
-            workflow = _workflow(args, source_name, pose_name, out_index)
+            workflow = _workflow(args, source_name, pose_name, out_index, attn_mask_name=attn_mask_name)
             workflow_path = workflow_dir / f"frame_{out_index:03d}.json"
             workflow_path.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             prompt_id = _queue_prompt(server, workflow, args=args)
@@ -216,12 +241,41 @@ def main() -> None:
     )
 
 
-def _workflow(args: argparse.Namespace, source_image_name: str, pose_image_name: str, index: int) -> dict[str, Any]:
+def _workflow(
+    args: argparse.Namespace,
+    source_image_name: str,
+    pose_image_name: str,
+    index: int,
+    *,
+    attn_mask_name: str | None = None,
+) -> dict[str, Any]:
     seed = args.seed + index * args.seed_step
     model_ref: list[Any] = ["1", 0]
     ipadapter_nodes: dict[str, Any] = {}
     if args.ipadapter_weight > 0:
-        model_ref = ["14", 0]
+        apply_node_id = "14"
+        model_ref = [apply_node_id, 0]
+        mask_nodes = _ipadapter_mask_nodes(attn_mask_name)
+        apply_inputs: dict[str, Any] = {
+            "model": ["13", 0],
+            "ipadapter": ["13", 1],
+            "image": ["5", 0],
+            "weight": args.ipadapter_weight,
+            "start_at": args.ipadapter_start,
+            "end_at": args.ipadapter_end,
+            "weight_type": args.ipadapter_weight_type,
+        }
+        if mask_nodes:
+            apply_inputs["attn_mask"] = ["16", 0]
+        class_type = "IPAdapter"
+        if args.ipadapter_mode == "advanced":
+            class_type = "IPAdapterAdvanced"
+            apply_inputs.update(
+                {
+                    "combine_embeds": args.ipadapter_combine_embeds,
+                    "embeds_scaling": args.ipadapter_embeds_scaling,
+                }
+            )
         ipadapter_nodes = {
             "13": {
                 "class_type": "IPAdapterUnifiedLoader",
@@ -231,17 +285,10 @@ def _workflow(args: argparse.Namespace, source_image_name: str, pose_image_name:
                 },
             },
             "14": {
-                "class_type": "IPAdapter",
-                "inputs": {
-                    "model": ["13", 0],
-                    "ipadapter": ["13", 1],
-                    "image": ["5", 0],
-                    "weight": args.ipadapter_weight,
-                    "start_at": args.ipadapter_start,
-                    "end_at": args.ipadapter_end,
-                    "weight_type": args.ipadapter_weight_type,
-                },
+                "class_type": class_type,
+                "inputs": apply_inputs,
             },
+            **mask_nodes,
         }
     return {
         "1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": args.checkpoint}},
@@ -297,6 +344,15 @@ def _workflow(args: argparse.Namespace, source_image_name: str, pose_image_name:
     }
 
 
+def _ipadapter_mask_nodes(attn_mask_name: str | None) -> dict[str, Any]:
+    if not attn_mask_name:
+        return {}
+    return {
+        "15": {"class_type": "LoadImage", "inputs": {"image": attn_mask_name}},
+        "16": {"class_type": "ImageToMask", "inputs": {"image": ["15", 0], "channel": "red"}},
+    }
+
+
 def _prepare_source(source: Path, output: Path, width: int, height: int) -> Path:
     image = Image.open(source).convert("RGBA")
     canvas = Image.new("RGBA", image.size, (255, 255, 255, 255))
@@ -319,6 +375,34 @@ def _prepare_pose(source: Path, output: Path, width: int, height: int) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     image.save(output)
     return output
+
+
+def _make_ipadapter_attn_mask(kind: str, output: Path, width: int, height: int) -> Path:
+    mask = Image.new("L", (width, height), 0)
+    draw = ImageDraw.Draw(mask)
+    if kind == "upper_body":
+        box = _scale_box(width, height, (0.30, 0.05, 0.70, 0.64))
+    elif kind == "whole_character":
+        box = _scale_box(width, height, (0.24, 0.04, 0.76, 0.94))
+    elif kind == "head_hair":
+        box = _scale_box(width, height, (0.34, 0.03, 0.66, 0.36))
+    else:
+        raise ValueError(f"Unknown IPAdapter attention mask kind: {kind}")
+    draw.rounded_rectangle(box, radius=max(8, round(width * 0.04)), fill=255)
+    mask = mask.filter(ImageFilter.GaussianBlur(radius=max(2, round(width * 0.018))))
+    output.parent.mkdir(parents=True, exist_ok=True)
+    mask.convert("RGB").save(output)
+    return output
+
+
+def _scale_box(width: int, height: int, box: tuple[float, float, float, float]) -> tuple[int, int, int, int]:
+    left, top, right, bottom = box
+    return (
+        round(width * left),
+        round(height * top),
+        round(width * right),
+        round(height * bottom),
+    )
 
 
 def _make_comparison_sheet(source: Path, poses: list[Path], outputs: list[Path], output: Path) -> Path:

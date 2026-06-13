@@ -9,6 +9,36 @@ description: Local-first workflow for generating 120-frame 2D character game ani
 
 Use `novaOrangeXL + ControlNet(OpenPose)` as the main generation path. Treat the input image as a character design reference. Do not make rigged puppet animation, cutout shaking, or random independent still generation the primary workflow.
 
+Reference-lock update, 2026-06-13:
+
+- Local IPAdapter Plus SDXL is the current first-line identity/reference lock for ControlNet regeneration.
+- Use `IPAdapterAdvanced` before more scalar-only ControlNet tuning when the route needs both identity and motion.
+- The best current short proof uses `style transfer precise` with an `upper_body` attention mask:
+  - `outputs/20260613_214841/reference_pose_regen/walk_ipadv_style_precise_upper_mask_sideview_v2_8f/`
+  - artifact gate `no_repair_needed: 8/8`
+  - span hard failures `0`
+  - region diagnostics still `retake_required: 2/8`
+- Treat that result as `selected_proof_only`, not an adopted asset. Do not spend on 120 frames until lower-body/feet mechanics and local redraw stability pass both deterministic gates and Agent visual review.
+- `whole_character` masks are more stable but stiffer. `head_hair` masks currently worsen lower-body/outfit drift and should be diagnostic only.
+- The current working mechanism is `identity lock + action-specific side-view motion template + upper-body identity mask + strict gate`.
+- The next improvement should target lower-body/foot mechanics, not another prompt/weight sweep.
+
+Lower-body/contact control update, 2026-06-13:
+
+- Synthetic side-view templates should include `foot_contact` metadata: `ground_y`, `stance_foot`, `swing_foot`, `contact_state`, and per-foot `ankle`, `toe`, `heel`, `box`, and `contact`.
+- Do not rely on ankle separation alone. A template can pass ankle separation while the rendered shoe/foot boxes still overlap.
+- Require foot-box diagnostics before generation:
+  - sampled ankle separation;
+  - sampled foot-box x gap;
+  - unclear foot-box count;
+  - contact counts;
+  - stance slide delta.
+- Current clean lower-body/contact source:
+  - `outputs/20260613_222505/motion_source_video_pdca/motion_sources/sideview_walk_foot_contact_v3/`
+  - `sampled_min_foot_box_x_gap: 0.11352`
+  - `unclear_foot_box_count: 0`
+- Treat `lower_body_sidecar/` as a control/mask candidate, not as visible final art. Do not overlay it into final pixels unless a workflow proves it does not leak.
+
 ## Output Target
 
 Generate 120-frame action assets. Do not downsample to 8-12 frames in this workflow. Frame reduction belongs to a separate thinning/export skill.

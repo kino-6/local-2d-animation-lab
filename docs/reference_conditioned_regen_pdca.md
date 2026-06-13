@@ -48,6 +48,8 @@ Updated:
 
 - Optional IPAdapter identity/reference lock through `IPAdapterUnifiedLoader` + `IPAdapter`.
 - `--ipadapter-preset`, `--ipadapter-weight`, `--ipadapter-weight-type`, `--ipadapter-start`, and `--ipadapter-end`.
+- `--ipadapter-mode advanced` for `IPAdapterAdvanced`.
+- `--ipadapter-combine-embeds`, `--ipadapter-embeds-scaling`, and `--ipadapter-attn-mask`.
 - The script still writes every generated run under `outputs/<timestamp>/reference_pose_regen/<label>/`.
 
 The script writes each run under `outputs/<timestamp>/reference_pose_regen/<label>/` with:
@@ -202,6 +204,66 @@ Result:
 
 Decision: `promising_probe`, not adoption OK. This proves the useful mechanism is not "OpenPose tuning" alone; it is `reference identity lock + action-specific side-view motion template + strict visual/gate review`.
 
+## Probe F: IPAdapterAdvanced + Clean Side-View Template
+
+Cleaner side-view control source:
+
+```text
+outputs/20260613_214207/motion_source_video_pdca/motion_sources/sideview_walk_adv_identity_lock_v2/
+```
+
+Template diagnostics passed:
+
+- unclear ankle separation count: `0`;
+- sampled minimum ankle separation: `0.082`;
+- sampled indices: `0,15,30,45,60,75,90,105`.
+
+Advanced probe matrix:
+
+```text
+outputs/20260613_214241/reference_pose_regen/walk_ipadv_comp_precise_sideview_v2_8f/
+outputs/20260613_214341/reference_pose_regen/walk_ipadv_style_precise_sideview_v2_8f/
+outputs/20260613_214434/reference_pose_regen/walk_ipadv_linear_short_sideview_v2_8f/
+```
+
+Result:
+
+- `style transfer precise` was the best unmasked route;
+- unmasked advanced probes still produced duplicate-silhouette or lower-body artifact failures;
+- scalar/schedule changes alone were not enough.
+
+Decision: continue into attention-mask probes rather than spend on 120 frames.
+
+## Probe G: IPAdapterAdvanced Attention Masks
+
+Best proof:
+
+```text
+outputs/20260613_214841/reference_pose_regen/walk_ipadv_style_precise_upper_mask_sideview_v2_8f/
+```
+
+Settings:
+
+- IPAdapter mode: `advanced`
+- weight type: `style transfer precise`
+- weight: `0.55`
+- end: `0.62`
+- embeds scaling: `K+mean(V) w/ C penalty`
+- attention mask: `upper_body`
+
+Gate result:
+
+- artifact gate: `no_repair_needed: 8/8`;
+- span selection: hard failures `0`, score `0.93491`;
+- region diagnostics: `foot_shadow_or_contact_artifact_review: 8/8`, `silhouette_redraw_jitter_review: 2/8`, `lower_body_pale_afterimage_review: 1/8`, region decision `retake_required: 2/8`.
+
+Comparison probes:
+
+- whole-character mask: `outputs/20260613_220050/reference_pose_regen/walk_ipadv_style_precise_whole_mask_sideview_v2_8f/`; stable but stiffer, region `retake_required: 3/8`.
+- head/hair mask: `outputs/20260613_220147/reference_pose_regen/walk_ipadv_style_precise_head_mask_sideview_v2_8f/`; rejected, artifact `retake_required: 5/8`.
+
+Decision: `selected_proof_only`. The upper-body mask confirms that region-limited identity lock is useful. It reduces hard failures compared with unmasked advanced probes, but it still does not meet the visual bar for an adopted 2D game walk asset.
+
 ## Interpretation
 
 This mechanism proves one useful thing: starting every frame from the same reference image can stabilize identity/color far better than accepting Wan video frames directly.
@@ -222,6 +284,8 @@ IPAdapter changes the tradeoff:
 - if control is too weak, the character becomes stable but too static.
 
 The best current identity-lock result required a side-view motion template. For 2D game assets, the action template must encode the desired camera/view and motion phase, not merely "a human walking".
+
+The latest mask result narrows the next blocker: identity lock is no longer the main unknown. Lower-body/foot mechanics and local redraw stability now decide whether the output can become an actual game asset.
 
 ## Next Mechanism
 
