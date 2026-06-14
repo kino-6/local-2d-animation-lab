@@ -176,3 +176,35 @@ outputs/adoptable/walk_8frame_sideview_baseline/
 - [x] Honest assessment:
   - More reviewable than the crude geometric puppet because contact/down foot lock, hip bob, head stability, knee bends, and arm opposition are explicit.
   - Still not production art.
+
+## Shape Polish Pass
+
+- [x] Keep all hard constraints from the 8-frame walk MVP.
+- [x] Do not change the output route or frame contract.
+- [x] Preserve the explicit skeleton/foot-lock model.
+- [x] Replace stick-like limb drawing with tapered filled limb segments.
+- [x] Add clearer thigh/calf separation while keeping dark socks visible.
+- [x] Reduce oversized or boot-like foot impression with smaller right-facing shoe shapes.
+- [x] Strengthen torso/hip continuity with a waist/hip block under the sailor top.
+- [x] Improve arms with upper/lower arm volume and elbow bend.
+- [x] Keep head mostly stable and visually connected through neck/collar.
+- [x] Add style/polish metadata to `manifest.json`.
+- [x] Update tests to verify the polish metadata and unchanged contract.
+- [x] Regenerate `outputs/adoptable/walk_8frame_sideview_baseline/`.
+- [x] Agent-review `contact_sheet.png`.
+
+## Shape Polish Pass Result
+
+- [x] Renderer polish metadata:
+  - `limb_renderer: tapered_filled_segments`
+  - `arm_model: upper_lower_segments_with_elbow`
+  - `leg_model: thigh_and_sock_segments_with_knee`
+  - `shoe_model: compact_right_facing_heel_toe`
+  - `torso_hip_connection: waist_block_under_sailor_top`
+- [x] Focused tests:
+  - `uv run pytest tests\test_build_walk_8frame_baseline.py tests\test_output_layout_policy.py`
+  - `5 passed`
+- [x] Honest assessment:
+  - Arms and legs read less like single-pixel sticks.
+  - Shoe/ankle connection is cleaner than the skeleton pass.
+  - The sprite remains a deterministic MVP baseline, not production art.

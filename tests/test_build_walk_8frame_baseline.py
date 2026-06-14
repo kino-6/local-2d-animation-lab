@@ -84,6 +84,13 @@ def test_build_walk_8frame_baseline_output_contract(tmp_path: Path) -> None:
     assert manifest["method"]["uses_comfyui"] is False
     assert manifest["method"]["renderer"] == "stylized_sprite_cycle"
     assert manifest["method"]["motion"] == "stylized reference-derived 8-phase sprite walk cycle"
+    assert manifest["method"]["style_polish"] == {
+        "limb_renderer": "tapered_filled_segments",
+        "arm_model": "upper_lower_segments_with_elbow",
+        "leg_model": "thigh_and_sock_segments_with_knee",
+        "shoe_model": "compact_right_facing_heel_toe",
+        "torso_hip_connection": "waist_block_under_sailor_top",
+    }
     assert manifest["motion_metrics"]["max_mean_diff_from_first"] > 0.5
     assert manifest["motion_metrics"]["unique_alpha_boxes"] >= 2
     assert manifest["motion_metrics"]["phase_labels"] == [

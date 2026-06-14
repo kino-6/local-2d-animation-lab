@@ -47,6 +47,13 @@
     "uses_120_frame_generation": false,
     "renderer": "stylized_sprite_cycle",
     "motion": "stylized reference-derived 8-phase sprite walk cycle",
+    "style_polish": {
+      "limb_renderer": "tapered_filled_segments",
+      "arm_model": "upper_lower_segments_with_elbow",
+      "leg_model": "thigh_and_sock_segments_with_knee",
+      "shoe_model": "compact_right_facing_heel_toe",
+      "torso_hip_connection": "waist_block_under_sailor_top"
+    },
     "palette": {
       "skin": [
         236,
@@ -158,15 +165,15 @@
   "motion_metrics": {
     "mean_diff_from_first": [
       0.0,
-      3.141,
-      3.145,
-      3.935,
-      1.63,
-      3.653,
-      2.651,
-      3.37
+      2.888,
+      2.604,
+      3.556,
+      1.257,
+      3.249,
+      2.292,
+      3.109
     ],
-    "max_mean_diff_from_first": 3.935,
+    "max_mean_diff_from_first": 3.556,
     "unique_alpha_boxes": 4,
     "phase_labels": [
       "contact",
@@ -220,6 +227,7 @@
     "notes": [
       "The first cutout-shift preview was not evaluation-worthy.",
       "The default renderer now uses a small deterministic skeleton with foot-lock metadata.",
+      "The current shape pass uses tapered filled limb segments to reduce the stick-puppet look.",
       "This is a stylized reference-derived game sprite, not production art and not a faithful redraw of the source image."
     ]
   },

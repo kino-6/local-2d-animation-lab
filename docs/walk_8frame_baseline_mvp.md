@@ -86,6 +86,11 @@ The latest quality pass keeps that scope and adds explicit skeleton metadata for
 
 `manifest.json` records these checks under `walk_readability`.
 
+The current shape polish pass keeps the same skeleton and adds filled tapered limb segments for
+arms and legs, a small waist/hip block under the sailor top, and compact right-facing shoes. This
+reduces the stick-puppet impression without changing the route scope or claiming production art
+quality.
+
 ## Review Bar
 
 Acceptable means:

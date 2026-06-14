@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import shutil
 import sys
 from pathlib import Path
@@ -162,6 +163,13 @@ def build_walk_8frame_baseline(
             "uses_120_frame_generation": False,
             "renderer": renderer,
             "motion": motion_description,
+            "style_polish": {
+                "limb_renderer": "tapered_filled_segments",
+                "arm_model": "upper_lower_segments_with_elbow",
+                "leg_model": "thigh_and_sock_segments_with_knee",
+                "shoe_model": "compact_right_facing_heel_toe",
+                "torso_hip_connection": "waist_block_under_sailor_top",
+            },
             "palette": palette,
             "cutout": cutout_report,
         },
@@ -172,6 +180,7 @@ def build_walk_8frame_baseline(
             "notes": [
                 "The first cutout-shift preview was not evaluation-worthy.",
                 "The default renderer now uses a small deterministic skeleton with foot-lock metadata.",
+                "The current shape pass uses tapered filled limb segments to reduce the stick-puppet look.",
                 "This is a stylized reference-derived game sprite, not production art and not a faithful redraw of the source image.",
             ],
         },
@@ -439,6 +448,14 @@ def _draw_stylized_body(
         (cx + 56 * scale, hip_y + 38 * scale),
         (cx - 52 * scale, hip_y + 38 * scale),
     ]
+    waist_poly = [
+        (cx - 35 * scale, hip_y - 34 * scale),
+        (cx + 36 * scale, hip_y - 34 * scale),
+        (cx + 43 * scale, hip_y - 14 * scale),
+        (cx - 42 * scale, hip_y - 14 * scale),
+    ]
+    draw.polygon([(x, y + 2 * scale) for x, y in waist_poly], fill=outline)
+    draw.polygon(waist_poly, fill=blouse)
     draw.polygon([(x, y + 2 * scale) for x, y in skirt_poly], fill=outline)
     draw.polygon(skirt_poly, fill=skirt)
     for offset in (-34, -12, 10, 32):
@@ -487,11 +504,12 @@ def _draw_stylized_arm(
     sleeve = palette["blouse"]
     skin = palette["skin_shadow"] if rear else palette["skin"]
     x, y = shoulder
-    elbow = (x + swing // 2, y + 42 * scale)
-    hand = (x + swing, y + 78 * scale)
-    draw.line([shoulder, elbow, hand], fill=outline, width=9 * scale, joint="curve")
-    draw.line([shoulder, elbow], fill=sleeve, width=7 * scale, joint="curve")
-    draw.line([elbow, hand], fill=skin, width=5 * scale, joint="curve")
+    elbow = (x + swing // 2, y + 38 * scale)
+    hand = (x + swing, y + 72 * scale)
+    _draw_tapered_segment(draw, shoulder, elbow, 8 * scale, 6 * scale, sleeve, outline)
+    _draw_tapered_segment(draw, elbow, hand, 5 * scale, 4 * scale, skin, outline)
+    draw.ellipse((elbow[0] - 4 * scale, elbow[1] - 4 * scale, elbow[0] + 4 * scale, elbow[1] + 4 * scale), fill=outline)
+    draw.ellipse((elbow[0] - 3 * scale, elbow[1] - 3 * scale, elbow[0] + 3 * scale, elbow[1] + 3 * scale), fill=skin)
     draw.ellipse((hand[0] - 4 * scale, hand[1] - 2 * scale, hand[0] + 5 * scale, hand[1] + 7 * scale), fill=skin)
 
 
@@ -508,20 +526,61 @@ def _draw_stylized_leg(
     skin = palette["skin_shadow"] if rear else palette["skin"]
     sock = palette["sock_shadow"] if rear else palette["sock"]
     shoe = palette["shoe_shadow"] if rear else palette["shoe"]
-    leg_width = 10 * scale if rear else 11 * scale
-    draw.line([hip, knee, foot], fill=outline, width=leg_width + 5 * scale, joint="curve")
-    draw.line([hip, knee], fill=skin, width=leg_width, joint="curve")
-    draw.line([knee, foot], fill=sock, width=leg_width, joint="curve")
+    thigh_width = (11 if rear else 12) * scale
+    calf_width = (10 if rear else 11) * scale
+    ankle = (foot[0], foot[1] - 7 * scale)
+    _draw_tapered_segment(draw, hip, knee, thigh_width, max(thigh_width - 3 * scale, 5 * scale), skin, outline)
+    draw.ellipse((knee[0] - 5 * scale, knee[1] - 5 * scale, knee[0] + 5 * scale, knee[1] + 5 * scale), fill=outline)
+    draw.ellipse((knee[0] - 3 * scale, knee[1] - 3 * scale, knee[0] + 3 * scale, knee[1] + 3 * scale), fill=skin)
+    _draw_tapered_segment(draw, knee, ankle, calf_width, max(calf_width - 4 * scale, 5 * scale), sock, outline)
     shoe_poly = [
-        (foot[0] - 14 * scale, foot[1] - 7 * scale),
-        (foot[0] + 24 * scale, foot[1] - 8 * scale),
-        (foot[0] + 32 * scale, foot[1] - 1 * scale),
-        (foot[0] + 10 * scale, foot[1] + 5 * scale),
-        (foot[0] - 14 * scale, foot[1] + 4 * scale),
+        (foot[0] - 10 * scale, foot[1] - 6 * scale),
+        (foot[0] + 22 * scale, foot[1] - 7 * scale),
+        (foot[0] + 29 * scale, foot[1] - 1 * scale),
+        (foot[0] + 9 * scale, foot[1] + 5 * scale),
+        (foot[0] - 12 * scale, foot[1] + 3 * scale),
     ]
     draw.polygon(shoe_poly, fill=outline)
     inner = [(round(x * 0.92 + foot[0] * 0.08), round(y * 0.86 + foot[1] * 0.14)) for x, y in shoe_poly]
     draw.polygon(inner, fill=shoe)
+
+
+def _draw_tapered_segment(
+    draw: ImageDraw.ImageDraw,
+    start: tuple[int, int],
+    end: tuple[int, int],
+    start_width: int,
+    end_width: int,
+    fill: tuple[int, int, int, int],
+    outline: tuple[int, int, int, int],
+) -> None:
+    outline_poly = _tapered_polygon(start, end, start_width + 4, end_width + 4)
+    fill_poly = _tapered_polygon(start, end, start_width, end_width)
+    draw.polygon(outline_poly, fill=outline)
+    draw.polygon(fill_poly, fill=fill)
+
+
+def _tapered_polygon(
+    start: tuple[int, int],
+    end: tuple[int, int],
+    start_width: int,
+    end_width: int,
+) -> list[tuple[int, int]]:
+    sx, sy = start
+    ex, ey = end
+    dx = ex - sx
+    dy = ey - sy
+    length = math.hypot(dx, dy) or 1.0
+    nx = -dy / length
+    ny = dx / length
+    sw = start_width / 2
+    ew = end_width / 2
+    return [
+        (round(sx + nx * sw), round(sy + ny * sw)),
+        (round(ex + nx * ew), round(ey + ny * ew)),
+        (round(ex - nx * ew), round(ey - ny * ew)),
+        (round(sx - nx * sw), round(sy - ny * sw)),
+    ]
 
 
 def _write_walk_frames(base: Image.Image, frames_dir: Path, palette: dict[str, list[int]]) -> list[Path]:
