@@ -34,7 +34,7 @@ outputs/adoptable/character_sprite_asset_pack/
 - [x] Include action folders:
   - `actions/walk/` copied from the current production-ready walk package;
   - `actions/idle/` as the first additional production-ready action;
-  - `actions/run/` as a gated future action stub, not production-ready.
+  - `actions/run/` as a dedicated production-ready run action from an accepted rough.
 - [x] Include:
   - `manifest.json`;
   - `identity_report.json`;
@@ -48,6 +48,8 @@ outputs/adoptable/character_sprite_asset_pack/
 - [x] The script must consume:
   - `assets/reference/Anima_00013_.png`;
   - `outputs/adoptable/artist_authored_8frame_walk_cleanup/production_ready/`.
+- [x] The script must consume the accepted run rough when available:
+  - `assets/artist_authored_roughs/imagegen_run_8frame_20260614/rough_frames/`.
 - [x] The script must not call model or video backends.
 - [x] Build `walk` by copying the accepted production-ready walk output.
 - [x] Build `idle` deterministically from the accepted walk character art:
@@ -61,7 +63,7 @@ outputs/adoptable/character_sprite_asset_pack/
 - [x] Add pack-level production gate:
   - `walk.production_ready == true`;
   - `idle.production_ready == true`;
-  - `run.production_ready == false`;
+  - `run.production_ready == true`;
   - identity cue checks pass for the adopted actions;
   - no unsupported backend usage;
   - route can still honestly report that broad action coverage is incomplete.
@@ -72,8 +74,9 @@ outputs/adoptable/character_sprite_asset_pack/
 - [x] Document that `production_ready` for this pack means:
   - current walk is accepted;
   - current idle is accepted;
+  - current run is accepted;
   - character identity cues are tracked;
-  - future actions are gated instead of silently claimed.
+  - future stronger actions are gated instead of silently claimed.
 - [x] Document that this does not solve faithful animation of arbitrary reference illustrations.
 
 ## Tests
@@ -82,10 +85,18 @@ outputs/adoptable/character_sprite_asset_pack/
 - [x] Verify the output directory layout.
 - [x] Verify `walk` has 8 frames and is production-ready.
 - [x] Verify `idle` has 4 frames and is production-ready.
-- [x] Verify `run` exists only as a non-production stub.
+- [x] Verify `run` has 8 frames and is production-ready.
 - [x] Verify `identity_report.json` contains all required cues.
 - [x] Verify `production_gate.json` marks the pack as `production_ready`.
 - [x] Verify no model/video backend is invoked.
+- [x] Generate a dedicated run rough sheet with built-in image generation and store it under:
+
+```text
+assets/artist_authored_roughs/imagegen_run_8frame_20260614/
+```
+
+- [x] Split the run rough sheet into 8 frames.
+- [x] Remove the green key background, trim alpha noise, keep the largest character component, and package run previews.
 
 ## Completion
 

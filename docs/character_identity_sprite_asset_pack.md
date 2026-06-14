@@ -44,13 +44,12 @@ Current production-ready actions:
 
 - `walk`: copied from `artist_authored_8frame_walk_cleanup/production_ready/`;
 - `idle`: deterministic subtle-idle action derived from the accepted walk sprite.
+- `run`: cleaned and packaged from the dedicated `imagegen_run_8frame_20260614` rough sheet.
 
-Explicitly gated future action:
+Future action policy:
 
-- `run`: stub only, not production-ready.
-
-This is intentional. A run cycle needs authored or accepted rough frames and should not be faked by
-speeding up the walk cycle.
+Run was promoted only after it had a dedicated 8-frame rough with clear running poses. Stronger
+actions still need authored or accepted rough frames and should not be faked by retiming walk frames.
 
 ## Production Ready Meaning
 
@@ -58,8 +57,8 @@ speeding up the walk cycle.
 
 - `walk.production_ready == true`;
 - `idle.production_ready == true`;
-- `run.production_ready == false` and is honestly gated;
-- required identity cues pass on the reference, walk, and idle assets;
+- `run.production_ready == true`;
+- required identity cues pass on the reference, walk, idle, and run assets;
 - no model or video backend is used.
 
 It does not mean arbitrary future actions are complete.

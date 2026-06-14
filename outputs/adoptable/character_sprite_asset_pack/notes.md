@@ -2,8 +2,7 @@
 
 - route: `character_sprite_asset_pack`
 - production_ready: `True`
-- current production actions: `walk`, `idle`
-- future gated actions: `run`
+- current production actions: `walk`, `idle`, `run`
 
 ## Identity Contract
 

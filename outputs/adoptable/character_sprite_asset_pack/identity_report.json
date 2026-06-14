@@ -7,6 +7,7 @@
       "reference_pixels": 45716,
       "walk_pixels": 55310,
       "idle_pixels": 25436,
+      "run_pixels": 34073,
       "passed": true
     },
     "side_profile_anime_girl": {
@@ -14,6 +15,7 @@
       "reference_pixels": 1048576,
       "walk_pixels": 264986,
       "idle_pixels": 122031,
+      "run_pixels": 189695,
       "passed": true
     },
     "sailor_white_top": {
@@ -21,6 +23,7 @@
       "reference_pixels": 72601,
       "walk_pixels": 38363,
       "idle_pixels": 19072,
+      "run_pixels": 25171,
       "passed": true
     },
     "red_tie": {
@@ -28,6 +31,7 @@
       "reference_pixels": 266677,
       "walk_pixels": 11660,
       "idle_pixels": 5340,
+      "run_pixels": 10730,
       "passed": true
     },
     "navy_skirt": {
@@ -35,6 +39,7 @@
       "reference_pixels": 54700,
       "walk_pixels": 73487,
       "idle_pixels": 31823,
+      "run_pixels": 49770,
       "passed": true
     },
     "dark_socks": {
@@ -42,6 +47,7 @@
       "reference_pixels": 54700,
       "walk_pixels": 73487,
       "idle_pixels": 31823,
+      "run_pixels": 49770,
       "passed": true
     },
     "brown_shoes": {
@@ -49,6 +55,7 @@
       "reference_pixels": 129631,
       "walk_pixels": 22452,
       "idle_pixels": 9000,
+      "run_pixels": 20331,
       "passed": true
     }
   },

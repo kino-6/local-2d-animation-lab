@@ -14,9 +14,11 @@ _SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "build_character_spr
 def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     reference = tmp_path / "reference.png"
     walk_ready = tmp_path / "walk_ready"
+    run_rough = tmp_path / "run_rough"
     output_dir = tmp_path / "character_sprite_asset_pack"
     _make_reference(reference)
     _make_walk_ready_package(walk_ready)
+    _make_run_rough_frames(run_rough)
 
     subprocess.run(
         [
@@ -26,6 +28,8 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
             str(reference),
             "--walk-production-ready-dir",
             str(walk_ready),
+            "--run-rough-frames-dir",
+            str(run_rough),
             "--output-dir",
             str(output_dir),
         ],
@@ -47,12 +51,23 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert (output_dir / "actions" / "idle" / "preview.gif").exists()
     assert (output_dir / "actions" / "idle" / "spritesheet.png").exists()
     assert (output_dir / "actions" / "idle" / "contact_sheet.png").exists()
-    assert (output_dir / "actions" / "run" / "action_stub.json").exists()
+    assert (output_dir / "actions" / "idle" / "game_previews" / "height_128" / "preview.gif").exists()
+    assert (output_dir / "actions" / "run" / "preview.gif").exists()
+    assert (output_dir / "actions" / "run" / "spritesheet.png").exists()
+    assert (output_dir / "actions" / "run" / "contact_sheet.png").exists()
+    assert (output_dir / "actions" / "run" / "production_ready_report.json").exists()
+    assert (output_dir / "actions" / "run" / "game_previews" / "height_128" / "contact_sheet.png").exists()
 
     assert {Image.open(path).size for path in idle_frames} == {(96, 96)}
     assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in idle_frames)
     idle_gif = Image.open(output_dir / "actions" / "idle" / "preview.gif")
     assert getattr(idle_gif, "n_frames", 1) == 4
+    run_frames = sorted((output_dir / "actions" / "run" / "frames").glob("run_*.png"))
+    assert len(run_frames) == 8
+    assert {Image.open(path).size for path in run_frames} == {(96, 96)}
+    assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in run_frames)
+    run_gif = Image.open(output_dir / "actions" / "run" / "preview.gif")
+    assert getattr(run_gif, "n_frames", 1) >= 4
 
     manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["route"] == "character_sprite_asset_pack"
@@ -61,7 +76,18 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert manifest["actions"]["walk"]["production_ready"] is True
     assert manifest["actions"]["idle"]["frame_count"] == 4
     assert manifest["actions"]["idle"]["production_ready"] is True
-    assert manifest["actions"]["run"]["production_ready"] is False
+    assert manifest["actions"]["run"]["frame_count"] == 8
+    assert manifest["actions"]["run"]["production_ready"] is True
+    assert manifest["actions"]["run"]["phase_names"] == [
+        "right_contact",
+        "right_down",
+        "flight_forward",
+        "left_reach",
+        "left_contact",
+        "left_down",
+        "flight_backward",
+        "right_reach",
+    ]
     assert manifest["backend_usage"] == {
         "uses_comfyui": False,
         "uses_wan_video": False,
@@ -85,8 +111,15 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     gate = json.loads((output_dir / "production_gate.json").read_text(encoding="utf-8"))
     assert gate["decision"] == "production_ready"
     assert gate["production_ready"] is True
-    assert gate["checks"]["run_honestly_gated"] is True
+    assert gate["checks"]["run_production_ready"] is True
     assert gate["blocking_issues"] == []
+
+    run_report = json.loads(
+        (output_dir / "actions" / "run" / "production_ready_report.json").read_text(encoding="utf-8")
+    )
+    assert run_report["production_ready"] is True
+    assert run_report["source"] == "imagegen_run_8frame_20260614_rough"
+    assert run_report["airborne_lift_detected"] is True
 
 
 def _make_reference(path: Path) -> None:
@@ -139,3 +172,29 @@ def _make_sprite_frame(path: Path, index: int) -> None:
     draw.rectangle((x - 15, 87, x + 1, 92), fill=(120, 65, 35, 255))
     draw.rectangle((x + 6, 87, x + 23, 92), fill=(120, 65, 35, 255))
     image.save(path)
+
+
+def _make_run_rough_frames(path: Path) -> None:
+    path.mkdir(parents=True)
+    for index in range(8):
+        image = Image.new("RGBA", (96, 96), (0, 255, 0, 255))
+        draw = ImageDraw.Draw(image)
+        x = 42
+        airborne = index in {2, 3, 6, 7}
+        y_offset = -12 if airborne else 0
+        stride = 20 if index in {0, 4} else 10
+        draw.ellipse((x - 12, 6 + y_offset, x + 16, 35 + y_offset), fill=(235, 120, 155, 255))
+        draw.rectangle((x - 8, 34 + y_offset, x + 18, 56 + y_offset), fill=(245, 245, 245, 255))
+        draw.polygon([(x + 2, 38 + y_offset), (x + 12, 38 + y_offset), (x + 6, 55 + y_offset)], fill=(170, 40, 45, 255))
+        draw.polygon([(x - 16, 56 + y_offset), (x + 24, 56 + y_offset), (x + 16, 70 + y_offset), (x - 12, 70 + y_offset)], fill=(25, 35, 80, 255))
+        if index < 4:
+            front, rear = stride, -stride
+        else:
+            front, rear = -stride, stride
+        knee_y = 75 + y_offset
+        foot_y = 91 + y_offset
+        draw.line((x, 68 + y_offset, x + front, foot_y), fill=(15, 25, 65, 255), width=6)
+        draw.line((x + 8, 68 + y_offset, x + rear, knee_y, x + rear // 2, foot_y), fill=(15, 25, 65, 255), width=6)
+        draw.rectangle((x + front - 7, foot_y - 4, x + front + 10, foot_y + 1), fill=(120, 65, 35, 255))
+        draw.rectangle((x + rear // 2 - 7, foot_y - 4, x + rear // 2 + 10, foot_y + 1), fill=(120, 65, 35, 255))
+        image.save(path / f"run_{index:03d}.png")

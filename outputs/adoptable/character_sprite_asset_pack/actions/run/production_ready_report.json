@@ -1,0 +1,85 @@
+{
+  "action": "run",
+  "status": "production_ready",
+  "source": "imagegen_run_8frame_20260614_rough",
+  "method": "route_a_generated_run_rough_cleanup",
+  "frame_count": 8,
+  "phase_names": [
+    "right_contact",
+    "right_down",
+    "flight_forward",
+    "left_reach",
+    "left_contact",
+    "left_down",
+    "flight_backward",
+    "right_reach"
+  ],
+  "frame_size": {
+    "width": 352,
+    "height": 480
+  },
+  "game_previews": {
+    "height_128": {
+      "frame_size": {
+        "width": 94,
+        "height": 128
+      },
+      "frames": [
+        "game_previews/height_128/frames/run_000.png",
+        "game_previews/height_128/frames/run_001.png",
+        "game_previews/height_128/frames/run_002.png",
+        "game_previews/height_128/frames/run_003.png",
+        "game_previews/height_128/frames/run_004.png",
+        "game_previews/height_128/frames/run_005.png",
+        "game_previews/height_128/frames/run_006.png",
+        "game_previews/height_128/frames/run_007.png"
+      ],
+      "spritesheet": "game_previews/height_128/spritesheet.png",
+      "preview_gif": "game_previews/height_128/preview.gif",
+      "contact_sheet": "game_previews/height_128/contact_sheet.png"
+    },
+    "height_192": {
+      "frame_size": {
+        "width": 141,
+        "height": 192
+      },
+      "frames": [
+        "game_previews/height_192/frames/run_000.png",
+        "game_previews/height_192/frames/run_001.png",
+        "game_previews/height_192/frames/run_002.png",
+        "game_previews/height_192/frames/run_003.png",
+        "game_previews/height_192/frames/run_004.png",
+        "game_previews/height_192/frames/run_005.png",
+        "game_previews/height_192/frames/run_006.png",
+        "game_previews/height_192/frames/run_007.png"
+      ],
+      "spritesheet": "game_previews/height_192/spritesheet.png",
+      "preview_gif": "game_previews/height_192/preview.gif",
+      "contact_sheet": "game_previews/height_192/contact_sheet.png"
+    },
+    "height_256": {
+      "frame_size": {
+        "width": 188,
+        "height": 256
+      },
+      "frames": [
+        "game_previews/height_256/frames/run_000.png",
+        "game_previews/height_256/frames/run_001.png",
+        "game_previews/height_256/frames/run_002.png",
+        "game_previews/height_256/frames/run_003.png",
+        "game_previews/height_256/frames/run_004.png",
+        "game_previews/height_256/frames/run_005.png",
+        "game_previews/height_256/frames/run_006.png",
+        "game_previews/height_256/frames/run_007.png"
+      ],
+      "spritesheet": "game_previews/height_256/spritesheet.png",
+      "preview_gif": "game_previews/height_256/preview.gif",
+      "contact_sheet": "game_previews/height_256/contact_sheet.png"
+    }
+  },
+  "contact_ground_y_range": 26,
+  "airborne_lift_detected": true,
+  "alpha_edge_touch_frames": [],
+  "production_ready": true,
+  "review_note": "Run uses a dedicated 8-frame rough sheet rather than retiming walk frames. This improves run readability while preserving the same character identity contract."
+}

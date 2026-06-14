@@ -55,19 +55,148 @@
       "spritesheet": "actions/idle/spritesheet.png",
       "preview_gif": "actions/idle/preview.gif",
       "contact_sheet": "actions/idle/contact_sheet.png",
+      "game_previews": {
+        "height_128": {
+          "frame_size": {
+            "width": 94,
+            "height": 128
+          },
+          "frames": [
+            "actions/idle/game_previews/height_128/frames/idle_000.png",
+            "actions/idle/game_previews/height_128/frames/idle_001.png",
+            "actions/idle/game_previews/height_128/frames/idle_002.png",
+            "actions/idle/game_previews/height_128/frames/idle_003.png"
+          ],
+          "spritesheet": "actions/idle/game_previews/height_128/spritesheet.png",
+          "preview_gif": "actions/idle/game_previews/height_128/preview.gif",
+          "contact_sheet": "actions/idle/game_previews/height_128/contact_sheet.png"
+        },
+        "height_192": {
+          "frame_size": {
+            "width": 141,
+            "height": 192
+          },
+          "frames": [
+            "actions/idle/game_previews/height_192/frames/idle_000.png",
+            "actions/idle/game_previews/height_192/frames/idle_001.png",
+            "actions/idle/game_previews/height_192/frames/idle_002.png",
+            "actions/idle/game_previews/height_192/frames/idle_003.png"
+          ],
+          "spritesheet": "actions/idle/game_previews/height_192/spritesheet.png",
+          "preview_gif": "actions/idle/game_previews/height_192/preview.gif",
+          "contact_sheet": "actions/idle/game_previews/height_192/contact_sheet.png"
+        },
+        "height_256": {
+          "frame_size": {
+            "width": 188,
+            "height": 256
+          },
+          "frames": [
+            "actions/idle/game_previews/height_256/frames/idle_000.png",
+            "actions/idle/game_previews/height_256/frames/idle_001.png",
+            "actions/idle/game_previews/height_256/frames/idle_002.png",
+            "actions/idle/game_previews/height_256/frames/idle_003.png"
+          ],
+          "spritesheet": "actions/idle/game_previews/height_256/spritesheet.png",
+          "preview_gif": "actions/idle/game_previews/height_256/preview.gif",
+          "contact_sheet": "actions/idle/game_previews/height_256/contact_sheet.png"
+        }
+      },
       "production_ready_report": "actions/idle/production_ready_report.json"
     },
     "run": {
       "action": "run",
-      "status": "future_action_stub",
-      "production_ready": false,
-      "reason": "Run needs authored or accepted rough frames; do not derive it by speeding up walk.",
-      "required_before_production": [
-        "8 authored run frames",
-        "stable contact/airborne phases",
-        "identity cue pass",
-        "game-size contact sheet review"
-      ]
+      "frame_count": 8,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "imagegen_run_8frame_20260614_rough",
+      "phase_names": [
+        "right_contact",
+        "right_down",
+        "flight_forward",
+        "left_reach",
+        "left_contact",
+        "left_down",
+        "flight_backward",
+        "right_reach"
+      ],
+      "frames": [
+        "actions/run/frames/run_000.png",
+        "actions/run/frames/run_001.png",
+        "actions/run/frames/run_002.png",
+        "actions/run/frames/run_003.png",
+        "actions/run/frames/run_004.png",
+        "actions/run/frames/run_005.png",
+        "actions/run/frames/run_006.png",
+        "actions/run/frames/run_007.png"
+      ],
+      "spritesheet": "actions/run/spritesheet.png",
+      "preview_gif": "actions/run/preview.gif",
+      "contact_sheet": "actions/run/contact_sheet.png",
+      "game_previews": {
+        "height_128": {
+          "frame_size": {
+            "width": 94,
+            "height": 128
+          },
+          "frames": [
+            "actions/run/game_previews/height_128/frames/run_000.png",
+            "actions/run/game_previews/height_128/frames/run_001.png",
+            "actions/run/game_previews/height_128/frames/run_002.png",
+            "actions/run/game_previews/height_128/frames/run_003.png",
+            "actions/run/game_previews/height_128/frames/run_004.png",
+            "actions/run/game_previews/height_128/frames/run_005.png",
+            "actions/run/game_previews/height_128/frames/run_006.png",
+            "actions/run/game_previews/height_128/frames/run_007.png"
+          ],
+          "spritesheet": "actions/run/game_previews/height_128/spritesheet.png",
+          "preview_gif": "actions/run/game_previews/height_128/preview.gif",
+          "contact_sheet": "actions/run/game_previews/height_128/contact_sheet.png"
+        },
+        "height_192": {
+          "frame_size": {
+            "width": 141,
+            "height": 192
+          },
+          "frames": [
+            "actions/run/game_previews/height_192/frames/run_000.png",
+            "actions/run/game_previews/height_192/frames/run_001.png",
+            "actions/run/game_previews/height_192/frames/run_002.png",
+            "actions/run/game_previews/height_192/frames/run_003.png",
+            "actions/run/game_previews/height_192/frames/run_004.png",
+            "actions/run/game_previews/height_192/frames/run_005.png",
+            "actions/run/game_previews/height_192/frames/run_006.png",
+            "actions/run/game_previews/height_192/frames/run_007.png"
+          ],
+          "spritesheet": "actions/run/game_previews/height_192/spritesheet.png",
+          "preview_gif": "actions/run/game_previews/height_192/preview.gif",
+          "contact_sheet": "actions/run/game_previews/height_192/contact_sheet.png"
+        },
+        "height_256": {
+          "frame_size": {
+            "width": 188,
+            "height": 256
+          },
+          "frames": [
+            "actions/run/game_previews/height_256/frames/run_000.png",
+            "actions/run/game_previews/height_256/frames/run_001.png",
+            "actions/run/game_previews/height_256/frames/run_002.png",
+            "actions/run/game_previews/height_256/frames/run_003.png",
+            "actions/run/game_previews/height_256/frames/run_004.png",
+            "actions/run/game_previews/height_256/frames/run_005.png",
+            "actions/run/game_previews/height_256/frames/run_006.png",
+            "actions/run/game_previews/height_256/frames/run_007.png"
+          ],
+          "spritesheet": "actions/run/game_previews/height_256/spritesheet.png",
+          "preview_gif": "actions/run/game_previews/height_256/preview.gif",
+          "contact_sheet": "actions/run/game_previews/height_256/contact_sheet.png"
+        }
+      },
+      "production_ready_report": "actions/run/production_ready_report.json"
     }
   },
   "identity_report": "identity_report.json",
@@ -78,12 +207,12 @@
     "checks": {
       "walk_production_ready": true,
       "idle_production_ready": true,
-      "run_honestly_gated": true,
+      "run_production_ready": true,
       "identity_cues_pass": true,
       "unsupported_backends_unused": true
     },
     "blocking_issues": [],
-    "scope_statement": "walk and idle are production-ready; run is explicitly gated as future work."
+    "scope_statement": "walk, idle, and run are production-ready for this MVP pack."
   },
   "backend_usage": {
     "uses_comfyui": false,
@@ -95,7 +224,7 @@
   "production_ready": true,
   "known_limits": [
     "The accepted sprite is a game-ready redesign, not a faithful frame-by-frame animation of the original illustration.",
-    "Only walk and idle are production-ready in this pack.",
-    "Run and stronger actions remain explicitly gated until new authored frames exist."
+    "Walk, idle, and run are production-ready for this MVP pack.",
+    "Stronger actions still need authored or accepted rough frames before production-ready promotion."
   ]
 }
