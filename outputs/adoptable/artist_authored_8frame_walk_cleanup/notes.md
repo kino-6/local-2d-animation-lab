@@ -17,6 +17,7 @@ This package is Route A: a rough walk cycle packaged for review from `ai_generat
 - Preserves the provided rough poses and silhouette without generating new frames.
 - Produces transparent frames, spritesheet, preview GIF, contact sheet, manifest, and cleanup report.
 - Produces 128, 192, and 256 px-height game-size preview packages by default.
+- Produces an optional `production_polish/` candidate with ground-line alignment.
 - Produces production review JSON/Markdown for the manual polish gate.
 - Uses deterministic cleanup only.
 

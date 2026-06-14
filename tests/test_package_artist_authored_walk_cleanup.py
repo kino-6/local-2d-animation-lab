@@ -49,6 +49,11 @@ def test_artist_authored_walk_cleanup_contract(tmp_path: Path) -> None:
     assert (output_dir / "game_previews" / "height_128" / "preview.gif").exists()
     assert (output_dir / "game_previews" / "height_192" / "spritesheet.png").exists()
     assert (output_dir / "game_previews" / "height_256" / "contact_sheet.png").exists()
+    assert (output_dir / "production_polish" / "preview.gif").exists()
+    assert (output_dir / "production_polish" / "contact_sheet.png").exists()
+    assert (output_dir / "production_polish" / "polish_report.json").exists()
+    assert (output_dir / "production_polish" / "polish_review.md").exists()
+    assert (output_dir / "production_polish" / "game_previews" / "height_128" / "preview.gif").exists()
 
     assert [Image.open(path).size for path in frame_paths] == [(96, 96)] * 8
     assert all(Image.open(path).mode == "RGBA" for path in frame_paths)
@@ -97,6 +102,13 @@ def test_artist_authored_walk_cleanup_contract(tmp_path: Path) -> None:
     assert manifest["production_gate"]["production_ready"] is False
     assert manifest["production_gate"]["manual_polish_required"] is False
     assert (output_dir / "production_review.md").read_text(encoding="utf-8").startswith("# Production Review")
+    assert manifest["outputs"]["production_polish"]["preview_gif"] == "production_polish/preview.gif"
+    assert manifest["outputs"]["production_polish"]["game_previews"]["height_128"]["preview_gif"] == (
+        "production_polish/game_previews/height_128/preview.gif"
+    )
+    assert manifest["outputs"]["production_polish"]["polish_review"] == "production_polish/polish_review.md"
+    assert manifest["production_polish"]["status"] == "auto_polished_candidate_not_final"
+    assert manifest["production_polish"]["estimated_ground_y_range_after"] == 0
 
 
 def test_artist_authored_walk_cleanup_rejects_wrong_frame_count(tmp_path: Path) -> None:

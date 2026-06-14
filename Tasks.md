@@ -323,8 +323,25 @@ production_ready: false
   - Do not mark production-ready until a human accepts the loop at game size.
   - Do not mark production-ready until frame-level polish is completed.
   - Do not mark production-ready until final production review flips `production_ready` to true.
+- [x] Add an automatic `production_polish/` candidate.
+- [x] Keep the original packaged frames intact while writing polished comparison outputs.
+- [x] Production polish actions:
+  - ground-line alignment;
+  - small alpha-component cleanup;
+  - regenerated preview GIF, contact sheet, spritesheet, and 128/192/256 px game previews.
+- [x] Current production polish metrics:
+
+```text
+ground_y_range_before: 9
+ground_y_range_after: 0
+max_abs_y_shift: 9
+status: auto_polished_candidate_not_final
+```
+
+- [x] Agent-review `production_polish/game_previews/height_128/contact_sheet.png` and `height_192/contact_sheet.png`.
 - [ ] Next production work:
+  - review `production_polish/preview.gif` in motion;
   - manually clean line jitter around hair tips, sleeves, skirt hem, socks, and shoes;
-  - polish shoe/contact shape on contact/down frames;
+  - polish shoe/contact shape on contact/down frames if the stabilized ground line feels too rigid;
   - normalize tiny color/value differences after manual edits;
   - run the production gate again.

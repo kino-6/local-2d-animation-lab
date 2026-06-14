@@ -49,6 +49,7 @@ def main() -> None:
     parser.add_argument("--source-kind", default="artist_authored_rough")
     parser.add_argument("--source-note", default="")
     parser.add_argument("--game-preview-heights", default="128,192,256")
+    parser.add_argument("--production-polish", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--clean", action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
 
@@ -65,6 +66,7 @@ def main() -> None:
         source_kind=args.source_kind,
         source_note=args.source_note,
         game_preview_heights=_parse_preview_heights(args.game_preview_heights),
+        production_polish=args.production_polish,
         clean=args.clean,
     )
     print(json.dumps(manifest, indent=2, ensure_ascii=False))
@@ -83,6 +85,7 @@ def package_artist_authored_walk_cleanup(
     source_kind: str = "artist_authored_rough",
     source_note: str = "",
     game_preview_heights: list[int] | None = None,
+    production_polish: bool = True,
     clean: bool = True,
 ) -> dict[str, Any]:
     source_paths = sorted(rough_frames_dir.glob("*.png"), key=_frame_index)
@@ -132,6 +135,11 @@ def package_artist_authored_walk_cleanup(
     preview_gif = make_preview_gif(output_paths, output_dir / "preview.gif", duration_ms=round(1000 / fps), loop=True)
     contact_sheet = make_contact_sheet(output_paths, output_dir / "contact_sheet.png", columns=4)
     game_previews = _write_game_previews(output_paths, output_dir, game_preview_heights, fps)
+    polish = (
+        _write_production_polish(output_paths, output_dir, game_preview_heights, fps)
+        if production_polish
+        else None
+    )
     cleanup_report = {
         "route": ROUTE,
         "frame_count": len(output_paths),
@@ -177,8 +185,10 @@ def package_artist_authored_walk_cleanup(
             "production_review": str(production_review_path.relative_to(output_dir)).replace("\\", "/"),
             "production_review_md": str(production_review_md.relative_to(output_dir)).replace("\\", "/"),
             "game_previews": game_previews,
+            "production_polish": polish["outputs"] if polish else None,
         },
         "game_readiness": game_readiness,
+        "production_polish": polish["metrics"] if polish else None,
         "production_gate": production_gate,
         "source": {
             "rough_frames_dir": str(rough_frames_dir),
@@ -317,6 +327,85 @@ def _write_game_previews(frame_paths: list[Path], output_dir: Path, heights: lis
     return previews
 
 
+def _write_production_polish(
+    frame_paths: list[Path],
+    output_dir: Path,
+    game_preview_heights: list[int],
+    fps: int,
+) -> dict[str, Any]:
+    polish_dir = output_dir / "production_polish"
+    frames_dir = polish_dir / "frames"
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    source_frames = [Image.open(path).convert("RGBA") for path in frame_paths]
+    source_boxes = [_alpha_bbox(frame) for frame in source_frames]
+    target_bottom = max(box[3] for box in source_boxes)
+
+    polished_paths: list[Path] = []
+    frame_reports: list[dict[str, Any]] = []
+    for index, (frame, source_box) in enumerate(zip(source_frames, source_boxes, strict=True)):
+        cleaned, removed_components = _remove_small_alpha_components(frame, min_area=6)
+        y_shift = target_bottom - source_box[3]
+        shifted = _shift_rgba(cleaned, 0, y_shift)
+        output = frames_dir / f"walk_{index:03d}.png"
+        shifted.save(output)
+        polished_paths.append(output)
+        polished_box = _alpha_bbox(shifted)
+        frame_reports.append(
+            {
+                "index": index,
+                "source_bbox": list(source_box),
+                "polished_bbox": list(polished_box),
+                "y_shift": y_shift,
+                "removed_small_components": removed_components,
+            }
+        )
+
+    spritesheet = make_sprite_sheet(polished_paths, polish_dir / "spritesheet.png", columns=8)
+    preview_gif = make_preview_gif(polished_paths, polish_dir / "preview.gif", duration_ms=round(1000 / fps), loop=True)
+    contact_sheet = make_contact_sheet(polished_paths, polish_dir / "contact_sheet.png", columns=4)
+    polish_previews = _write_game_previews(polished_paths, polish_dir, game_preview_heights, fps)
+    polished_boxes = [report["polished_bbox"] for report in frame_reports]
+    metrics = {
+        "status": "auto_polished_candidate_not_final",
+        "method": "ground_line_alignment_and_small_alpha_component_cleanup",
+        "target_bottom_y": target_bottom,
+        "estimated_ground_y_range_before": max(box[3] for box in source_boxes) - min(box[3] for box in source_boxes),
+        "estimated_ground_y_range_after": max(box[3] for box in polished_boxes) - min(box[3] for box in polished_boxes),
+        "max_abs_y_shift": max(abs(report["y_shift"]) for report in frame_reports),
+        "total_removed_small_components": sum(report["removed_small_components"] for report in frame_reports),
+        "frames": frame_reports,
+        "manual_review_required": True,
+    }
+    report_path = polish_dir / "polish_report.json"
+    report_path.write_text(json.dumps(metrics, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    review_path = polish_dir / "polish_review.md"
+    review_path.write_text(_polish_review_notes(metrics), encoding="utf-8")
+    return {
+        "outputs": {
+            "frames": [str(path.relative_to(output_dir)).replace("\\", "/") for path in polished_paths],
+            "spritesheet": str(spritesheet.relative_to(output_dir)).replace("\\", "/"),
+            "preview_gif": str(preview_gif.relative_to(output_dir)).replace("\\", "/"),
+            "contact_sheet": str(contact_sheet.relative_to(output_dir)).replace("\\", "/"),
+            "game_previews": {
+                key: _relativize_preview_paths(value, polish_dir, output_dir) for key, value in polish_previews.items()
+            },
+            "polish_report": str(report_path.relative_to(output_dir)).replace("\\", "/"),
+            "polish_review": str(review_path.relative_to(output_dir)).replace("\\", "/"),
+        },
+        "metrics": metrics,
+    }
+
+
+def _relativize_preview_paths(preview: dict[str, Any], preview_root: Path, output_dir: Path) -> dict[str, Any]:
+    return {
+        "frame_size": preview["frame_size"],
+        "frames": [str((preview_root / path).relative_to(output_dir)).replace("\\", "/") for path in preview["frames"]],
+        "spritesheet": str((preview_root / preview["spritesheet"]).relative_to(output_dir)).replace("\\", "/"),
+        "preview_gif": str((preview_root / preview["preview_gif"]).relative_to(output_dir)).replace("\\", "/"),
+        "contact_sheet": str((preview_root / preview["contact_sheet"]).relative_to(output_dir)).replace("\\", "/"),
+    }
+
+
 def _game_readiness_metrics(
     frame_entries: list[dict[str, Any]],
     frame_width: int,
@@ -392,6 +481,57 @@ def _flatten(image: Image.Image) -> Image.Image:
     background = Image.new("RGBA", image.size, (255, 255, 255, 255))
     background.alpha_composite(image)
     return background
+
+
+def _alpha_bbox(image: Image.Image) -> tuple[int, int, int, int]:
+    bbox = image.getchannel("A").getbbox()
+    if bbox is None:
+        raise RuntimeError("No visible foreground.")
+    return bbox
+
+
+def _shift_rgba(image: Image.Image, dx: int, dy: int) -> Image.Image:
+    shifted = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    shifted.alpha_composite(image, (dx, dy))
+    return shifted
+
+
+def _remove_small_alpha_components(image: Image.Image, min_area: int) -> tuple[Image.Image, int]:
+    alpha = image.getchannel("A")
+    pixels = alpha.load()
+    width, height = image.size
+    visited: set[tuple[int, int]] = set()
+    remove: set[tuple[int, int]] = set()
+    components_removed = 0
+    for start_y in range(height):
+        for start_x in range(width):
+            if (start_x, start_y) in visited or pixels[start_x, start_y] == 0:
+                continue
+            stack = [(start_x, start_y)]
+            component: list[tuple[int, int]] = []
+            visited.add((start_x, start_y))
+            while stack:
+                x, y = stack.pop()
+                component.append((x, y))
+                for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+                    if nx < 0 or ny < 0 or nx >= width or ny >= height:
+                        continue
+                    if (nx, ny) in visited or pixels[nx, ny] == 0:
+                        continue
+                    visited.add((nx, ny))
+                    stack.append((nx, ny))
+            if len(component) < min_area:
+                remove.update(component)
+                components_removed += 1
+
+    if not remove:
+        return image, 0
+    out = image.copy()
+    out_pixels = out.load()
+    for x, y in remove:
+        red, green, blue, _alpha = out_pixels[x, y]
+        out_pixels[x, y] = (red, green, blue, 0)
+    return out, components_removed
 
 
 def _estimate_background(image: Image.Image) -> tuple[int, int, int]:
@@ -492,6 +632,7 @@ This package is Route A: {source_summary}.
 - {pose_control_summary}
 - Produces transparent frames, spritesheet, preview GIF, contact sheet, manifest, and cleanup report.
 - Produces 128, 192, and 256 px-height game-size preview packages by default.
+- Produces an optional `production_polish/` candidate with ground-line alignment.
 - Produces production review JSON/Markdown for the manual polish gate.
 - Uses deterministic cleanup only.
 
@@ -537,6 +678,32 @@ def _production_review_notes(production_gate: dict[str, Any]) -> str:
 
 Do not mark this asset production-ready until a human accepts the loop at game size, frame-level
 polish is completed, and a final production review explicitly flips `production_ready` to true.
+"""
+
+
+def _polish_review_notes(metrics: dict[str, Any]) -> str:
+    frame_lines = "\n".join(
+        f"- frame {frame['index']:02d}: y_shift={frame['y_shift']}, removed_small_components={frame['removed_small_components']}"
+        for frame in metrics["frames"]
+    )
+    return f"""# Production Polish Review
+
+- status: `{metrics["status"]}`
+- method: `{metrics["method"]}`
+- ground_y_range_before: `{metrics["estimated_ground_y_range_before"]}`
+- ground_y_range_after: `{metrics["estimated_ground_y_range_after"]}`
+- max_abs_y_shift: `{metrics["max_abs_y_shift"]}`
+- total_removed_small_components: `{metrics["total_removed_small_components"]}`
+- manual_review_required: `{metrics["manual_review_required"]}`
+
+## Frame Adjustments
+
+{frame_lines}
+
+## Review Notes
+
+This is an automatic polish candidate, not final production art. Review the 128px and 192px
+`production_polish/game_previews/` GIFs before accepting it as the manual-polish base.
 """
 
 

@@ -53,6 +53,7 @@ The package contains:
 - `cleanup_report.json`
 - `production_review.json`
 - `production_review.md`
+- `production_polish/`
 - `notes.md`
 
 ## Command
@@ -72,7 +73,8 @@ Allowed:
 - green-dominant chroma cleanup and despill for generated rough sheets;
 - plain-background removal when the rough has a removable solid background;
 - alpha normalization;
-- spritesheet, contact sheet, preview GIF, game-size previews, manifest, cleanup report, and production review generation.
+- automatic ground-line alignment for a `production_polish/` candidate;
+- spritesheet, contact sheet, preview GIF, game-size previews, manifest, cleanup report, polish report, and production review generation.
 
 Not allowed:
 
@@ -138,3 +140,28 @@ This does not mean `production_ready`. The remaining production work is manual p
 - final color/value normalization after edits.
 
 The asset must stay `production_ready: false` until those manual polish steps are accepted.
+
+## Production Polish Candidate
+
+The package now writes an automatic polish candidate:
+
+```text
+outputs/adoptable/artist_authored_8frame_walk_cleanup/production_polish/
+```
+
+This candidate keeps the same 8 frames and only applies conservative post-processing:
+
+- ground-line alignment;
+- tiny alpha-component cleanup;
+- regenerated spritesheet, preview GIF, contact sheet, and 128/192/256 px game previews.
+
+Current polish metrics:
+
+```text
+ground_y_range_before: 9
+ground_y_range_after: 0
+max_abs_y_shift: 9
+```
+
+Use `production_polish/` as the base for human review and final Aseprite cleanup. It is still
+`auto_polished_candidate_not_final`, not production art.
