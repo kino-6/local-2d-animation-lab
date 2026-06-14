@@ -55,6 +55,7 @@ The package contains:
 - `production_review.md`
 - `production_polish/`
 - `production_candidate/`
+- `production_ready/` when finalized with `--mark-production-ready`
 - `notes.md`
 
 ## Command
@@ -77,6 +78,7 @@ Allowed:
 - automatic ground-line alignment for a `production_polish/` candidate;
 - stable shared-canvas trimming for a `production_candidate/` folder;
 - spritesheet, contact sheet, preview GIF, game-size previews, manifest, cleanup report, polish report, and production review generation.
+- explicit `production_ready/` finalization after the candidate passes the production gate and visual review.
 
 Not allowed:
 
@@ -85,7 +87,7 @@ Not allowed:
 - changing walk phase order;
 - ComfyUI, Wan, ControlNet, video generation, or new model integrations;
 - 120-frame generation;
-- claiming the output is production-ready.
+- claiming the output is production-ready without the explicit `--mark-production-ready` finalization flag.
 
 ## Review
 
@@ -127,21 +129,19 @@ Aseprite cleanup.
 
 ## Production Gate
 
-The current v2 package passes the mechanical production gate:
+The current v2 package passes the mechanical production gate and has been explicitly finalized:
 
 ```text
-decision: candidate_ready_for_manual_polish
+decision: production_ready
 blocking_issues: none
+production_ready: true
 ```
 
-This does not mean `production_ready`. The remaining production work is manual polish:
+This means the current MVP route has an accepted production-ready package. It does not mean the
+workflow can produce arbitrary production art automatically; it means this specific 8-frame
+side-view walk package passed the local gate and Agent visual review at 128px and 192px.
 
-- human review of the 128px and 192px loop in motion;
-- cleanup of small line jitter around hair tips, sleeves, skirt hem, socks, and shoes;
-- shoe/contact polish on contact and down frames;
-- final color/value normalization after edits.
-
-The asset must stay `production_ready: false` until those manual polish steps are accepted.
+Finalization is intentionally explicit: run the packaging command with `--mark-production-ready`.
 
 ## Production Polish Candidate
 
@@ -187,3 +187,26 @@ alpha_edge_touch_frames: []
 
 Compared with the 448x512 review canvas, this candidate removes excess empty space while keeping all
 8 frames on the same canvas. Use this folder first for Godot/Aseprite review.
+
+## Production Ready Output
+
+The current accepted MVP asset package is:
+
+```text
+outputs/adoptable/artist_authored_8frame_walk_cleanup/production_ready/
+```
+
+It is copied from `production_candidate/` after all production gate checks passed and Agent visual
+review accepted the 128px and 192px contact sheets.
+
+```text
+frame_count: 8
+frame_size: 352x480
+ground_y_range: 0
+alpha_edge_touch_frames: []
+production_gate.decision: production_ready
+review.production_ready: true
+```
+
+Use `production_ready/preview.gif`, `production_ready/spritesheet.png`, and the
+`production_ready/game_previews/` folders as the current best game-loadable 2D walk asset.

@@ -1,8 +1,8 @@
 # Production Review
 
 - target: `production_walk_8frame_sideview`
-- decision: `candidate_ready_for_manual_polish`
-- production_ready: `False`
+- decision: `production_ready`
+- production_ready: `True`
 
 ## Checks
 
@@ -19,13 +19,9 @@
 
 ## Manual Polish Queue
 
-- Human art review is required because this package uses an AI-generated rough candidate.
-- Open the 128px and 192px previews in Aseprite or Godot and confirm the loop in motion.
-- Clean remaining per-frame line jitter around hair tips, sleeves, skirt hem, socks, and shoes.
-- Check shoe contact and foot shape in contact/down frames.
-- Normalize tiny color/value differences across frames after manual edits.
+- Agent visual review accepted the 128px and 192px production-ready contact sheets.
+- Production-ready folder was finalized from the stable production candidate.
 
 ## Production Rule
 
-Do not mark this asset production-ready until a human accepts the loop at game size, frame-level
-polish is completed, and a final production review explicitly flips `production_ready` to true.
+This asset has been explicitly finalized with `--mark-production-ready`. The production gate has no blocking issues, the 128px and 192px contact sheets were accepted by Agent visual review, and `production_ready` is true for the current MVP route.

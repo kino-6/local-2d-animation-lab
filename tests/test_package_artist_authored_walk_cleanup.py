@@ -145,6 +145,46 @@ def test_artist_authored_walk_cleanup_rejects_wrong_frame_count(tmp_path: Path) 
     assert "requires exactly 8 PNG rough frames" in completed.stderr
 
 
+def test_artist_authored_walk_cleanup_can_mark_production_ready(tmp_path: Path) -> None:
+    rough = tmp_path / "rough"
+    rough.mkdir()
+    for index in range(8):
+        _make_rough_frame(rough / f"walk_{index:03d}.png", index)
+
+    output_dir = tmp_path / "artist_authored_8frame_walk_cleanup"
+    subprocess.run(
+        [
+            sys.executable,
+            str(_SCRIPT),
+            "--rough-frames-dir",
+            str(rough),
+            "--output-dir",
+            str(output_dir),
+            "--mark-production-ready",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["review"]["production_ready"] is True
+    assert manifest["production_gate"]["decision"] == "production_ready"
+    assert manifest["production_gate"]["production_ready"] is True
+    assert manifest["production_gate"]["manual_polish_required"] is False
+    assert manifest["production_gate"]["do_not_claim_production_until"] == []
+    assert manifest["production_polish"]["production_ready"]["status"] == "production_ready"
+    assert manifest["outputs"]["production_polish"]["production_ready"]["preview_gif"] == (
+        "production_ready/preview.gif"
+    )
+    production_review = (output_dir / "production_review.md").read_text(encoding="utf-8")
+    assert "explicitly finalized with `--mark-production-ready`" in production_review
+    assert "Do not mark this asset production-ready" not in production_review
+    assert (output_dir / "production_ready" / "preview.gif").exists()
+    assert (output_dir / "production_ready" / "production_ready_report.json").exists()
+    assert (output_dir / "production_ready" / "production_ready_review.md").exists()
+
+
 def test_artist_authored_walk_cleanup_removes_green_dominant_background(tmp_path: Path) -> None:
     rough = tmp_path / "rough"
     rough.mkdir()

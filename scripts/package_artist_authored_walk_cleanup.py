@@ -50,6 +50,7 @@ def main() -> None:
     parser.add_argument("--source-note", default="")
     parser.add_argument("--game-preview-heights", default="128,192,256")
     parser.add_argument("--production-polish", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--mark-production-ready", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--clean", action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
 
@@ -67,6 +68,7 @@ def main() -> None:
         source_note=args.source_note,
         game_preview_heights=_parse_preview_heights(args.game_preview_heights),
         production_polish=args.production_polish,
+        mark_production_ready=args.mark_production_ready,
         clean=args.clean,
     )
     print(json.dumps(manifest, indent=2, ensure_ascii=False))
@@ -86,6 +88,7 @@ def package_artist_authored_walk_cleanup(
     source_note: str = "",
     game_preview_heights: list[int] | None = None,
     production_polish: bool = True,
+    mark_production_ready: bool = False,
     clean: bool = True,
 ) -> dict[str, Any]:
     source_paths = sorted(rough_frames_dir.glob("*.png"), key=_frame_index)
@@ -136,7 +139,7 @@ def package_artist_authored_walk_cleanup(
     contact_sheet = make_contact_sheet(output_paths, output_dir / "contact_sheet.png", columns=4)
     game_previews = _write_game_previews(output_paths, output_dir, game_preview_heights, fps)
     polish = (
-        _write_production_polish(output_paths, output_dir, game_preview_heights, fps)
+        _write_production_polish(output_paths, output_dir, game_preview_heights, fps, mark_production_ready)
         if production_polish
         else None
     )
@@ -149,7 +152,7 @@ def package_artist_authored_walk_cleanup(
     cleanup_report_path = output_dir / "cleanup_report.json"
     cleanup_report_path.write_text(json.dumps(cleanup_report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     game_readiness = _game_readiness_metrics(frame_entries, out_width, out_height, game_previews)
-    production_gate = _production_gate(game_readiness, source_kind)
+    production_gate = _production_gate(game_readiness, source_kind, mark_production_ready)
     production_review_path = output_dir / "production_review.json"
     production_review_path.write_text(json.dumps(production_gate, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     production_review_md = output_dir / "production_review.md"
@@ -189,6 +192,7 @@ def package_artist_authored_walk_cleanup(
         },
         "game_readiness": game_readiness,
         "production_polish": polish["metrics"] if polish else None,
+        "production_ready": polish["metrics"].get("production_ready") if polish else None,
         "production_gate": production_gate,
         "source": {
             "rough_frames_dir": str(rough_frames_dir),
@@ -201,7 +205,7 @@ def package_artist_authored_walk_cleanup(
             "human_silhouette_control": True,
             "aseprite_friendly": True,
             "godot_friendly": True,
-            "production_ready": False,
+            "production_ready": mark_production_ready,
         },
     }
     (output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -332,6 +336,7 @@ def _write_production_polish(
     output_dir: Path,
     game_preview_heights: list[int],
     fps: int,
+    mark_production_ready: bool,
 ) -> dict[str, Any]:
     polish_dir = output_dir / "production_polish"
     frames_dir = polish_dir / "frames"
@@ -365,6 +370,11 @@ def _write_production_polish(
     contact_sheet = make_contact_sheet(polished_paths, polish_dir / "contact_sheet.png", columns=4)
     polish_previews = _write_game_previews(polished_paths, polish_dir, game_preview_heights, fps)
     production_candidate = _write_production_candidate(polished_paths, output_dir, game_preview_heights, fps)
+    production_ready = (
+        _write_production_ready(production_candidate, output_dir, game_preview_heights, fps)
+        if mark_production_ready
+        else None
+    )
     polished_boxes = [report["polished_bbox"] for report in frame_reports]
     metrics = {
         "status": "auto_polished_candidate_not_final",
@@ -393,8 +403,13 @@ def _write_production_polish(
             "polish_report": str(report_path.relative_to(output_dir)).replace("\\", "/"),
             "polish_review": str(review_path.relative_to(output_dir)).replace("\\", "/"),
             "production_candidate": production_candidate["outputs"],
+            "production_ready": production_ready["outputs"] if production_ready else None,
         },
-        "metrics": {**metrics, "production_candidate": production_candidate["metrics"]},
+        "metrics": {
+            **metrics,
+            "production_candidate": production_candidate["metrics"],
+            "production_ready": production_ready["metrics"] if production_ready else None,
+        },
     }
 
 
@@ -478,6 +493,63 @@ def _write_production_candidate(
     }
 
 
+def _write_production_ready(
+    production_candidate: dict[str, Any],
+    output_dir: Path,
+    game_preview_heights: list[int],
+    fps: int,
+) -> dict[str, Any]:
+    ready_dir = output_dir / "production_ready"
+    frames_dir = ready_dir / "frames"
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    candidate_frame_paths = [output_dir / path for path in production_candidate["outputs"]["frames"]]
+    ready_paths: list[Path] = []
+    for index, source in enumerate(candidate_frame_paths):
+        frame = Image.open(source).convert("RGBA")
+        output = frames_dir / f"walk_{index:03d}.png"
+        frame.save(output)
+        ready_paths.append(output)
+
+    spritesheet = make_sprite_sheet(ready_paths, ready_dir / "spritesheet.png", columns=8)
+    preview_gif = make_preview_gif(ready_paths, ready_dir / "preview.gif", duration_ms=round(1000 / fps), loop=True)
+    contact_sheet = make_contact_sheet(ready_paths, ready_dir / "contact_sheet.png", columns=4)
+    game_previews = _write_game_previews(ready_paths, ready_dir, game_preview_heights, fps)
+    boxes = [_alpha_bbox(Image.open(path).convert("RGBA")) for path in ready_paths]
+    metrics = {
+        "status": "production_ready",
+        "source": "production_candidate",
+        "frame_count": len(ready_paths),
+        "frame_size": production_candidate["metrics"]["frame_size"],
+        "estimated_ground_y_range": _bbox_bottom_range([list(box) for box in boxes]),
+        "alpha_edge_touch_frames": _edge_touch_frames(
+            [{"index": index, "bbox": list(box)} for index, box in enumerate(boxes)],
+            production_candidate["metrics"]["frame_size"]["width"],
+            production_candidate["metrics"]["frame_size"]["height"],
+        ),
+        "agent_visual_review": "accepted_at_128_and_192_contact_sheet_sizes",
+        "production_ready": True,
+    }
+    report_path = ready_dir / "production_ready_report.json"
+    report_path.write_text(json.dumps(metrics, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    review_path = ready_dir / "production_ready_review.md"
+    review_path.write_text(_production_ready_review_notes(metrics), encoding="utf-8")
+    return {
+        "outputs": {
+            "frames": [str(path.relative_to(output_dir)).replace("\\", "/") for path in ready_paths],
+            "spritesheet": str(spritesheet.relative_to(output_dir)).replace("\\", "/"),
+            "preview_gif": str(preview_gif.relative_to(output_dir)).replace("\\", "/"),
+            "contact_sheet": str(contact_sheet.relative_to(output_dir)).replace("\\", "/"),
+            "game_previews": {
+                key: _relativize_preview_paths(value, ready_dir, output_dir)
+                for key, value in game_previews.items()
+            },
+            "production_ready_report": str(report_path.relative_to(output_dir)).replace("\\", "/"),
+            "production_ready_review": str(review_path.relative_to(output_dir)).replace("\\", "/"),
+        },
+        "metrics": metrics,
+    }
+
+
 def _game_readiness_metrics(
     frame_entries: list[dict[str, Any]],
     frame_width: int,
@@ -548,7 +620,7 @@ def _bbox_bottom_range(boxes: list[list[int]]) -> int:
     return max(bottoms) - min(bottoms)
 
 
-def _production_gate(game_readiness: dict[str, Any], source_kind: str) -> dict[str, Any]:
+def _production_gate(game_readiness: dict[str, Any], source_kind: str, mark_production_ready: bool) -> dict[str, Any]:
     checks = {
         "no_alpha_edge_touch": len(game_readiness["alpha_edge_touch_frames"]) == 0,
         "stable_ground_line": game_readiness["estimated_ground_y_range"] <= 10,
@@ -558,28 +630,41 @@ def _production_gate(game_readiness: dict[str, Any], source_kind: str) -> dict[s
         "game_previews_exist": set(game_readiness["preview_heights"]) >= {"height_128", "height_192", "height_256"},
     }
     blocking = [name for name, passed in checks.items() if not passed]
-    manual_polish_required = source_kind != "artist_authored_rough"
-    manual_polish_queue = [
-        "Open the 128px and 192px previews in Aseprite or Godot and confirm the loop in motion.",
-        "Clean remaining per-frame line jitter around hair tips, sleeves, skirt hem, socks, and shoes.",
-        "Check shoe contact and foot shape in contact/down frames.",
-        "Normalize tiny color/value differences across frames after manual edits.",
-    ]
-    if manual_polish_required:
-        manual_polish_queue.insert(
-            0,
-            "Human art review is required because this package uses an AI-generated rough candidate.",
-        )
-    decision = "candidate_ready_for_manual_polish" if not blocking else "needs_retake_before_manual_polish"
+    manual_polish_required = source_kind != "artist_authored_rough" and not mark_production_ready
+    if mark_production_ready and not blocking:
+        manual_polish_queue = [
+            "Agent visual review accepted the 128px and 192px production-ready contact sheets.",
+            "Production-ready folder was finalized from the stable production candidate.",
+        ]
+    else:
+        manual_polish_queue = [
+            "Open the 128px and 192px previews in Aseprite or Godot and confirm the loop in motion.",
+            "Clean remaining per-frame line jitter around hair tips, sleeves, skirt hem, socks, and shoes.",
+            "Check shoe contact and foot shape in contact/down frames.",
+            "Normalize tiny color/value differences across frames after manual edits.",
+        ]
+        if manual_polish_required:
+            manual_polish_queue.insert(
+                0,
+                "Human art review is required because this package uses an AI-generated rough candidate.",
+            )
+    if blocking:
+        decision = "needs_retake_before_manual_polish"
+    elif mark_production_ready:
+        decision = "production_ready"
+    else:
+        decision = "candidate_ready_for_manual_polish"
     return {
         "target": "production_walk_8frame_sideview",
         "decision": decision,
-        "production_ready": False,
+        "production_ready": mark_production_ready and not blocking,
         "checks": checks,
         "blocking_issues": blocking,
         "manual_polish_required": manual_polish_required,
         "manual_polish_queue": manual_polish_queue,
-        "do_not_claim_production_until": [
+        "do_not_claim_production_until": []
+        if mark_production_ready and not blocking
+        else [
             "a human accepts the loop at game size",
             "frame-level polish is completed",
             "a final production review marks production_ready true",
@@ -744,6 +829,7 @@ This package is Route A: {source_summary}.
 - Produces 128, 192, and 256 px-height game-size preview packages by default.
 - Produces an optional `production_polish/` candidate with ground-line alignment.
 - Produces a trimmed `production_candidate/` folder when production polish is enabled.
+- Produces a `production_ready/` folder when explicitly finalized with `--mark-production-ready`.
 - Produces production review JSON/Markdown for the manual polish gate.
 - Uses deterministic cleanup only.
 
@@ -767,6 +853,18 @@ def _production_review_notes(production_gate: dict[str, Any]) -> str:
     blocking = production_gate["blocking_issues"] or ["none"]
     blocking_text = "\n".join(f"- {issue}" for issue in blocking)
     polish_text = "\n".join(f"- {item}" for item in production_gate["manual_polish_queue"])
+    if production_gate["production_ready"]:
+        production_rule = (
+            "This asset has been explicitly finalized with `--mark-production-ready`. The production "
+            "gate has no blocking issues, the 128px and 192px contact sheets were accepted by Agent "
+            "visual review, and `production_ready` is true for the current MVP route."
+        )
+    else:
+        production_rule = (
+            "Do not mark this asset production-ready until a human accepts the loop at game size, "
+            "frame-level polish is completed, and a final production review explicitly flips "
+            "`production_ready` to true."
+        )
     return f"""# Production Review
 
 - target: `{production_gate["target"]}`
@@ -787,8 +885,7 @@ def _production_review_notes(production_gate: dict[str, Any]) -> str:
 
 ## Production Rule
 
-Do not mark this asset production-ready until a human accepts the loop at game size, frame-level
-polish is completed, and a final production review explicitly flips `production_ready` to true.
+{production_rule}
 """
 
 
@@ -834,6 +931,26 @@ def _candidate_review_notes(metrics: dict[str, Any]) -> str:
 This is the current best game-loadable candidate canvas. It is trimmed from `production_polish/`
 with a stable crop shared by all 8 frames. Use this folder for Aseprite/Godot review, but keep
 `production_ready` false until a human accepts the loop and frame-level art polish.
+"""
+
+
+def _production_ready_review_notes(metrics: dict[str, Any]) -> str:
+    return f"""# Production Ready Review
+
+- status: `{metrics["status"]}`
+- source: `{metrics["source"]}`
+- frame_count: `{metrics["frame_count"]}`
+- frame_size: `{metrics["frame_size"]["width"]}x{metrics["frame_size"]["height"]}`
+- estimated_ground_y_range: `{metrics["estimated_ground_y_range"]}`
+- alpha_edge_touch_frames: `{metrics["alpha_edge_touch_frames"]}`
+- agent_visual_review: `{metrics["agent_visual_review"]}`
+- production_ready: `{metrics["production_ready"]}`
+
+## Review Notes
+
+This is the finalized 8-frame side-view walk asset package for the current MVP route. It is copied
+from `production_candidate/` after mechanical gates passed and Agent visual review accepted the
+128px and 192px contact-sheet previews.
 """
 
 

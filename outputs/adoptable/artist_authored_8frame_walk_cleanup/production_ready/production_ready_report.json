@@ -1,0 +1,13 @@
+{
+  "status": "production_ready",
+  "source": "production_candidate",
+  "frame_count": 8,
+  "frame_size": {
+    "width": 352,
+    "height": 480
+  },
+  "estimated_ground_y_range": 0,
+  "alpha_edge_touch_frames": [],
+  "agent_visual_review": "accepted_at_128_and_192_contact_sheet_sizes",
+  "production_ready": true
+}

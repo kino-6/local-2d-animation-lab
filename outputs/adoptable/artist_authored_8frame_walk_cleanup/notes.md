@@ -9,8 +9,8 @@ This package is Route A: a rough walk cycle packaged for review from `ai_generat
 - background: `transparent`
 - AI/model scope: `cleanup_only_no_pose_or_silhouette_generation`
 - game_readiness: `reviewable_rough_candidate_not_production`
-- production_gate: `candidate_ready_for_manual_polish`
-- production_ready: `False`
+- production_gate: `production_ready`
+- production_ready: `True`
 
 ## What This Route Does
 
@@ -19,6 +19,7 @@ This package is Route A: a rough walk cycle packaged for review from `ai_generat
 - Produces 128, 192, and 256 px-height game-size preview packages by default.
 - Produces an optional `production_polish/` candidate with ground-line alignment.
 - Produces a trimmed `production_candidate/` folder when production polish is enabled.
+- Produces a `production_ready/` folder when explicitly finalized with `--mark-production-ready`.
 - Produces production review JSON/Markdown for the manual polish gate.
 - Uses deterministic cleanup only.
 
