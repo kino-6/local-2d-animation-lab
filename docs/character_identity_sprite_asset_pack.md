@@ -17,6 +17,8 @@ The package contains:
 - `actions/walk/`
 - `actions/idle/`
 - `actions/run/`
+- `actions/jump/`
+- `actions/hurt/`
 - `manifest.json`
 - `identity_report.json`
 - `production_gate.json`
@@ -45,11 +47,14 @@ Current production-ready actions:
 - `walk`: copied from `artist_authored_8frame_walk_cleanup/production_ready/`;
 - `idle`: deterministic subtle-idle action derived from the accepted walk sprite.
 - `run`: cleaned and packaged from the dedicated `imagegen_run_8frame_20260614` rough sheet.
+- `jump`: cleaned and packaged from the dedicated `imagegen_jump_6frame_20260614` rough sheet.
+- `hurt`: cleaned and packaged from the dedicated `imagegen_hurt_4frame_20260614` rough sheet.
 
 Future action policy:
 
-Run was promoted only after it had a dedicated 8-frame rough with clear running poses. Stronger
-actions still need authored or accepted rough frames and should not be faked by retiming walk frames.
+Run, jump, and hurt were promoted only after they had dedicated rough sheets with action-specific
+poses. Stronger actions still need authored or accepted rough frames and should not be faked by
+retiming walk frames.
 
 ## Production Ready Meaning
 
@@ -58,7 +63,9 @@ actions still need authored or accepted rough frames and should not be faked by 
 - `walk.production_ready == true`;
 - `idle.production_ready == true`;
 - `run.production_ready == true`;
-- required identity cues pass on the reference, walk, idle, and run assets;
+- `jump.production_ready == true`;
+- `hurt.production_ready == true`;
+- required identity cues pass on the reference, walk, idle, run, jump, and hurt assets;
 - no model or video backend is used.
 
 It does not mean arbitrary future actions are complete.

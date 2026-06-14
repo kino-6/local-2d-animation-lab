@@ -22,6 +22,8 @@ ROUTE = "character_sprite_asset_pack"
 DEFAULT_REFERENCE = Path("assets/reference/Anima_00013_.png")
 DEFAULT_WALK_READY = Path("outputs/adoptable/artist_authored_8frame_walk_cleanup/production_ready")
 DEFAULT_RUN_ROUGH = Path("assets/artist_authored_roughs/imagegen_run_8frame_20260614/rough_frames")
+DEFAULT_JUMP_ROUGH = Path("assets/artist_authored_roughs/imagegen_jump_6frame_20260614/rough_frames")
+DEFAULT_HURT_ROUGH = Path("assets/artist_authored_roughs/imagegen_hurt_4frame_20260614/rough_frames")
 DEFAULT_OUTPUT = Path("outputs/adoptable/character_sprite_asset_pack")
 
 IDENTITY_CUES = {
@@ -42,6 +44,8 @@ def main() -> None:
     parser.add_argument("--reference-image", default=DEFAULT_REFERENCE, type=Path)
     parser.add_argument("--walk-production-ready-dir", default=DEFAULT_WALK_READY, type=Path)
     parser.add_argument("--run-rough-frames-dir", default=DEFAULT_RUN_ROUGH, type=Path)
+    parser.add_argument("--jump-rough-frames-dir", default=DEFAULT_JUMP_ROUGH, type=Path)
+    parser.add_argument("--hurt-rough-frames-dir", default=DEFAULT_HURT_ROUGH, type=Path)
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT, type=Path)
     parser.add_argument("--fps", default=8, type=int)
     parser.add_argument("--clean", action=argparse.BooleanOptionalAction, default=True)
@@ -51,6 +55,8 @@ def main() -> None:
         reference_image=args.reference_image,
         walk_production_ready_dir=args.walk_production_ready_dir,
         run_rough_frames_dir=args.run_rough_frames_dir,
+        jump_rough_frames_dir=args.jump_rough_frames_dir,
+        hurt_rough_frames_dir=args.hurt_rough_frames_dir,
         output_dir=args.output_dir,
         fps=args.fps,
         clean=args.clean,
@@ -62,6 +68,8 @@ def build_character_sprite_asset_pack(
     reference_image: Path = DEFAULT_REFERENCE,
     walk_production_ready_dir: Path = DEFAULT_WALK_READY,
     run_rough_frames_dir: Path | None = DEFAULT_RUN_ROUGH,
+    jump_rough_frames_dir: Path | None = DEFAULT_JUMP_ROUGH,
+    hurt_rough_frames_dir: Path | None = DEFAULT_HURT_ROUGH,
     output_dir: Path = DEFAULT_OUTPUT,
     fps: int = 8,
     clean: bool = True,
@@ -88,23 +96,51 @@ def build_character_sprite_asset_pack(
         fps=fps,
         run_rough_frames_dir=run_rough_frames_dir,
     )
+    target_size = Image.open(walk_frames[0]).size
+    jump_action = _build_named_rough_action(
+        action="jump",
+        rough_frames_dir=jump_rough_frames_dir,
+        action_dir=actions_dir / "jump",
+        fps=fps,
+        target_size=target_size,
+        frame_count=6,
+        phase_names=["anticipation", "takeoff", "rise", "apex", "fall", "landing_recovery"],
+        source_slug="imagegen_jump_6frame_20260614_rough",
+        review_note="Jump uses a dedicated 6-frame rough sheet with anticipation, takeoff, airborne, and landing phases.",
+    )
+    hurt_action = _build_named_rough_action(
+        action="hurt",
+        rough_frames_dir=hurt_rough_frames_dir,
+        action_dir=actions_dir / "hurt",
+        fps=fps,
+        target_size=target_size,
+        frame_count=4,
+        phase_names=["brace", "small_recoil", "large_stagger", "recover"],
+        source_slug="imagegen_hurt_4frame_20260614_rough",
+        review_note="Hurt uses a dedicated 4-frame rough sheet with bracing, recoil, stagger, and recovery phases.",
+    )
 
     identity_report = _build_identity_report(
         reference_image=reference_image,
-        walk_action_dir=actions_dir / "walk",
-        idle_action_dir=actions_dir / "idle",
-        run_action_dir=actions_dir / "run",
+        action_dirs={
+            "walk": actions_dir / "walk",
+            "idle": actions_dir / "idle",
+            "run": actions_dir / "run",
+            "jump": actions_dir / "jump",
+            "hurt": actions_dir / "hurt",
+        },
     )
-    production_gate = _build_production_gate(walk_action, idle_action, run_action, identity_report)
+    actions = {
+        "walk": walk_action,
+        "idle": idle_action,
+        "run": run_action,
+        "jump": jump_action,
+        "hurt": hurt_action,
+    }
+    production_gate = _build_production_gate(actions, identity_report)
 
-    (output_dir / "identity_report.json").write_text(
-        json.dumps(identity_report, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
-    (output_dir / "production_gate.json").write_text(
-        json.dumps(production_gate, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
+    _write_text(output_dir / "identity_report.json", json.dumps(identity_report, indent=2, ensure_ascii=False) + "\n")
+    _write_text(output_dir / "production_gate.json", json.dumps(production_gate, indent=2, ensure_ascii=False) + "\n")
 
     manifest = {
         "route": ROUTE,
@@ -112,9 +148,7 @@ def build_character_sprite_asset_pack(
         "source_reference": str(reference_image).replace("\\", "/"),
         "canonical_identity": IDENTITY_CUES,
         "actions": {
-            "walk": walk_action,
-            "idle": idle_action,
-            "run": run_action,
+            **actions,
         },
         "identity_report": "identity_report.json",
         "production_gate": production_gate,
@@ -128,15 +162,12 @@ def build_character_sprite_asset_pack(
         "production_ready": production_gate["production_ready"],
         "known_limits": [
             "The accepted sprite is a game-ready redesign, not a faithful frame-by-frame animation of the original illustration.",
-            "Walk, idle, and run are production-ready for this MVP pack.",
+            "Walk, idle, run, jump, and hurt are production-ready for this MVP pack.",
             "Stronger actions still need authored or accepted rough frames before production-ready promotion.",
         ],
     }
-    (output_dir / "manifest.json").write_text(
-        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
-    (output_dir / "notes.md").write_text(_notes(manifest), encoding="utf-8")
+    _write_text(output_dir / "manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
+    _write_text(output_dir / "notes.md", _notes(manifest))
     return manifest
 
 
@@ -193,11 +224,8 @@ def _build_idle_action(walk_frames: list[Path], action_dir: Path, fps: int) -> d
         "alpha_edge_touch_frames": metrics["alpha_edge_touch_frames"],
         "production_ready": metrics["ground_y_range"] == 0 and not metrics["alpha_edge_touch_frames"],
     }
-    (action_dir / "production_ready_report.json").write_text(
-        json.dumps(report, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
-    (action_dir / "notes.md").write_text(_idle_notes(report), encoding="utf-8")
+    _write_text(action_dir / "production_ready_report.json", json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    _write_text(action_dir / "notes.md", _idle_notes(report))
     return {
         "action": "idle",
         "frame_count": 4,
@@ -307,11 +335,8 @@ def _build_run_action(
             "It is not a new AI generation and should be replaced later if authored run frames become available."
         ),
     }
-    (action_dir / "production_ready_report.json").write_text(
-        json.dumps(report, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
-    (action_dir / "notes.md").write_text(_run_notes(report), encoding="utf-8")
+    _write_text(action_dir / "production_ready_report.json", json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    _write_text(action_dir / "notes.md", _run_notes(report))
     return {
         "action": "run",
         "frame_count": 8,
@@ -391,11 +416,8 @@ def _build_run_action_from_rough(
             "run readability while preserving the same character identity contract."
         ),
     }
-    (action_dir / "production_ready_report.json").write_text(
-        json.dumps(report, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
-    (action_dir / "notes.md").write_text(_run_notes(report), encoding="utf-8")
+    _write_text(action_dir / "production_ready_report.json", json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    _write_text(action_dir / "notes.md", _run_notes(report))
     return {
         "action": "run",
         "frame_count": 8,
@@ -410,6 +432,79 @@ def _build_run_action_from_rough(
         "contact_sheet": "actions/run/contact_sheet.png",
         "game_previews": _prefix_preview_paths(game_previews, "actions/run"),
         "production_ready_report": "actions/run/production_ready_report.json",
+    }
+
+
+def _build_named_rough_action(
+    action: str,
+    rough_frames_dir: Path | None,
+    action_dir: Path,
+    fps: int,
+    target_size: tuple[int, int],
+    frame_count: int,
+    phase_names: list[str],
+    source_slug: str,
+    review_note: str,
+) -> dict[str, Any]:
+    if rough_frames_dir is None or not rough_frames_dir.exists():
+        raise FileNotFoundError(f"{action} rough frames not found: {rough_frames_dir}")
+    rough_paths = sorted(rough_frames_dir.glob(f"{action}_*.png"))
+    if len(rough_paths) != frame_count:
+        raise ValueError(f"Expected {frame_count} {action} rough frames, found {len(rough_paths)}.")
+    if action_dir.exists():
+        shutil.rmtree(action_dir)
+    frames_dir = action_dir / "frames"
+    frames_dir.mkdir(parents=True, exist_ok=True)
+
+    frame_paths: list[Path] = []
+    for index, source in enumerate(rough_paths):
+        image = Image.open(source).convert("RGBA")
+        cleaned = _clean_green_background(image)
+        normalized = cleaned.resize(target_size, Image.Resampling.LANCZOS)
+        normalized = _threshold_alpha(normalized, minimum_alpha=24)
+        normalized = _keep_largest_alpha_component(normalized)
+        normalized = _keep_inside_canvas(normalized, margin=2)
+        output = frames_dir / f"{action}_{index:03d}.png"
+        normalized.save(output)
+        frame_paths.append(output)
+
+    make_sprite_sheet(frame_paths, action_dir / "spritesheet.png", columns=frame_count)
+    make_preview_gif(frame_paths, action_dir / "preview.gif", duration_ms=round(1000 / fps), loop=True)
+    make_contact_sheet(frame_paths, action_dir / "contact_sheet.png", columns=min(4, frame_count))
+    game_previews = _write_action_game_previews(frame_paths, action_dir, [128, 192, 256], fps=fps)
+
+    metrics = _action_metrics(frame_paths)
+    production_ready = len(frame_paths) == frame_count and not metrics["alpha_edge_touch_frames"]
+    report = {
+        "action": action,
+        "status": "production_ready" if production_ready else f"{action}_candidate_needs_review",
+        "source": source_slug,
+        "method": "route_a_generated_rough_cleanup",
+        "frame_count": frame_count,
+        "phase_names": phase_names,
+        "frame_size": metrics["frame_size"],
+        "game_previews": game_previews,
+        "ground_y_range": metrics["ground_y_range"],
+        "alpha_edge_touch_frames": metrics["alpha_edge_touch_frames"],
+        "production_ready": production_ready,
+        "review_note": review_note,
+    }
+    _write_text(action_dir / "production_ready_report.json", json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    _write_text(action_dir / "notes.md", _rough_action_notes(report))
+    return {
+        "action": action,
+        "frame_count": frame_count,
+        "frame_size": metrics["frame_size"],
+        "production_ready": production_ready,
+        "status": report["status"],
+        "source": source_slug,
+        "phase_names": phase_names,
+        "frames": [f"actions/{action}/frames/{action}_{index:03d}.png" for index in range(frame_count)],
+        "spritesheet": f"actions/{action}/spritesheet.png",
+        "preview_gif": f"actions/{action}/preview.gif",
+        "contact_sheet": f"actions/{action}/contact_sheet.png",
+        "game_previews": _prefix_preview_paths(game_previews, f"actions/{action}"),
+        "production_ready_report": f"actions/{action}/production_ready_report.json",
     }
 
 
@@ -592,35 +687,24 @@ def _prefix_preview_paths(previews: dict[str, Any], prefix: str) -> dict[str, An
     return prefixed
 
 
-def _build_identity_report(
-    reference_image: Path,
-    walk_action_dir: Path,
-    idle_action_dir: Path,
-    run_action_dir: Path,
-) -> dict[str, Any]:
+def _build_identity_report(reference_image: Path, action_dirs: dict[str, Path]) -> dict[str, Any]:
     reference = Image.open(reference_image).convert("RGBA")
-    walk_frames = sorted((walk_action_dir / "frames").glob("walk_*.png"))
-    idle_frames = sorted((idle_action_dir / "frames").glob("idle_*.png"))
-    run_frames = sorted((run_action_dir / "frames").glob("run_*.png"))
-
     reference_counts = _cue_counts([reference])
-    walk_counts = _cue_counts([Image.open(path).convert("RGBA") for path in walk_frames])
-    idle_counts = _cue_counts([Image.open(path).convert("RGBA") for path in idle_frames])
-    run_counts = _cue_counts([Image.open(path).convert("RGBA") for path in run_frames])
+    action_counts = {}
+    for action, action_dir in action_dirs.items():
+        frame_paths = sorted((action_dir / "frames").glob(f"{action}_*.png"))
+        action_counts[action] = _cue_counts([Image.open(path).convert("RGBA") for path in frame_paths])
 
     cue_reports = {}
     for cue, description in IDENTITY_CUES.items():
+        action_pixels = {action: counts[cue] for action, counts in action_counts.items()}
         cue_reports[cue] = {
             "description": description,
             "reference_pixels": reference_counts[cue],
-            "walk_pixels": walk_counts[cue],
-            "idle_pixels": idle_counts[cue],
-            "run_pixels": run_counts[cue],
+            "action_pixels": action_pixels,
             "passed": (
                 reference_counts[cue] > 0
-                and walk_counts[cue] > 0
-                and idle_counts[cue] > 0
-                and run_counts[cue] > 0
+                and all(count > 0 for count in action_pixels.values())
             ),
         }
 
@@ -637,19 +721,13 @@ def _build_identity_report(
     }
 
 
-def _build_production_gate(
-    walk_action: dict[str, Any],
-    idle_action: dict[str, Any],
-    run_action: dict[str, Any],
-    identity_report: dict[str, Any],
-) -> dict[str, Any]:
+def _build_production_gate(actions: dict[str, dict[str, Any]], identity_report: dict[str, Any]) -> dict[str, Any]:
     checks = {
-        "walk_production_ready": walk_action["production_ready"] is True,
-        "idle_production_ready": idle_action["production_ready"] is True,
-        "run_production_ready": run_action["production_ready"] is True,
-        "identity_cues_pass": identity_report["all_required_cues_pass"] is True,
-        "unsupported_backends_unused": True,
+        f"{action}_production_ready": action_info["production_ready"] is True
+        for action, action_info in actions.items()
     }
+    checks["identity_cues_pass"] = identity_report["all_required_cues_pass"] is True
+    checks["unsupported_backends_unused"] = True
     blocking = [name for name, passed in checks.items() if not passed]
     return {
         "target": "character_sprite_asset_pack_mvp",
@@ -657,7 +735,7 @@ def _build_production_gate(
         "production_ready": not blocking,
         "checks": checks,
         "blocking_issues": blocking,
-        "scope_statement": "walk, idle, and run are production-ready for this MVP pack.",
+        "scope_statement": "walk, idle, run, jump, and hurt are production-ready for this MVP pack.",
     }
 
 
@@ -714,12 +792,16 @@ def _alpha_bbox(image: Image.Image) -> tuple[int, int, int, int]:
     return box
 
 
+def _write_text(path: Path, content: str) -> None:
+    path.write_text(content, encoding="utf-8", newline="\n")
+
+
 def _notes(manifest: dict[str, Any]) -> str:
     return f"""# Character Sprite Asset Pack
 
 - route: `{manifest["route"]}`
 - production_ready: `{manifest["production_ready"]}`
-- current production actions: `walk`, `idle`, `run`
+- current production actions: `{", ".join(manifest["actions"].keys())}`
 
 ## Identity Contract
 
@@ -758,8 +840,24 @@ def _run_notes(report: dict[str, Any]) -> str:
 - airborne_lift_detected: `{report["airborne_lift_detected"]}`
 - alpha_edge_touch_frames: `{report["alpha_edge_touch_frames"]}`
 
-This is a deterministic MVP run cycle from the accepted character sprite. It adds run-specific
+This is an accepted run cycle packaged under the same identity contract. It adds run-specific
 contact/down/flight/reach timing without introducing a new model backend.
+"""
+
+
+def _rough_action_notes(report: dict[str, Any]) -> str:
+    return f"""# {report["action"].title()} Action
+
+- status: `{report["status"]}`
+- production_ready: `{report["production_ready"]}`
+- source: `{report["source"]}`
+- method: `{report["method"]}`
+- frame_count: `{report["frame_count"]}`
+- phase_names: `{report["phase_names"]}`
+- ground_y_range: `{report["ground_y_range"]}`
+- alpha_edge_touch_frames: `{report["alpha_edge_touch_frames"]}`
+
+{report["review_note"]}
 """
 
 

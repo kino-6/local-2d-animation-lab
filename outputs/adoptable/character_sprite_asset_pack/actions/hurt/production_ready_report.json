@@ -1,0 +1,68 @@
+{
+  "action": "hurt",
+  "status": "production_ready",
+  "source": "imagegen_hurt_4frame_20260614_rough",
+  "method": "route_a_generated_rough_cleanup",
+  "frame_count": 4,
+  "phase_names": [
+    "brace",
+    "small_recoil",
+    "large_stagger",
+    "recover"
+  ],
+  "frame_size": {
+    "width": 352,
+    "height": 480
+  },
+  "game_previews": {
+    "height_128": {
+      "frame_size": {
+        "width": 94,
+        "height": 128
+      },
+      "frames": [
+        "game_previews/height_128/frames/hurt_000.png",
+        "game_previews/height_128/frames/hurt_001.png",
+        "game_previews/height_128/frames/hurt_002.png",
+        "game_previews/height_128/frames/hurt_003.png"
+      ],
+      "spritesheet": "game_previews/height_128/spritesheet.png",
+      "preview_gif": "game_previews/height_128/preview.gif",
+      "contact_sheet": "game_previews/height_128/contact_sheet.png"
+    },
+    "height_192": {
+      "frame_size": {
+        "width": 141,
+        "height": 192
+      },
+      "frames": [
+        "game_previews/height_192/frames/hurt_000.png",
+        "game_previews/height_192/frames/hurt_001.png",
+        "game_previews/height_192/frames/hurt_002.png",
+        "game_previews/height_192/frames/hurt_003.png"
+      ],
+      "spritesheet": "game_previews/height_192/spritesheet.png",
+      "preview_gif": "game_previews/height_192/preview.gif",
+      "contact_sheet": "game_previews/height_192/contact_sheet.png"
+    },
+    "height_256": {
+      "frame_size": {
+        "width": 188,
+        "height": 256
+      },
+      "frames": [
+        "game_previews/height_256/frames/hurt_000.png",
+        "game_previews/height_256/frames/hurt_001.png",
+        "game_previews/height_256/frames/hurt_002.png",
+        "game_previews/height_256/frames/hurt_003.png"
+      ],
+      "spritesheet": "game_previews/height_256/spritesheet.png",
+      "preview_gif": "game_previews/height_256/preview.gif",
+      "contact_sheet": "game_previews/height_256/contact_sheet.png"
+    }
+  },
+  "ground_y_range": 6,
+  "alpha_edge_touch_frames": [],
+  "production_ready": true,
+  "review_note": "Hurt uses a dedicated 4-frame rough sheet with bracing, recoil, stagger, and recovery phases."
+}

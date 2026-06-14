@@ -35,6 +35,8 @@ outputs/adoptable/character_sprite_asset_pack/
   - `actions/walk/` copied from the current production-ready walk package;
   - `actions/idle/` as the first additional production-ready action;
   - `actions/run/` as a dedicated production-ready run action from an accepted rough.
+  - `actions/jump/` as a dedicated production-ready jump action from an accepted rough.
+  - `actions/hurt/` as a dedicated production-ready small-damage reaction from an accepted rough.
 - [x] Include:
   - `manifest.json`;
   - `identity_report.json`;
@@ -50,6 +52,9 @@ outputs/adoptable/character_sprite_asset_pack/
   - `outputs/adoptable/artist_authored_8frame_walk_cleanup/production_ready/`.
 - [x] The script must consume the accepted run rough when available:
   - `assets/artist_authored_roughs/imagegen_run_8frame_20260614/rough_frames/`.
+- [x] The script must consume accepted jump and hurt roughs when available:
+  - `assets/artist_authored_roughs/imagegen_jump_6frame_20260614/rough_frames/`;
+  - `assets/artist_authored_roughs/imagegen_hurt_4frame_20260614/rough_frames/`.
 - [x] The script must not call model or video backends.
 - [x] Build `walk` by copying the accepted production-ready walk output.
 - [x] Build `idle` deterministically from the accepted walk character art:
@@ -64,6 +69,8 @@ outputs/adoptable/character_sprite_asset_pack/
   - `walk.production_ready == true`;
   - `idle.production_ready == true`;
   - `run.production_ready == true`;
+  - `jump.production_ready == true`;
+  - `hurt.production_ready == true`;
   - identity cue checks pass for the adopted actions;
   - no unsupported backend usage;
   - route can still honestly report that broad action coverage is incomplete.
@@ -75,6 +82,8 @@ outputs/adoptable/character_sprite_asset_pack/
   - current walk is accepted;
   - current idle is accepted;
   - current run is accepted;
+  - current jump is accepted;
+  - current hurt is accepted;
   - character identity cues are tracked;
   - future stronger actions are gated instead of silently claimed.
 - [x] Document that this does not solve faithful animation of arbitrary reference illustrations.
@@ -86,6 +95,8 @@ outputs/adoptable/character_sprite_asset_pack/
 - [x] Verify `walk` has 8 frames and is production-ready.
 - [x] Verify `idle` has 4 frames and is production-ready.
 - [x] Verify `run` has 8 frames and is production-ready.
+- [x] Verify `jump` has 6 frames and is production-ready.
+- [x] Verify `hurt` has 4 frames and is production-ready.
 - [x] Verify `identity_report.json` contains all required cues.
 - [x] Verify `production_gate.json` marks the pack as `production_ready`.
 - [x] Verify no model/video backend is invoked.
@@ -97,10 +108,20 @@ assets/artist_authored_roughs/imagegen_run_8frame_20260614/
 
 - [x] Split the run rough sheet into 8 frames.
 - [x] Remove the green key background, trim alpha noise, keep the largest character component, and package run previews.
+- [x] Generate dedicated jump and hurt rough sheets with built-in image generation and store them under:
+
+```text
+assets/artist_authored_roughs/imagegen_jump_6frame_20260614/
+assets/artist_authored_roughs/imagegen_hurt_4frame_20260614/
+```
+
+- [x] Split the jump rough sheet into 6 frames.
+- [x] Split the hurt rough sheet into 4 frames.
+- [x] Remove the green key background, trim alpha noise, keep the largest character component, and package jump/hurt previews.
 
 ## Completion
 
 - [x] Generate `outputs/adoptable/character_sprite_asset_pack/`.
-- [x] Agent-review the `walk` and `idle` contact sheets.
+- [x] Agent-review the `walk`, `idle`, `run`, `jump`, and `hurt` contact sheets.
 - [x] Run focused tests.
 - [x] Commit and push the completed pack.

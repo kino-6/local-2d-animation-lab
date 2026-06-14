@@ -10,5 +10,5 @@
 - airborne_lift_detected: `True`
 - alpha_edge_touch_frames: `[]`
 
-This is a deterministic MVP run cycle from the accepted character sprite. It adds run-specific
+This is an accepted run cycle packaged under the same identity contract. It adds run-specific
 contact/down/flight/reach timing without introducing a new model backend.

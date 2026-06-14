@@ -197,6 +197,164 @@
         }
       },
       "production_ready_report": "actions/run/production_ready_report.json"
+    },
+    "jump": {
+      "action": "jump",
+      "frame_count": 6,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "imagegen_jump_6frame_20260614_rough",
+      "phase_names": [
+        "anticipation",
+        "takeoff",
+        "rise",
+        "apex",
+        "fall",
+        "landing_recovery"
+      ],
+      "frames": [
+        "actions/jump/frames/jump_000.png",
+        "actions/jump/frames/jump_001.png",
+        "actions/jump/frames/jump_002.png",
+        "actions/jump/frames/jump_003.png",
+        "actions/jump/frames/jump_004.png",
+        "actions/jump/frames/jump_005.png"
+      ],
+      "spritesheet": "actions/jump/spritesheet.png",
+      "preview_gif": "actions/jump/preview.gif",
+      "contact_sheet": "actions/jump/contact_sheet.png",
+      "game_previews": {
+        "height_128": {
+          "frame_size": {
+            "width": 94,
+            "height": 128
+          },
+          "frames": [
+            "actions/jump/game_previews/height_128/frames/jump_000.png",
+            "actions/jump/game_previews/height_128/frames/jump_001.png",
+            "actions/jump/game_previews/height_128/frames/jump_002.png",
+            "actions/jump/game_previews/height_128/frames/jump_003.png",
+            "actions/jump/game_previews/height_128/frames/jump_004.png",
+            "actions/jump/game_previews/height_128/frames/jump_005.png"
+          ],
+          "spritesheet": "actions/jump/game_previews/height_128/spritesheet.png",
+          "preview_gif": "actions/jump/game_previews/height_128/preview.gif",
+          "contact_sheet": "actions/jump/game_previews/height_128/contact_sheet.png"
+        },
+        "height_192": {
+          "frame_size": {
+            "width": 141,
+            "height": 192
+          },
+          "frames": [
+            "actions/jump/game_previews/height_192/frames/jump_000.png",
+            "actions/jump/game_previews/height_192/frames/jump_001.png",
+            "actions/jump/game_previews/height_192/frames/jump_002.png",
+            "actions/jump/game_previews/height_192/frames/jump_003.png",
+            "actions/jump/game_previews/height_192/frames/jump_004.png",
+            "actions/jump/game_previews/height_192/frames/jump_005.png"
+          ],
+          "spritesheet": "actions/jump/game_previews/height_192/spritesheet.png",
+          "preview_gif": "actions/jump/game_previews/height_192/preview.gif",
+          "contact_sheet": "actions/jump/game_previews/height_192/contact_sheet.png"
+        },
+        "height_256": {
+          "frame_size": {
+            "width": 188,
+            "height": 256
+          },
+          "frames": [
+            "actions/jump/game_previews/height_256/frames/jump_000.png",
+            "actions/jump/game_previews/height_256/frames/jump_001.png",
+            "actions/jump/game_previews/height_256/frames/jump_002.png",
+            "actions/jump/game_previews/height_256/frames/jump_003.png",
+            "actions/jump/game_previews/height_256/frames/jump_004.png",
+            "actions/jump/game_previews/height_256/frames/jump_005.png"
+          ],
+          "spritesheet": "actions/jump/game_previews/height_256/spritesheet.png",
+          "preview_gif": "actions/jump/game_previews/height_256/preview.gif",
+          "contact_sheet": "actions/jump/game_previews/height_256/contact_sheet.png"
+        }
+      },
+      "production_ready_report": "actions/jump/production_ready_report.json"
+    },
+    "hurt": {
+      "action": "hurt",
+      "frame_count": 4,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "imagegen_hurt_4frame_20260614_rough",
+      "phase_names": [
+        "brace",
+        "small_recoil",
+        "large_stagger",
+        "recover"
+      ],
+      "frames": [
+        "actions/hurt/frames/hurt_000.png",
+        "actions/hurt/frames/hurt_001.png",
+        "actions/hurt/frames/hurt_002.png",
+        "actions/hurt/frames/hurt_003.png"
+      ],
+      "spritesheet": "actions/hurt/spritesheet.png",
+      "preview_gif": "actions/hurt/preview.gif",
+      "contact_sheet": "actions/hurt/contact_sheet.png",
+      "game_previews": {
+        "height_128": {
+          "frame_size": {
+            "width": 94,
+            "height": 128
+          },
+          "frames": [
+            "actions/hurt/game_previews/height_128/frames/hurt_000.png",
+            "actions/hurt/game_previews/height_128/frames/hurt_001.png",
+            "actions/hurt/game_previews/height_128/frames/hurt_002.png",
+            "actions/hurt/game_previews/height_128/frames/hurt_003.png"
+          ],
+          "spritesheet": "actions/hurt/game_previews/height_128/spritesheet.png",
+          "preview_gif": "actions/hurt/game_previews/height_128/preview.gif",
+          "contact_sheet": "actions/hurt/game_previews/height_128/contact_sheet.png"
+        },
+        "height_192": {
+          "frame_size": {
+            "width": 141,
+            "height": 192
+          },
+          "frames": [
+            "actions/hurt/game_previews/height_192/frames/hurt_000.png",
+            "actions/hurt/game_previews/height_192/frames/hurt_001.png",
+            "actions/hurt/game_previews/height_192/frames/hurt_002.png",
+            "actions/hurt/game_previews/height_192/frames/hurt_003.png"
+          ],
+          "spritesheet": "actions/hurt/game_previews/height_192/spritesheet.png",
+          "preview_gif": "actions/hurt/game_previews/height_192/preview.gif",
+          "contact_sheet": "actions/hurt/game_previews/height_192/contact_sheet.png"
+        },
+        "height_256": {
+          "frame_size": {
+            "width": 188,
+            "height": 256
+          },
+          "frames": [
+            "actions/hurt/game_previews/height_256/frames/hurt_000.png",
+            "actions/hurt/game_previews/height_256/frames/hurt_001.png",
+            "actions/hurt/game_previews/height_256/frames/hurt_002.png",
+            "actions/hurt/game_previews/height_256/frames/hurt_003.png"
+          ],
+          "spritesheet": "actions/hurt/game_previews/height_256/spritesheet.png",
+          "preview_gif": "actions/hurt/game_previews/height_256/preview.gif",
+          "contact_sheet": "actions/hurt/game_previews/height_256/contact_sheet.png"
+        }
+      },
+      "production_ready_report": "actions/hurt/production_ready_report.json"
     }
   },
   "identity_report": "identity_report.json",
@@ -208,11 +366,13 @@
       "walk_production_ready": true,
       "idle_production_ready": true,
       "run_production_ready": true,
+      "jump_production_ready": true,
+      "hurt_production_ready": true,
       "identity_cues_pass": true,
       "unsupported_backends_unused": true
     },
     "blocking_issues": [],
-    "scope_statement": "walk, idle, and run are production-ready for this MVP pack."
+    "scope_statement": "walk, idle, run, jump, and hurt are production-ready for this MVP pack."
   },
   "backend_usage": {
     "uses_comfyui": false,
@@ -224,7 +384,7 @@
   "production_ready": true,
   "known_limits": [
     "The accepted sprite is a game-ready redesign, not a faithful frame-by-frame animation of the original illustration.",
-    "Walk, idle, and run are production-ready for this MVP pack.",
+    "Walk, idle, run, jump, and hurt are production-ready for this MVP pack.",
     "Stronger actions still need authored or accepted rough frames before production-ready promotion."
   ]
 }
