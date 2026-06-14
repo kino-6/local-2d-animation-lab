@@ -1,17 +1,21 @@
 {
   "action": "jump",
   "status": "production_ready",
-  "source": "imagegen_jump_8frame_20260614_rough",
+  "source": "imagegen_jump_12frame_tiles_20260615_rough",
   "method": "route_a_generated_rough_cleanup",
-  "frame_count": 8,
+  "frame_count": 12,
   "phase_names": [
-    "anticipation_crouch",
-    "takeoff",
+    "neutral_crouch",
+    "deep_crouch",
+    "takeoff_extend",
     "early_rise",
-    "rising_tuck",
-    "apex_tuck",
+    "rising_knees_bent",
+    "apex_approach",
+    "apex_hold",
     "falling_extend",
+    "falling_reach",
     "landing_contact",
+    "landing_settle",
     "landing_recovery"
   ],
   "frame_size": {
@@ -32,7 +36,11 @@
         "game_previews/height_128/frames/jump_004.png",
         "game_previews/height_128/frames/jump_005.png",
         "game_previews/height_128/frames/jump_006.png",
-        "game_previews/height_128/frames/jump_007.png"
+        "game_previews/height_128/frames/jump_007.png",
+        "game_previews/height_128/frames/jump_008.png",
+        "game_previews/height_128/frames/jump_009.png",
+        "game_previews/height_128/frames/jump_010.png",
+        "game_previews/height_128/frames/jump_011.png"
       ],
       "spritesheet": "game_previews/height_128/spritesheet.png",
       "preview_gif": "game_previews/height_128/preview.gif",
@@ -51,7 +59,11 @@
         "game_previews/height_192/frames/jump_004.png",
         "game_previews/height_192/frames/jump_005.png",
         "game_previews/height_192/frames/jump_006.png",
-        "game_previews/height_192/frames/jump_007.png"
+        "game_previews/height_192/frames/jump_007.png",
+        "game_previews/height_192/frames/jump_008.png",
+        "game_previews/height_192/frames/jump_009.png",
+        "game_previews/height_192/frames/jump_010.png",
+        "game_previews/height_192/frames/jump_011.png"
       ],
       "spritesheet": "game_previews/height_192/spritesheet.png",
       "preview_gif": "game_previews/height_192/preview.gif",
@@ -70,15 +82,19 @@
         "game_previews/height_256/frames/jump_004.png",
         "game_previews/height_256/frames/jump_005.png",
         "game_previews/height_256/frames/jump_006.png",
-        "game_previews/height_256/frames/jump_007.png"
+        "game_previews/height_256/frames/jump_007.png",
+        "game_previews/height_256/frames/jump_008.png",
+        "game_previews/height_256/frames/jump_009.png",
+        "game_previews/height_256/frames/jump_010.png",
+        "game_previews/height_256/frames/jump_011.png"
       ],
       "spritesheet": "game_previews/height_256/spritesheet.png",
       "preview_gif": "game_previews/height_256/preview.gif",
       "contact_sheet": "game_previews/height_256/contact_sheet.png"
     }
   },
-  "ground_y_range": 121,
+  "ground_y_range": 207,
   "alpha_edge_touch_frames": [],
   "production_ready": true,
-  "review_note": "Jump uses a dedicated 8-frame rough sheet with anticipation, takeoff, rise, tuck, fall, landing, and recovery phases."
+  "review_note": "Jump uses dedicated 2x2 tiled rough sheets with 12 source frames for anticipation, takeoff, rise, apex, fall, landing, and recovery phases."
 }

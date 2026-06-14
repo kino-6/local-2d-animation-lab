@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 try:
     from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
@@ -22,8 +22,8 @@ ROUTE = "character_sprite_asset_pack"
 DEFAULT_REFERENCE = Path("assets/reference/Anima_00013_.png")
 DEFAULT_WALK_READY = Path("outputs/adoptable/artist_authored_8frame_walk_cleanup/production_ready")
 DEFAULT_RUN_ROUGH = Path("assets/artist_authored_roughs/imagegen_run_8frame_20260614/rough_frames")
-DEFAULT_JUMP_ROUGH = Path("assets/artist_authored_roughs/imagegen_jump_8frame_20260614/rough_frames")
-DEFAULT_HURT_ROUGH = Path("assets/artist_authored_roughs/imagegen_hurt_6frame_20260614/rough_frames")
+DEFAULT_JUMP_ROUGH = Path("assets/artist_authored_roughs/imagegen_jump_12frame_tiles_20260615/rough_frames")
+DEFAULT_HURT_ROUGH = Path("assets/artist_authored_roughs/imagegen_hurt_8frame_tiles_20260615/rough_frames")
 DEFAULT_OUTPUT = Path("outputs/adoptable/character_sprite_asset_pack")
 
 IDENTITY_CUES = {
@@ -76,13 +76,17 @@ ACTION_RUNTIME_SPECS = {
     "jump": {
         "loop": False,
         "phase_names": [
-            "anticipation_crouch",
-            "takeoff",
+            "neutral_crouch",
+            "deep_crouch",
+            "takeoff_extend",
             "early_rise",
-            "rising_tuck",
-            "apex_tuck",
+            "rising_knees_bent",
+            "apex_approach",
+            "apex_hold",
             "falling_extend",
+            "falling_reach",
             "landing_contact",
+            "landing_settle",
             "landing_recovery",
         ],
         "transition_notes": ["idle", "walk", "run", "hurt"],
@@ -91,11 +95,13 @@ ACTION_RUNTIME_SPECS = {
     "hurt": {
         "loop": False,
         "phase_names": [
-            "neutral_brace",
+            "brace",
             "impact_recoil",
-            "stagger_step",
-            "peak_stagger",
-            "settle",
+            "strong_recoil",
+            "peak_recoil",
+            "stagger_forward",
+            "crouch_settle",
+            "recover_half",
             "recover",
         ],
         "transition_notes": ["idle", "walk"],
@@ -172,11 +178,11 @@ def build_character_sprite_asset_pack(
         fps=fps,
         target_size=target_size,
         scale_reference=scale_reference,
-        frame_count=8,
+        frame_count=12,
         phase_names=ACTION_RUNTIME_SPECS["jump"]["phase_names"],
-        source_slug="imagegen_jump_8frame_20260614_rough",
+        source_slug="imagegen_jump_12frame_tiles_20260615_rough",
         review_note=(
-            "Jump uses a dedicated 8-frame rough sheet with anticipation, takeoff, rise, tuck, fall, "
+            "Jump uses dedicated 2x2 tiled rough sheets with 12 source frames for anticipation, takeoff, rise, apex, fall, "
             "landing, and recovery phases."
         ),
     )
@@ -187,11 +193,11 @@ def build_character_sprite_asset_pack(
         fps=fps,
         target_size=target_size,
         scale_reference=scale_reference,
-        frame_count=6,
+        frame_count=8,
         phase_names=ACTION_RUNTIME_SPECS["hurt"]["phase_names"],
-        source_slug="imagegen_hurt_6frame_20260614_rough",
+        source_slug="imagegen_hurt_8frame_tiles_20260615_rough",
         review_note=(
-            "Hurt uses a dedicated 6-frame rough sheet with brace, recoil, stagger, settle, and recovery phases."
+            "Hurt uses dedicated 2x2 tiled rough sheets with 8 source frames for brace, recoil, stagger, settle, and recovery phases."
         ),
     )
 
@@ -575,7 +581,9 @@ def _normalize_rough_sequence(
     scale = min(height_scale, width_scale)
 
     if action == "hurt":
-        scale = min(scale, 1.12)
+        scale = min(scale * 0.88, 0.92)
+    elif action == "jump":
+        scale = min(scale, 1.18)
 
     source_ground = max(source_bottoms)
     source_center = sorted(source_centers)[len(source_centers) // 2]
@@ -589,10 +597,15 @@ def _normalize_rough_sequence(
         crop_width = max(1, round(crop.width * scale))
         crop_height = max(1, round(crop.height * scale))
         resized = crop.resize((crop_width, crop_height), Image.Resampling.LANCZOS)
+        if action == "jump":
+            resized = resized.filter(ImageFilter.UnsharpMask(radius=1.1, percent=135, threshold=3))
         output = Image.new("RGBA", target_size, (0, 0, 0, 0))
 
         source_frame_center = (box[0] + box[2]) / 2
-        target_x = target_center + round((source_frame_center - source_center) * scale)
+        if action == "hurt":
+            target_x = target_center
+        else:
+            target_x = target_center + round((source_frame_center - source_center) * scale)
         if preserve_vertical_arc:
             target_bottom = target_ground + round((box[3] - source_ground) * scale)
         else:

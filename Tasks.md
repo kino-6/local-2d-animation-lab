@@ -1,114 +1,129 @@
-# Tasks: Dense Source Frames for Jump and Hurt
+# Tasks: Attack Sword Light 12-Frame MVP
 
 Archived checkpoints:
 
 ```text
-docs/archive/Tasks_20260614_character_sprite_pack_polish_godot_completed.md
-docs/output_cleanup_20260614_character_sprite_pack.md
+docs/archive/Tasks_20260615_higher_density_jump_hurt_completed.md
+docs/output_cleanup_20260615_high_density_actions.md
 ```
 
 ## Upper Rule
 
-- [x] Do not return to 120-frame generation, Wan/video generation, ComfyUI exploration, ControlNet research, or broad model integration work.
-- [x] Keep the current adopted pack path:
+- [ ] Keep the project focused on one adoptable 2D game sprite pack.
+- [ ] Do not return to 120-frame generation, Wan/video generation, ComfyUI exploration, ControlNet research, or broad model integration work.
+- [ ] Do not attempt a generic attack system yet.
+- [ ] Implement one constrained action first:
+
+```text
+attack_sword_light
+```
+
+- [ ] Keep the adopted output path:
 
 ```text
 outputs/adoptable/character_sprite_asset_pack/
 ```
 
-- [x] Improve source-frame density for the weakest current actions:
-  - `jump`
-  - `hurt`
-- [x] Do not claim cross-fade or optical-flow interpolation as production art.
-- [x] Prefer Route A: denser action-specific rough sheets first, then local cleanup, scale normalization, packaging, Godot validation, and visual review.
-
 ## Current Findings
 
-- [x] Record that Godot viewer centering now separates review centering from runtime `bottom_center_canvas` origin.
-- [x] Record that `jump` and `hurt` were previously off-scale because whole-cell rough resize was used.
-- [x] Record that foreground alpha-bbox normalization fixed the most visible scale mismatch.
-- [x] Record that runtime `playback_frame_indices` is only timing expansion:
-  - current `jump`: 6 source frames, 8 playback frames;
-  - current `hurt`: 4 source frames, 6 playback frames.
+- [ ] Record that dense action roughs should use multiple 2x2 source sheets.
+- [ ] Record that attack is harder than locomotion because hand, arm, weapon, and active timing must stay connected.
+- [ ] Record that weapon consistency is a new gate, separate from character identity.
+- [ ] Keep previous fixes:
+  - source frame count must be real source art, not playback holds;
+  - action visible bounds must stay away from canvas edges;
+  - one-shot actions must not loop in Godot.
 
-## Deliverable
+## Action Spec
 
-- [x] Add denser rough sources:
+- [ ] Define `attack_sword_light`:
+  - direction: `right`;
+  - view: `side`;
+  - frame_count: `12`;
+  - loop: `false`;
+  - weapon: simple one-handed short sword;
+  - background: transparent after cleanup;
+  - active hit frames: `[5, 6]`.
+- [ ] Use phase names:
+  - `ready`;
+  - `anticipation`;
+  - `draw_back`;
+  - `windup`;
+  - `slash_start`;
+  - `active_slash`;
+  - `active_follow_through`;
+  - `overshoot`;
+  - `recoil`;
+  - `settle`;
+  - `recover`;
+  - `ready_return`.
+
+## New Rough Source
+
+- [ ] Create a high-resolution tiled rough source:
 
 ```text
-assets/artist_authored_roughs/imagegen_jump_8frame_20260614/
-assets/artist_authored_roughs/imagegen_hurt_6frame_20260614/
+assets/artist_authored_roughs/imagegen_attack_sword_light_12frame_tiles_20260615/
 ```
 
-- [x] Update the adopted pack so:
-  - `jump` has 8 source frames;
-  - `hurt` has at least 6 source frames;
-  - both keep transparent frames, spritesheets, GIFs, contact sheets, runtime metadata, and Godot playback.
-- [x] Preserve the current identity contract:
-  - pink bob hair;
-  - side-profile anime girl;
-  - sailor-style white top;
-  - red tie;
-  - navy skirt;
-  - dark socks;
-  - brown shoes.
+- [ ] Use three 2x2 sheets:
+  - sheet 0: ready, anticipation, draw back, windup;
+  - sheet 1: slash start, active slash, active follow-through, overshoot;
+  - sheet 2: recoil, settle, recover, ready return.
+- [ ] Store every source sheet, prompt metadata, and split `rough_frames/`.
+- [ ] Record that built-in image generation is non-local rough creation; the local reproducible pipeline begins from committed rough frames.
 
-## Implementation
+## Builder Updates
 
-- [x] Generate or author a new 8-frame jump rough sheet.
-- [x] Generate or author a new 6-frame hurt rough sheet.
-- [x] Store each source sheet and prompt metadata under `assets/artist_authored_roughs/`.
-- [x] Split rough sheets into `rough_frames/`.
-- [x] Update `scripts/build_character_sprite_asset_pack.py` defaults:
-  - `DEFAULT_JUMP_ROUGH`;
-  - `DEFAULT_HURT_ROUGH`;
-  - jump frame count and phase names;
-  - hurt frame count and phase names.
-- [x] Keep foreground alpha-bbox normalization for rough actions.
-- [x] Update runtime playback metadata so source-frame count and playback-frame count are not misleading.
-- [x] Regenerate `outputs/adoptable/character_sprite_asset_pack/`.
-- [x] Keep `outputs/` restricted to adopted outputs and required walk source.
+- [ ] Add `DEFAULT_ATTACK_SWORD_LIGHT_ROUGH`.
+- [ ] Add `--attack-sword-light-rough-frames-dir`.
+- [ ] Add `attack_sword_light` to `ACTION_RUNTIME_SPECS`.
+- [ ] Add `hit_frames: [5, 6]` and expose it in runtime metadata.
+- [ ] Build and package `actions/attack_sword_light/`.
+- [ ] Include the action in:
+  - manifest;
+  - runtime manifest;
+  - identity report;
+  - production gate;
+  - pack review contact sheet;
+  - Godot import manifest;
+  - Aseprite notes.
 
-## Godot Review
+## Review
 
-- [x] Confirm `godot --path godot` opens the character sprite pack viewer.
-- [x] Confirm headless Godot pack validation passes:
-
-```powershell
-godot --headless --path godot --script res://tests/pack_e2e_runner.gd -- --manifest outputs/adoptable/character_sprite_asset_pack/manifest.json
-```
-
-- [x] Confirm viewer centering remains correct after action switching.
-- [x] Agent-review `pack_review/all_actions_contact_sheet.png` for:
-  - scale consistency;
-  - action readability;
-  - no duplicate character;
-  - no obvious green-key residue;
-  - `jump` and `hurt` benefiting from denser source frames.
+- [ ] Agent-review `actions/attack_sword_light/contact_sheet.png` for:
+  - one character only;
+  - sword is visible and connected to hand;
+  - clear anticipation, active, follow-through, recover sequence;
+  - active frames are readable;
+  - no edge clipping;
+  - no obvious green-key residue.
+- [ ] Agent-review `pack_review/all_actions_contact_sheet.png`.
+- [ ] Mark known limits honestly if weapon consistency or pose drift remains.
 
 ## Documentation
 
-- [x] Update `docs/character_identity_sprite_asset_pack.md` with the denser `jump/hurt` source-frame counts.
-- [x] Update `docs/local_skills/route-a-action-rough-to-pack/SKILL.md` with the source-frame-density rule:
-  - use more drawn/source frames for production motion;
-  - use playback holds only as runtime timing support.
-- [x] Update `docs/output_cleanup_20260614_character_sprite_pack.md` if retained outputs change.
+- [ ] Update `docs/character_identity_sprite_asset_pack.md`.
+- [ ] Update `docs/local_skills/route-a-action-rough-to-pack/SKILL.md`.
+- [ ] Record the attack route as `review_ready_attack_mvp` if visual quality is not as strong as locomotion.
 
 ## Tests
 
-- [x] Update `tests/test_build_character_sprite_asset_pack.py`.
-- [x] Update `tests/test_godot_character_sprite_pack.py`.
-- [x] Verify:
-  - `jump` source frame count is 8;
-  - `hurt` source frame count is at least 6;
-  - Godot playback action count remains 5;
-  - loop flags remain correct;
-  - production gate remains `production_ready`;
-  - consistency gate remains passing.
+- [ ] Update `tests/test_build_character_sprite_asset_pack.py`.
+- [ ] Update `tests/test_godot_character_sprite_pack.py`.
+- [ ] Verify:
+  - action count is 6;
+  - `attack_sword_light` frame count is 12;
+  - `attack_sword_light.loop == false`;
+  - source frame count equals playback frame count;
+  - hit frames are `[5, 6]`;
+  - visible bbox stays inside the canvas with margin;
+  - production gate remains passing for the pack;
+  - unsupported backend flags remain false.
 
 ## Completion
 
-- [x] Run focused tests.
-- [x] Run Godot headless validation.
-- [x] Agent-review the regenerated pack contact sheet.
-- [x] Commit and push the completed dense-frame upgrade.
+- [ ] Run focused Python tests.
+- [ ] Run Godot headless E2E validation.
+- [ ] Run `git diff --check`.
+- [ ] Commit and push the completed attack MVP if validation passes.

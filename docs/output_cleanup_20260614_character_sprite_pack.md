@@ -61,6 +61,10 @@ Reasons:
 - Dense-frame implementation target:
   - `jump`: 8 source frames with anticipation, takeoff, rise, tuck, fall, landing, and recovery;
   - `hurt`: 6 source frames with brace, recoil, stagger, settle, and recovery.
+- 2026-06-15 follow-up: use multiple 2x2 source sheets for higher-density actions to avoid
+  crowded-grid resolution loss:
+  - `jump`: 12 source frames;
+  - `hurt`: 8 source frames.
 
 ## Next Direction
 

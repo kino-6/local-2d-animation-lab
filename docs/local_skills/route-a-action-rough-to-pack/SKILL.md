@@ -103,6 +103,9 @@ The builder should:
 - normalize foreground scale from the alpha bounding box instead of resizing the whole rough cell;
 - align grounded actions to the accepted walk ground line;
 - preserve vertical arc for airborne actions such as `jump`;
+- do not preserve accidental rough-sheet horizontal offsets for reaction actions such as `hurt`;
+- keep reaction action visible bounds away from canvas edges so Godot playback does not look like a
+  left-right snap;
 - keep all outputs under `outputs/adoptable/character_sprite_asset_pack/actions/<action>/`;
 - create `frames/`, `spritesheet.png`, `preview.gif`, `contact_sheet.png`, `game_previews/`, `production_ready_report.json`, and `notes.md`;
 - update pack-level `manifest.json`, `identity_report.json`, `production_gate.json`, and `notes.md`;
@@ -209,14 +212,16 @@ If the rough fails visually, do not tune cleanup parameters endlessly. Retake th
 ## Current Accepted Examples
 
 - `run`: `assets/artist_authored_roughs/imagegen_run_8frame_20260614/rough_frames/`
-- `jump`: `assets/artist_authored_roughs/imagegen_jump_8frame_20260614/rough_frames/`
-- `hurt`: `assets/artist_authored_roughs/imagegen_hurt_6frame_20260614/rough_frames/`
+- `jump`: `assets/artist_authored_roughs/imagegen_jump_12frame_tiles_20260615/rough_frames/`
+- `hurt`: `assets/artist_authored_roughs/imagegen_hurt_8frame_tiles_20260615/rough_frames/`
 
 These examples are reproducible from committed rough frames through local packaging. Their initial rough creation used AI-assisted image generation and should not be described as local-only generation.
 
 Current density rule:
 
 - use real source frames for action readability before adding runtime holds;
-- `jump` should keep at least 8 source frames for anticipation, takeoff, airborne, landing, and recovery;
-- `hurt` should keep at least 6 source frames for brace, recoil, stagger, settle, and recovery;
+- `jump` should keep at least 12 source frames for anticipation, takeoff, airborne, landing, and recovery;
+- `hurt` should keep at least 8 source frames for brace, recoil, stagger, settle, and recovery;
+- dense action roughs should use multiple 2x2 source sheets instead of one crowded grid to protect
+  per-cell resolution;
 - playback holds are acceptable timing support, not production art or true interpolation.

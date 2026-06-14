@@ -1,15 +1,17 @@
 {
   "action": "hurt",
   "status": "production_ready",
-  "source": "imagegen_hurt_6frame_20260614_rough",
+  "source": "imagegen_hurt_8frame_tiles_20260615_rough",
   "method": "route_a_generated_rough_cleanup",
-  "frame_count": 6,
+  "frame_count": 8,
   "phase_names": [
-    "neutral_brace",
+    "brace",
     "impact_recoil",
-    "stagger_step",
-    "peak_stagger",
-    "settle",
+    "strong_recoil",
+    "peak_recoil",
+    "stagger_forward",
+    "crouch_settle",
+    "recover_half",
     "recover"
   ],
   "frame_size": {
@@ -28,7 +30,9 @@
         "game_previews/height_128/frames/hurt_002.png",
         "game_previews/height_128/frames/hurt_003.png",
         "game_previews/height_128/frames/hurt_004.png",
-        "game_previews/height_128/frames/hurt_005.png"
+        "game_previews/height_128/frames/hurt_005.png",
+        "game_previews/height_128/frames/hurt_006.png",
+        "game_previews/height_128/frames/hurt_007.png"
       ],
       "spritesheet": "game_previews/height_128/spritesheet.png",
       "preview_gif": "game_previews/height_128/preview.gif",
@@ -45,7 +49,9 @@
         "game_previews/height_192/frames/hurt_002.png",
         "game_previews/height_192/frames/hurt_003.png",
         "game_previews/height_192/frames/hurt_004.png",
-        "game_previews/height_192/frames/hurt_005.png"
+        "game_previews/height_192/frames/hurt_005.png",
+        "game_previews/height_192/frames/hurt_006.png",
+        "game_previews/height_192/frames/hurt_007.png"
       ],
       "spritesheet": "game_previews/height_192/spritesheet.png",
       "preview_gif": "game_previews/height_192/preview.gif",
@@ -62,7 +68,9 @@
         "game_previews/height_256/frames/hurt_002.png",
         "game_previews/height_256/frames/hurt_003.png",
         "game_previews/height_256/frames/hurt_004.png",
-        "game_previews/height_256/frames/hurt_005.png"
+        "game_previews/height_256/frames/hurt_005.png",
+        "game_previews/height_256/frames/hurt_006.png",
+        "game_previews/height_256/frames/hurt_007.png"
       ],
       "spritesheet": "game_previews/height_256/spritesheet.png",
       "preview_gif": "game_previews/height_256/preview.gif",
@@ -72,5 +80,5 @@
   "ground_y_range": 0,
   "alpha_edge_touch_frames": [],
   "production_ready": true,
-  "review_note": "Hurt uses a dedicated 6-frame rough sheet with brace, recoil, stagger, settle, and recovery phases."
+  "review_note": "Hurt uses dedicated 2x2 tiled rough sheets with 8 source frames for brace, recoil, stagger, settle, and recovery phases."
 }

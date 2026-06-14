@@ -49,8 +49,8 @@ Current production-ready actions:
 - `walk`: copied from `artist_authored_8frame_walk_cleanup/production_ready/`;
 - `idle`: deterministic subtle-idle action derived from the accepted walk sprite.
 - `run`: cleaned and packaged from the dedicated `imagegen_run_8frame_20260614` rough sheet.
-- `jump`: cleaned and packaged from the dedicated `imagegen_jump_8frame_20260614` rough sheet.
-- `hurt`: cleaned and packaged from the dedicated `imagegen_hurt_6frame_20260614` rough sheet.
+- `jump`: cleaned and packaged from the dedicated `imagegen_jump_12frame_tiles_20260615` rough sheets.
+- `hurt`: cleaned and packaged from the dedicated `imagegen_hurt_8frame_tiles_20260615` rough sheets.
 
 The repeatable workflow for adding actions is documented in
 `docs/local_skills/route-a-action-rough-to-pack/SKILL.md`.
@@ -90,11 +90,13 @@ Runtime assumptions:
 - Treat `jump` and `hurt` as one-shot actions.
 - Collision boxes are approximate review boxes, not final gameplay hitboxes.
 - `jump` and `hurt` now use denser source roughs rather than runtime-only timing expansion:
-  - `jump`: 8 source frames, 8 playback frames;
-  - `hurt`: 6 source frames, 6 playback frames.
+  - `jump`: 12 source frames, 12 playback frames;
+  - `hurt`: 8 source frames, 8 playback frames.
 - Playback timing expansion may still be used for runtime holds in future actions, but it must not be
   described as true inbetween art. When motion feels under-sampled, prefer an authored or I2I rough
   retake with more drawn frames.
+- Dense action roughs should use multiple 2x2 source sheets instead of one crowded grid, because
+  crowded grids reduce per-frame source resolution before cleanup.
 
 ## Godot Viewer
 
