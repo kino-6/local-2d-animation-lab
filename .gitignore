@@ -211,8 +211,6 @@ tempCodeRunnerFile.py
 # Generated animation runs
 outputs/*
 !outputs/.gitkeep
-!outputs/adoptable/
-!outputs/adoptable/**
 outputs_smoke/
 outputs_*/
 review_packages/
