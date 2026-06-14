@@ -1,0 +1,60 @@
+{
+  "status": "identity_cues_pass",
+  "all_required_cues_pass": true,
+  "cue_reports": {
+    "pink_bob_hair": {
+      "description": "pink hair silhouette",
+      "reference_pixels": 45716,
+      "walk_pixels": 55310,
+      "idle_pixels": 25436,
+      "passed": true
+    },
+    "side_profile_anime_girl": {
+      "description": "right-facing side-profile anime girl",
+      "reference_pixels": 1048576,
+      "walk_pixels": 264986,
+      "idle_pixels": 122031,
+      "passed": true
+    },
+    "sailor_white_top": {
+      "description": "sailor-style white top",
+      "reference_pixels": 72601,
+      "walk_pixels": 38363,
+      "idle_pixels": 19072,
+      "passed": true
+    },
+    "red_tie": {
+      "description": "red tie",
+      "reference_pixels": 266677,
+      "walk_pixels": 11660,
+      "idle_pixels": 5340,
+      "passed": true
+    },
+    "navy_skirt": {
+      "description": "navy skirt",
+      "reference_pixels": 54700,
+      "walk_pixels": 73487,
+      "idle_pixels": 31823,
+      "passed": true
+    },
+    "dark_socks": {
+      "description": "dark socks",
+      "reference_pixels": 54700,
+      "walk_pixels": 73487,
+      "idle_pixels": 31823,
+      "passed": true
+    },
+    "brown_shoes": {
+      "description": "brown shoes",
+      "reference_pixels": 129631,
+      "walk_pixels": 22452,
+      "idle_pixels": 9000,
+      "passed": true
+    }
+  },
+  "source_drift_policy": {
+    "accepted_form": "reference_derived_game_sprite_design",
+    "not_accepted_form": "untracked redesign that drops required character cues",
+    "known_drift": "The current sprite is not a faithful copy of the reference illustration."
+  }
+}

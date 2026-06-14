@@ -1,0 +1,14 @@
+{
+  "action": "idle",
+  "status": "production_ready",
+  "source": "walk_005.png",
+  "method": "subtle_upper_body_breathing_from_accepted_walk_sprite",
+  "frame_count": 4,
+  "frame_size": {
+    "width": 352,
+    "height": 480
+  },
+  "ground_y_range": 0,
+  "alpha_edge_touch_frames": [],
+  "production_ready": true
+}

@@ -1,0 +1,14 @@
+{
+  "target": "character_sprite_asset_pack_mvp",
+  "decision": "production_ready",
+  "production_ready": true,
+  "checks": {
+    "walk_production_ready": true,
+    "idle_production_ready": true,
+    "run_honestly_gated": true,
+    "identity_cues_pass": true,
+    "unsupported_backends_unused": true
+  },
+  "blocking_issues": [],
+  "scope_statement": "walk and idle are production-ready; run is explicitly gated as future work."
+}

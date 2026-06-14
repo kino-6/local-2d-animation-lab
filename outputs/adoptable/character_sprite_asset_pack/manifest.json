@@ -1,0 +1,101 @@
+{
+  "route": "character_sprite_asset_pack",
+  "asset_kind": "2d_game_sprite_asset_pack",
+  "source_reference": "assets/reference/Anima_00013_.png",
+  "canonical_identity": {
+    "pink_bob_hair": "pink hair silhouette",
+    "side_profile_anime_girl": "right-facing side-profile anime girl",
+    "sailor_white_top": "sailor-style white top",
+    "red_tie": "red tie",
+    "navy_skirt": "navy skirt",
+    "dark_socks": "dark socks",
+    "brown_shoes": "brown shoes"
+  },
+  "actions": {
+    "walk": {
+      "action": "walk",
+      "frame_count": 8,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "artist_authored_8frame_walk_cleanup/production_ready",
+      "frames": [
+        "actions/walk/frames/walk_000.png",
+        "actions/walk/frames/walk_001.png",
+        "actions/walk/frames/walk_002.png",
+        "actions/walk/frames/walk_003.png",
+        "actions/walk/frames/walk_004.png",
+        "actions/walk/frames/walk_005.png",
+        "actions/walk/frames/walk_006.png",
+        "actions/walk/frames/walk_007.png"
+      ],
+      "spritesheet": "actions/walk/spritesheet.png",
+      "preview_gif": "actions/walk/preview.gif",
+      "contact_sheet": "actions/walk/contact_sheet.png"
+    },
+    "idle": {
+      "action": "idle",
+      "frame_count": 4,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "walk_005.png",
+      "frames": [
+        "actions/idle/frames/idle_000.png",
+        "actions/idle/frames/idle_001.png",
+        "actions/idle/frames/idle_002.png",
+        "actions/idle/frames/idle_003.png"
+      ],
+      "spritesheet": "actions/idle/spritesheet.png",
+      "preview_gif": "actions/idle/preview.gif",
+      "contact_sheet": "actions/idle/contact_sheet.png",
+      "production_ready_report": "actions/idle/production_ready_report.json"
+    },
+    "run": {
+      "action": "run",
+      "status": "future_action_stub",
+      "production_ready": false,
+      "reason": "Run needs authored or accepted rough frames; do not derive it by speeding up walk.",
+      "required_before_production": [
+        "8 authored run frames",
+        "stable contact/airborne phases",
+        "identity cue pass",
+        "game-size contact sheet review"
+      ]
+    }
+  },
+  "identity_report": "identity_report.json",
+  "production_gate": {
+    "target": "character_sprite_asset_pack_mvp",
+    "decision": "production_ready",
+    "production_ready": true,
+    "checks": {
+      "walk_production_ready": true,
+      "idle_production_ready": true,
+      "run_honestly_gated": true,
+      "identity_cues_pass": true,
+      "unsupported_backends_unused": true
+    },
+    "blocking_issues": [],
+    "scope_statement": "walk and idle are production-ready; run is explicitly gated as future work."
+  },
+  "backend_usage": {
+    "uses_comfyui": false,
+    "uses_wan_video": false,
+    "uses_controlnet": false,
+    "uses_new_model_backend": false,
+    "uses_120_frame_generation": false
+  },
+  "production_ready": true,
+  "known_limits": [
+    "The accepted sprite is a game-ready redesign, not a faithful frame-by-frame animation of the original illustration.",
+    "Only walk and idle are production-ready in this pack.",
+    "Run and stronger actions remain explicitly gated until new authored frames exist."
+  ]
+}
