@@ -1,0 +1,207 @@
+{
+  "route": "artist_authored_8frame_walk_cleanup",
+  "frame_count": 8,
+  "reports": [
+    {
+      "index": 0,
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_000.png",
+      "original_size": {
+        "width": 384,
+        "height": 512
+      },
+      "output_size": {
+        "width": 448,
+        "height": 512
+      },
+      "alpha_bbox": [
+        122,
+        31,
+        376,
+        465
+      ],
+      "background_removed": true,
+      "estimated_background": [
+        9,
+        239,
+        14
+      ],
+      "removed_pixel_count": 162119
+    },
+    {
+      "index": 1,
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_001.png",
+      "original_size": {
+        "width": 384,
+        "height": 512
+      },
+      "output_size": {
+        "width": 448,
+        "height": 512
+      },
+      "alpha_bbox": [
+        110,
+        39,
+        306,
+        471
+      ],
+      "background_removed": true,
+      "estimated_background": [
+        6,
+        240,
+        12
+      ],
+      "removed_pixel_count": 162042
+    },
+    {
+      "index": 2,
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_002.png",
+      "original_size": {
+        "width": 384,
+        "height": 512
+      },
+      "output_size": {
+        "width": 448,
+        "height": 512
+      },
+      "alpha_bbox": [
+        56,
+        31,
+        416,
+        468
+      ],
+      "background_removed": true,
+      "estimated_background": [
+        6,
+        240,
+        12
+      ],
+      "removed_pixel_count": 160627
+    },
+    {
+      "index": 3,
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_003.png",
+      "original_size": {
+        "width": 384,
+        "height": 512
+      },
+      "output_size": {
+        "width": 448,
+        "height": 512
+      },
+      "alpha_bbox": [
+        32,
+        28,
+        260,
+        468
+      ],
+      "background_removed": true,
+      "estimated_background": [
+        8,
+        239,
+        12
+      ],
+      "removed_pixel_count": 163979
+    },
+    {
+      "index": 4,
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_004.png",
+      "original_size": {
+        "width": 384,
+        "height": 512
+      },
+      "output_size": {
+        "width": 448,
+        "height": 512
+      },
+      "alpha_bbox": [
+        110,
+        13,
+        365,
+        447
+      ],
+      "background_removed": true,
+      "estimated_background": [
+        8,
+        240,
+        13
+      ],
+      "removed_pixel_count": 162283
+    },
+    {
+      "index": 5,
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_005.png",
+      "original_size": {
+        "width": 384,
+        "height": 512
+      },
+      "output_size": {
+        "width": 448,
+        "height": 512
+      },
+      "alpha_bbox": [
+        99,
+        19,
+        278,
+        452
+      ],
+      "background_removed": true,
+      "estimated_background": [
+        5,
+        242,
+        11
+      ],
+      "removed_pixel_count": 163157
+    },
+    {
+      "index": 6,
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_006.png",
+      "original_size": {
+        "width": 384,
+        "height": 512
+      },
+      "output_size": {
+        "width": 448,
+        "height": 512
+      },
+      "alpha_bbox": [
+        44,
+        19,
+        416,
+        451
+      ],
+      "background_removed": true,
+      "estimated_background": [
+        4,
+        241,
+        11
+      ],
+      "removed_pixel_count": 162122
+    },
+    {
+      "index": 7,
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_007.png",
+      "original_size": {
+        "width": 384,
+        "height": 512
+      },
+      "output_size": {
+        "width": 448,
+        "height": 512
+      },
+      "alpha_bbox": [
+        32,
+        19,
+        241,
+        450
+      ],
+      "background_removed": true,
+      "estimated_background": [
+        8,
+        240,
+        12
+      ],
+      "removed_pixel_count": 164822
+    }
+  ],
+  "warnings": []
+}

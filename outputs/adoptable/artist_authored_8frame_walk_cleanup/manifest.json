@@ -1,0 +1,160 @@
+{
+  "route": "artist_authored_8frame_walk_cleanup",
+  "route_status": "requires_artist_authored_rough",
+  "asset_kind": "2d_game_sprite",
+  "source_kind": "ai_generated_rough_for_route_a",
+  "output_status": "cleanup_packaged_for_review",
+  "frame_count": 8,
+  "fps": 8,
+  "phase_names": [
+    "contact",
+    "down",
+    "passing",
+    "up",
+    "opposite_contact",
+    "opposite_down",
+    "opposite_passing",
+    "opposite_up"
+  ],
+  "frame_size": {
+    "width": 448,
+    "height": 512
+  },
+  "background": "transparent",
+  "loop": true,
+  "manual_art_required": true,
+  "ai_scope": "cleanup_only_no_pose_or_silhouette_generation",
+  "backend_usage": {
+    "uses_comfyui": false,
+    "uses_wan_video": false,
+    "uses_controlnet": false,
+    "uses_new_model_backend": false,
+    "uses_120_frame_generation": false
+  },
+  "outputs": {
+    "frames": [
+      "frames/walk_000.png",
+      "frames/walk_001.png",
+      "frames/walk_002.png",
+      "frames/walk_003.png",
+      "frames/walk_004.png",
+      "frames/walk_005.png",
+      "frames/walk_006.png",
+      "frames/walk_007.png"
+    ],
+    "spritesheet": "spritesheet.png",
+    "preview_gif": "preview.gif",
+    "contact_sheet": "contact_sheet.png",
+    "cleanup_report": "cleanup_report.json"
+  },
+  "source": {
+    "rough_frames_dir": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames",
+    "reference_image": "assets\\reference\\Anima_00013_.png",
+    "note": "Generated with built-in image_gen as a rough candidate for Route A; not a human-authored final sprite. Repackaged with transparent horizontal safety padding."
+  },
+  "frames": [
+    {
+      "index": 0,
+      "phase": "contact",
+      "file": "frames/walk_000.png",
+      "duration_ms": 125,
+      "bbox": [
+        122,
+        31,
+        376,
+        465
+      ]
+    },
+    {
+      "index": 1,
+      "phase": "down",
+      "file": "frames/walk_001.png",
+      "duration_ms": 125,
+      "bbox": [
+        110,
+        39,
+        306,
+        471
+      ]
+    },
+    {
+      "index": 2,
+      "phase": "passing",
+      "file": "frames/walk_002.png",
+      "duration_ms": 125,
+      "bbox": [
+        56,
+        31,
+        416,
+        468
+      ]
+    },
+    {
+      "index": 3,
+      "phase": "up",
+      "file": "frames/walk_003.png",
+      "duration_ms": 125,
+      "bbox": [
+        32,
+        28,
+        260,
+        468
+      ]
+    },
+    {
+      "index": 4,
+      "phase": "opposite_contact",
+      "file": "frames/walk_004.png",
+      "duration_ms": 125,
+      "bbox": [
+        110,
+        13,
+        365,
+        447
+      ]
+    },
+    {
+      "index": 5,
+      "phase": "opposite_down",
+      "file": "frames/walk_005.png",
+      "duration_ms": 125,
+      "bbox": [
+        99,
+        19,
+        278,
+        452
+      ]
+    },
+    {
+      "index": 6,
+      "phase": "opposite_passing",
+      "file": "frames/walk_006.png",
+      "duration_ms": 125,
+      "bbox": [
+        44,
+        19,
+        416,
+        451
+      ]
+    },
+    {
+      "index": 7,
+      "phase": "opposite_up",
+      "file": "frames/walk_007.png",
+      "duration_ms": 125,
+      "bbox": [
+        32,
+        19,
+        241,
+        450
+      ]
+    }
+  ],
+  "review": {
+    "human_pose_control": true,
+    "human_silhouette_control": true,
+    "aseprite_friendly": true,
+    "godot_friendly": true,
+    "production_ready": false
+  }
+}

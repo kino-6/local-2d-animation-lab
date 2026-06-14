@@ -46,6 +46,8 @@ def main() -> None:
     parser.add_argument("--remove-background", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--background-threshold", default=88, type=int)
     parser.add_argument("--background-min-channel", default=205, type=int)
+    parser.add_argument("--source-kind", default="artist_authored_rough")
+    parser.add_argument("--source-note", default="")
     parser.add_argument("--clean", action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
 
@@ -59,6 +61,8 @@ def main() -> None:
         remove_background=args.remove_background,
         background_threshold=args.background_threshold,
         background_min_channel=args.background_min_channel,
+        source_kind=args.source_kind,
+        source_note=args.source_note,
         clean=args.clean,
     )
     print(json.dumps(manifest, indent=2, ensure_ascii=False))
@@ -74,6 +78,8 @@ def package_artist_authored_walk_cleanup(
     remove_background: bool = True,
     background_threshold: int = 88,
     background_min_channel: int = 205,
+    source_kind: str = "artist_authored_rough",
+    source_note: str = "",
     clean: bool = True,
 ) -> dict[str, Any]:
     source_paths = sorted(rough_frames_dir.glob("*.png"), key=_frame_index)
@@ -134,7 +140,7 @@ def package_artist_authored_walk_cleanup(
         "route": ROUTE,
         "route_status": ROUTE_STATUS,
         "asset_kind": "2d_game_sprite",
-        "source_kind": "artist_authored_rough",
+        "source_kind": source_kind,
         "output_status": "cleanup_packaged_for_review",
         "frame_count": 8,
         "fps": fps,
@@ -161,6 +167,7 @@ def package_artist_authored_walk_cleanup(
         "source": {
             "rough_frames_dir": str(rough_frames_dir),
             "reference_image": str(reference_image) if reference_image else None,
+            "note": source_note,
         },
         "frames": frame_entries,
         "review": {
@@ -318,12 +325,19 @@ def _connected_background_mask(
 def _notes(manifest: dict[str, Any], cleanup_report: dict[str, Any]) -> str:
     warnings = cleanup_report["warnings"] or ["none"]
     warning_text = "\n".join(f"- {warning}" for warning in warnings)
+    if manifest["source_kind"] == "artist_authored_rough":
+        source_summary = "a human-authored rough walk cycle packaged for review"
+        pose_control_summary = "Keeps human-authored pose and silhouette control."
+    else:
+        source_summary = f"a rough walk cycle packaged for review from `{manifest['source_kind']}`"
+        pose_control_summary = "Preserves the provided rough poses and silhouette without generating new frames."
     return f"""# Artist-Authored 8-Frame Walk Cleanup
 
-This package is Route A: a human-authored rough walk cycle packaged for review.
+This package is Route A: {source_summary}.
 
 - route: `{manifest["route"]}`
 - route_status: `{manifest["route_status"]}`
+- source_kind: `{manifest["source_kind"]}`
 - frame_count: `{manifest["frame_count"]}`
 - background: `{manifest["background"]}`
 - AI/model scope: `{manifest["ai_scope"]}`
@@ -331,7 +345,7 @@ This package is Route A: a human-authored rough walk cycle packaged for review.
 
 ## What This Route Does
 
-- Keeps human-authored pose and silhouette control.
+- {pose_control_summary}
 - Produces transparent frames, spritesheet, preview GIF, contact sheet, manifest, and cleanup report.
 - Uses deterministic cleanup only.
 

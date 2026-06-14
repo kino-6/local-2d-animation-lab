@@ -81,3 +81,22 @@ Not allowed:
 
 The output should be reviewed in Aseprite or Godot. Failures should be recorded per frame in
 `cleanup_report.json` or fixed directly in the rough frames.
+
+## Generated Rough Candidate
+
+A first AI-generated rough candidate is stored as a Route A input experiment:
+
+```text
+assets/artist_authored_roughs/imagegen_walk_8frame_20260614/
+```
+
+Packaged review output:
+
+```text
+outputs/adoptable/artist_authored_8frame_walk_cleanup/
+```
+
+This candidate is useful because it avoids the geometric puppet failure mode and produces a
+reviewable anime-style 8-frame side-view walk sheet. It is still not production art, and it should
+not be treated as proof that fully automated generation is solved. The manifest marks it as
+`source_kind: ai_generated_rough_for_route_a` for honesty.

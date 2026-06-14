@@ -247,3 +247,33 @@ baseline_complete_but_not_artistically_viable
   - spritesheet, preview GIF, contact sheet, manifest, cleanup report;
   - backend usage flags all false;
   - rejection of wrong frame count.
+
+## Route A Generated Rough Candidate
+
+- [x] Generate one anime-style 4x2 walk-cycle source sheet as a rough candidate.
+- [x] Store the generated source and prompt under:
+
+```text
+assets/artist_authored_roughs/imagegen_walk_8frame_20260614/
+```
+
+- [x] Split the source sheet into exactly 8 rough PNG frames.
+- [x] Package the rough candidate through `artist_authored_8frame_walk_cleanup`.
+- [x] Store the reviewable package under:
+
+```text
+outputs/adoptable/artist_authored_8frame_walk_cleanup/
+```
+
+- [x] Mark the manifest source honestly as:
+
+```text
+source_kind: ai_generated_rough_for_route_a
+```
+
+- [x] Agent-review `contact_sheet.png`.
+- [x] Honest assessment:
+  - Much better than the geometric puppet baseline.
+  - Reviewable as a 2D game walk rough candidate.
+  - Still not production art.
+  - Route A remains the practical path because the rough frames can be edited in Aseprite.
