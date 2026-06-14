@@ -45,12 +45,88 @@
     "spritesheet": "spritesheet.png",
     "preview_gif": "preview.gif",
     "contact_sheet": "contact_sheet.png",
-    "cleanup_report": "cleanup_report.json"
+    "cleanup_report": "cleanup_report.json",
+    "game_previews": {
+      "height_128": {
+        "frame_size": {
+          "width": 112,
+          "height": 128
+        },
+        "frames": [
+          "game_previews/height_128/frames/walk_000.png",
+          "game_previews/height_128/frames/walk_001.png",
+          "game_previews/height_128/frames/walk_002.png",
+          "game_previews/height_128/frames/walk_003.png",
+          "game_previews/height_128/frames/walk_004.png",
+          "game_previews/height_128/frames/walk_005.png",
+          "game_previews/height_128/frames/walk_006.png",
+          "game_previews/height_128/frames/walk_007.png"
+        ],
+        "spritesheet": "game_previews/height_128/spritesheet.png",
+        "preview_gif": "game_previews/height_128/preview.gif",
+        "contact_sheet": "game_previews/height_128/contact_sheet.png"
+      },
+      "height_192": {
+        "frame_size": {
+          "width": 168,
+          "height": 192
+        },
+        "frames": [
+          "game_previews/height_192/frames/walk_000.png",
+          "game_previews/height_192/frames/walk_001.png",
+          "game_previews/height_192/frames/walk_002.png",
+          "game_previews/height_192/frames/walk_003.png",
+          "game_previews/height_192/frames/walk_004.png",
+          "game_previews/height_192/frames/walk_005.png",
+          "game_previews/height_192/frames/walk_006.png",
+          "game_previews/height_192/frames/walk_007.png"
+        ],
+        "spritesheet": "game_previews/height_192/spritesheet.png",
+        "preview_gif": "game_previews/height_192/preview.gif",
+        "contact_sheet": "game_previews/height_192/contact_sheet.png"
+      },
+      "height_256": {
+        "frame_size": {
+          "width": 224,
+          "height": 256
+        },
+        "frames": [
+          "game_previews/height_256/frames/walk_000.png",
+          "game_previews/height_256/frames/walk_001.png",
+          "game_previews/height_256/frames/walk_002.png",
+          "game_previews/height_256/frames/walk_003.png",
+          "game_previews/height_256/frames/walk_004.png",
+          "game_previews/height_256/frames/walk_005.png",
+          "game_previews/height_256/frames/walk_006.png",
+          "game_previews/height_256/frames/walk_007.png"
+        ],
+        "spritesheet": "game_previews/height_256/spritesheet.png",
+        "preview_gif": "game_previews/height_256/preview.gif",
+        "contact_sheet": "game_previews/height_256/contact_sheet.png"
+      }
+    }
+  },
+  "game_readiness": {
+    "fixed_best_rough": true,
+    "generated_new_motion": false,
+    "preview_heights": [
+      "height_128",
+      "height_192",
+      "height_256"
+    ],
+    "alpha_edge_touch_frames": [],
+    "estimated_head_y_range": 12,
+    "estimated_ground_y_range": 9,
+    "estimated_center_x_range": 31.5,
+    "estimated_bbox_width_range": 114,
+    "estimated_bbox_height_range": 7,
+    "game_preview_review_required": true,
+    "decision": "reviewable_rough_candidate_not_production"
   },
   "source": {
     "rough_frames_dir": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames",
     "reference_image": "assets\\reference\\Anima_00013_.png",
-    "note": "Generated with built-in image_gen as a second rough candidate for Route A; stricter game-sprite prompt, split with 5px grid inset, packaged with green-dominance chroma cleanup."
+    "note": "Generated with built-in image_gen as a second rough candidate for Route A; fixed as the current motion rough and packaged with green-dominance chroma cleanup, despill, stability metrics, and game-size previews."
   },
   "frames": [
     {

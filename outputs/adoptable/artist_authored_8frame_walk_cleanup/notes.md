@@ -8,12 +8,14 @@ This package is Route A: a rough walk cycle packaged for review from `ai_generat
 - frame_count: `8`
 - background: `transparent`
 - AI/model scope: `cleanup_only_no_pose_or_silhouette_generation`
+- game_readiness: `reviewable_rough_candidate_not_production`
 - production_ready: `False`
 
 ## What This Route Does
 
 - Preserves the provided rough poses and silhouette without generating new frames.
 - Produces transparent frames, spritesheet, preview GIF, contact sheet, manifest, and cleanup report.
+- Produces 128, 192, and 256 px-height game-size preview packages by default.
 - Uses deterministic cleanup only.
 
 ## What This Route Does Not Do

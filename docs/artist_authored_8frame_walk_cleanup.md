@@ -46,6 +46,9 @@ The package contains:
 - `spritesheet.png`
 - `preview.gif`
 - `contact_sheet.png`
+- `game_previews/height_128/`
+- `game_previews/height_192/`
+- `game_previews/height_256/`
 - `manifest.json`
 - `cleanup_report.json`
 - `notes.md`
@@ -64,9 +67,10 @@ uv run python scripts\package_artist_authored_walk_cleanup.py `
 Allowed:
 
 - transparent-background cleanup;
+- green-dominant chroma cleanup and despill for generated rough sheets;
 - plain-background removal when the rough has a removable solid background;
 - alpha normalization;
-- spritesheet, contact sheet, preview GIF, manifest, and cleanup report generation.
+- spritesheet, contact sheet, preview GIF, game-size previews, manifest, and cleanup report generation.
 
 Not allowed:
 
@@ -110,3 +114,7 @@ not be treated as proof that fully automated generation is solved. The manifest 
 v2 required a cleanup improvement: the generated green background looked uniform but contained
 enough variation that distance-threshold chroma removal either left green panels or damaged the
 character. The cleanup script now also recognizes green-dominant connected background regions.
+
+The current packaged output also includes game-size previews at 128, 192, and 256 px height. These
+are for reviewing whether the motion still reads at practical 2D game sizes before doing any manual
+Aseprite cleanup.

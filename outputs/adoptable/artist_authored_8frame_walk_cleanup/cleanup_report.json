@@ -25,7 +25,8 @@
         244,
         84
       ],
-      "removed_pixel_count": 152285
+      "removed_pixel_count": 152285,
+      "despilled_pixel_count": 0
     },
     {
       "index": 1,
@@ -50,7 +51,8 @@
         245,
         72
       ],
-      "removed_pixel_count": 154446
+      "removed_pixel_count": 154446,
+      "despilled_pixel_count": 4
     },
     {
       "index": 2,
@@ -75,7 +77,8 @@
         245,
         71
       ],
-      "removed_pixel_count": 154730
+      "removed_pixel_count": 154730,
+      "despilled_pixel_count": 3
     },
     {
       "index": 3,
@@ -100,7 +103,8 @@
         246,
         111
       ],
-      "removed_pixel_count": 154848
+      "removed_pixel_count": 154848,
+      "despilled_pixel_count": 8
     },
     {
       "index": 4,
@@ -125,7 +129,8 @@
         240,
         28
       ],
-      "removed_pixel_count": 152685
+      "removed_pixel_count": 152685,
+      "despilled_pixel_count": 1
     },
     {
       "index": 5,
@@ -150,7 +155,8 @@
         245,
         14
       ],
-      "removed_pixel_count": 157288
+      "removed_pixel_count": 157288,
+      "despilled_pixel_count": 2
     },
     {
       "index": 6,
@@ -175,7 +181,8 @@
         243,
         15
       ],
-      "removed_pixel_count": 155773
+      "removed_pixel_count": 155773,
+      "despilled_pixel_count": 46
     },
     {
       "index": 7,
@@ -200,7 +207,8 @@
         248,
         68
       ],
-      "removed_pixel_count": 154575
+      "removed_pixel_count": 154575,
+      "despilled_pixel_count": 1
     }
   ],
   "warnings": []

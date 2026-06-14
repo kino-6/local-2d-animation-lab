@@ -44,6 +44,9 @@ def test_artist_authored_walk_cleanup_contract(tmp_path: Path) -> None:
     assert (output_dir / "manifest.json").exists()
     assert (output_dir / "cleanup_report.json").exists()
     assert (output_dir / "notes.md").exists()
+    assert (output_dir / "game_previews" / "height_128" / "preview.gif").exists()
+    assert (output_dir / "game_previews" / "height_192" / "spritesheet.png").exists()
+    assert (output_dir / "game_previews" / "height_256" / "contact_sheet.png").exists()
 
     assert [Image.open(path).size for path in frame_paths] == [(96, 96)] * 8
     assert all(Image.open(path).mode == "RGBA" for path in frame_paths)
@@ -79,6 +82,12 @@ def test_artist_authored_walk_cleanup_contract(tmp_path: Path) -> None:
         "uses_new_model_backend": False,
         "uses_120_frame_generation": False,
     }
+    assert manifest["outputs"]["game_previews"]["height_128"]["frame_size"] == {"width": 128, "height": 128}
+    assert manifest["outputs"]["game_previews"]["height_192"]["frame_size"] == {"width": 192, "height": 192}
+    assert manifest["outputs"]["game_previews"]["height_256"]["frame_size"] == {"width": 256, "height": 256}
+    assert manifest["game_readiness"]["fixed_best_rough"] is True
+    assert manifest["game_readiness"]["generated_new_motion"] is False
+    assert manifest["game_readiness"]["decision"] == "reviewable_rough_candidate_not_production"
 
 
 def test_artist_authored_walk_cleanup_rejects_wrong_frame_count(tmp_path: Path) -> None:
@@ -133,6 +142,10 @@ def test_artist_authored_walk_cleanup_removes_green_dominant_background(tmp_path
     assert frame.getpixel((0, 0))[3] == 0
     assert frame.getpixel((48, 48))[3] == 255
     assert frame.getpixel((48, 48))[:3] == (20, 30, 70)
+
+    manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
+    report = manifest["frames"][0]["bbox"]
+    assert report == [32, 10, 65, 73]
 
 
 def _make_rough_frame(path: Path, index: int) -> None:

@@ -274,6 +274,20 @@ source_kind: ai_generated_rough_for_route_a_v2
 ```
 
 - [x] Add green-dominance chroma cleanup after v2 showed that visually green backgrounds may not be perfectly uniform.
+- [x] Add green despill so leftover chroma edges do not survive as bright green fringe.
+- [x] Freeze v2 as the current motion rough instead of continuing prompt exploration.
+- [x] Add game-size preview packages:
+  - `game_previews/height_128/`
+  - `game_previews/height_192/`
+  - `game_previews/height_256/`
+- [x] Add `game_readiness` metrics to `manifest.json`:
+  - head y-range;
+  - ground y-range;
+  - center x-range;
+  - bbox width/height ranges;
+  - alpha edge-touch frames;
+  - explicit `reviewable_rough_candidate_not_production` decision.
+- [x] Add tests for game preview outputs and game readiness metadata.
 - [x] Agent-review `contact_sheet.png`.
 - [x] Honest assessment:
   - Much better than the geometric puppet baseline.

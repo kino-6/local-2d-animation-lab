@@ -48,6 +48,7 @@ def main() -> None:
     parser.add_argument("--background-min-channel", default=205, type=int)
     parser.add_argument("--source-kind", default="artist_authored_rough")
     parser.add_argument("--source-note", default="")
+    parser.add_argument("--game-preview-heights", default="128,192,256")
     parser.add_argument("--clean", action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
 
@@ -63,6 +64,7 @@ def main() -> None:
         background_min_channel=args.background_min_channel,
         source_kind=args.source_kind,
         source_note=args.source_note,
+        game_preview_heights=_parse_preview_heights(args.game_preview_heights),
         clean=args.clean,
     )
     print(json.dumps(manifest, indent=2, ensure_ascii=False))
@@ -80,6 +82,7 @@ def package_artist_authored_walk_cleanup(
     background_min_channel: int = 205,
     source_kind: str = "artist_authored_rough",
     source_note: str = "",
+    game_preview_heights: list[int] | None = None,
     clean: bool = True,
 ) -> dict[str, Any]:
     source_paths = sorted(rough_frames_dir.glob("*.png"), key=_frame_index)
@@ -124,9 +127,11 @@ def package_artist_authored_walk_cleanup(
             }
         )
 
+    game_preview_heights = game_preview_heights if game_preview_heights is not None else [128, 192, 256]
     spritesheet = make_sprite_sheet(output_paths, output_dir / "spritesheet.png", columns=8)
     preview_gif = make_preview_gif(output_paths, output_dir / "preview.gif", duration_ms=round(1000 / fps), loop=True)
     contact_sheet = make_contact_sheet(output_paths, output_dir / "contact_sheet.png", columns=4)
+    game_previews = _write_game_previews(output_paths, output_dir, game_preview_heights, fps)
     cleanup_report = {
         "route": ROUTE,
         "frame_count": len(output_paths),
@@ -163,7 +168,9 @@ def package_artist_authored_walk_cleanup(
             "preview_gif": str(preview_gif.relative_to(output_dir)).replace("\\", "/"),
             "contact_sheet": str(contact_sheet.relative_to(output_dir)).replace("\\", "/"),
             "cleanup_report": str(cleanup_report_path.relative_to(output_dir)).replace("\\", "/"),
+            "game_previews": game_previews,
         },
+        "game_readiness": _game_readiness_metrics(frame_entries, out_width, out_height, game_previews),
         "source": {
             "rough_frames_dir": str(rough_frames_dir),
             "reference_image": str(reference_image) if reference_image else None,
@@ -225,6 +232,7 @@ def _remove_connected_background(
 ) -> tuple[Image.Image, dict[str, Any]]:
     rgb = _flatten(image).convert("RGB")
     background = _estimate_background(rgb)
+    green_key = background[1] >= max(background[0], background[2]) + 80
     mask = _connected_background_mask(rgb, background, threshold, min_channel)
     rgba = rgb.convert("RGBA")
     pixels = rgba.load()
@@ -238,10 +246,12 @@ def _remove_connected_background(
                 removed += 1
             else:
                 pixels[x, y] = (red, green, blue, 255)
+    despilled = _despill_green_edges(rgba) if green_key else 0
     return rgba, {
         "background_removed": True,
         "estimated_background": list(background),
         "removed_pixel_count": removed,
+        "despilled_pixel_count": despilled,
     }
 
 
@@ -262,6 +272,72 @@ def _cleanup_warnings(reports: list[dict[str, Any]]) -> list[str]:
         if right <= left or bottom <= top:
             warnings.append(f"Frame {report['index']} has invalid alpha bounds.")
     return warnings
+
+
+def _write_game_previews(frame_paths: list[Path], output_dir: Path, heights: list[int], fps: int) -> dict[str, Any]:
+    previews: dict[str, Any] = {}
+    for height in heights:
+        if height <= 0:
+            raise ValueError(f"Preview height must be positive: {height}")
+        preview_dir = output_dir / "game_previews" / f"height_{height}"
+        frames_dir = preview_dir / "frames"
+        frames_dir.mkdir(parents=True, exist_ok=True)
+        resized_paths: list[Path] = []
+        for index, frame_path in enumerate(frame_paths):
+            frame = Image.open(frame_path).convert("RGBA")
+            width = round(frame.width * height / frame.height)
+            resized = frame.resize((width, height), Image.Resampling.LANCZOS)
+            resized_path = frames_dir / f"walk_{index:03d}.png"
+            resized.save(resized_path)
+            resized_paths.append(resized_path)
+        spritesheet = make_sprite_sheet(resized_paths, preview_dir / "spritesheet.png", columns=8)
+        preview_gif = make_preview_gif(
+            resized_paths,
+            preview_dir / "preview.gif",
+            duration_ms=round(1000 / fps),
+            loop=True,
+        )
+        contact_sheet = make_contact_sheet(resized_paths, preview_dir / "contact_sheet.png", columns=4)
+        previews[f"height_{height}"] = {
+            "frame_size": {"width": Image.open(resized_paths[0]).width, "height": height},
+            "frames": [str(path.relative_to(output_dir)).replace("\\", "/") for path in resized_paths],
+            "spritesheet": str(spritesheet.relative_to(output_dir)).replace("\\", "/"),
+            "preview_gif": str(preview_gif.relative_to(output_dir)).replace("\\", "/"),
+            "contact_sheet": str(contact_sheet.relative_to(output_dir)).replace("\\", "/"),
+        }
+    return previews
+
+
+def _game_readiness_metrics(
+    frame_entries: list[dict[str, Any]],
+    frame_width: int,
+    frame_height: int,
+    game_previews: dict[str, Any],
+) -> dict[str, Any]:
+    boxes = [entry["bbox"] for entry in frame_entries]
+    centers = [round((left + right) / 2, 2) for left, _top, right, _bottom in boxes]
+    tops = [top for _left, top, _right, _bottom in boxes]
+    bottoms = [bottom for _left, _top, _right, bottom in boxes]
+    widths = [right - left for left, _top, right, _bottom in boxes]
+    heights = [bottom - top for _left, top, _right, bottom in boxes]
+    edge_touch = [
+        index
+        for index, (left, top, right, bottom) in enumerate(boxes)
+        if left <= 0 or top <= 0 or right >= frame_width or bottom >= frame_height
+    ]
+    return {
+        "fixed_best_rough": True,
+        "generated_new_motion": False,
+        "preview_heights": list(game_previews.keys()),
+        "alpha_edge_touch_frames": edge_touch,
+        "estimated_head_y_range": max(tops) - min(tops),
+        "estimated_ground_y_range": max(bottoms) - min(bottoms),
+        "estimated_center_x_range": round(max(centers) - min(centers), 2),
+        "estimated_bbox_width_range": max(widths) - min(widths),
+        "estimated_bbox_height_range": max(heights) - min(heights),
+        "game_preview_review_required": True,
+        "decision": "reviewable_rough_candidate_not_production",
+    }
 
 
 def _flatten(image: Image.Image) -> Image.Image:
@@ -325,6 +401,21 @@ def _connected_background_mask(
     return out
 
 
+def _despill_green_edges(image: Image.Image) -> int:
+    pixels = image.load()
+    changed = 0
+    for y in range(image.height):
+        for x in range(image.width):
+            red, green, blue, alpha = pixels[x, y]
+            if alpha == 0:
+                continue
+            limit = max(red, blue)
+            if green >= 120 and green >= limit + 35:
+                pixels[x, y] = (red, limit, blue, alpha)
+                changed += 1
+    return changed
+
+
 def _notes(manifest: dict[str, Any], cleanup_report: dict[str, Any]) -> str:
     warnings = cleanup_report["warnings"] or ["none"]
     warning_text = "\n".join(f"- {warning}" for warning in warnings)
@@ -344,12 +435,14 @@ This package is Route A: {source_summary}.
 - frame_count: `{manifest["frame_count"]}`
 - background: `{manifest["background"]}`
 - AI/model scope: `{manifest["ai_scope"]}`
+- game_readiness: `{manifest["game_readiness"]["decision"]}`
 - production_ready: `{manifest["review"]["production_ready"]}`
 
 ## What This Route Does
 
 - {pose_control_summary}
 - Produces transparent frames, spritesheet, preview GIF, contact sheet, manifest, and cleanup report.
+- Produces 128, 192, and 256 px-height game-size preview packages by default.
 - Uses deterministic cleanup only.
 
 ## What This Route Does Not Do
@@ -368,6 +461,12 @@ This package is Route A: {source_summary}.
 def _frame_index(path: Path) -> int:
     digits = "".join(ch if ch.isdigit() else " " for ch in path.stem).split()
     return int(digits[-1]) if digits else -1
+
+
+def _parse_preview_heights(value: str) -> list[int]:
+    if not value.strip():
+        return []
+    return [int(part.strip()) for part in value.split(",") if part.strip()]
 
 
 if __name__ == "__main__":
