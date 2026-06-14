@@ -50,11 +50,18 @@ Current production-ready actions:
 - `jump`: cleaned and packaged from the dedicated `imagegen_jump_6frame_20260614` rough sheet.
 - `hurt`: cleaned and packaged from the dedicated `imagegen_hurt_4frame_20260614` rough sheet.
 
+The repeatable workflow for adding actions is documented in
+`docs/local_skills/route-a-action-rough-to-pack/SKILL.md`.
+
 Future action policy:
 
 Run, jump, and hurt were promoted only after they had dedicated rough sheets with action-specific
 poses. Stronger actions still need authored or accepted rough frames and should not be faked by
 retiming walk frames.
+
+Built-in image generation or image-to-image is acceptable for rough source art when local generation
+is not producing usable assets. In that case, record the rough creation as non-local in `prompt.md`;
+the local reproducible pipeline begins from the committed rough frames.
 
 ## Production Ready Meaning
 

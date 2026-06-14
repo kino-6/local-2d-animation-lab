@@ -14,6 +14,8 @@ docs/archive/Tasks_20260614_walk_production_ready_completed.md
   - action coverage, where only `walk` exists.
 - [x] Stay scoped to a small adoptable 2D game asset pack.
 - [x] Do not return to 120-frame generation, Wan/video generation, ComfyUI exploration, ControlNet research, or broad model integration work.
+- [x] Use Route A as the repeatable action expansion path: action-specific rough sheet first, then local cleanup, packaging, tests, and gate.
+- [x] Allow built-in image generation or I2I for rough source art when local generation is not producing usable assets, but record it as non-local rough creation.
 
 ## Deliverable
 
@@ -78,6 +80,8 @@ outputs/adoptable/character_sprite_asset_pack/
 ## Documentation
 
 - [x] Add `docs/character_identity_sprite_asset_pack.md`.
+- [x] Add the repeatable action expansion Skill:
+  - `docs/local_skills/route-a-action-rough-to-pack/SKILL.md`.
 - [x] Document that `production_ready` for this pack means:
   - current walk is accepted;
   - current idle is accepted;
@@ -87,6 +91,7 @@ outputs/adoptable/character_sprite_asset_pack/
   - character identity cues are tracked;
   - future stronger actions are gated instead of silently claimed.
 - [x] Document that this does not solve faithful animation of arbitrary reference illustrations.
+- [x] Document that current AI-assisted rough generation is not local-only, while committed rough-frame packaging is locally reproducible.
 
 ## Tests
 

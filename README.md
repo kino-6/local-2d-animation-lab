@@ -77,6 +77,7 @@ Keep this README limited to stable entry points. Specific PDCA attempts, failed 
 
 Stable command entry points:
 
+- Add small production-ready sprite actions from rough sheets: `docs/local_skills/route-a-action-rough-to-pack/SKILL.md`
 - Build reusable controls: `scripts/build_pose_templates.py`
 - Import extracted motion-source poses: `scripts/import_motion_source_pose.py`
 - Run SDXL/OpenPose PDCA: `scripts/pdca_controlnet_assets.py`
