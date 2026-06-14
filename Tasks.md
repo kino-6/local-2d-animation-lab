@@ -208,3 +208,22 @@ outputs/adoptable/walk_8frame_sideview_baseline/
   - Arms and legs read less like single-pixel sticks.
   - Shoe/ankle connection is cleaner than the skeleton pass.
   - The sprite remains a deterministic MVP baseline, not production art.
+
+## Stop And Pivot
+
+- [x] Stop minor improvements to the deterministic stylized renderer.
+- [x] Mark `walk_8frame_sideview_baseline` as:
+
+```text
+baseline_complete_but_not_artistically_viable
+```
+
+- [x] Keep the route as a technical baseline only.
+- [x] Do not add ComfyUI, Wan, video generation, ControlNet, or new model integrations for this pivot.
+- [x] Do not generate new assets for this pivot.
+- [x] Add `docs/next_asset_generation_routes.md`.
+- [x] Compare exactly three next routes:
+  - Route A: Artist-authored base sprite + AI-assisted cleanup.
+  - Route B: Reference-derived character redesign + deterministic animation.
+  - Route C: Pose-template image generation per keyframe.
+- [x] Recommend Route A as the next implementation target.

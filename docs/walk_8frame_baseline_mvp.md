@@ -14,6 +14,16 @@ outputs/adoptable/walk_8frame_sideview_baseline/
 The package is intentionally conservative. It proves repository workflow, output shape, and review
 readiness before chasing higher generative quality.
 
+## Route Conclusion
+
+```text
+baseline_complete_but_not_artistically_viable
+```
+
+This route is complete as a technical baseline only. It should not receive further minor renderer
+tuning. The infrastructure is useful, but the visual result reads as a geometric puppet rather than
+a viable 2D game character animation.
+
 ## Fixed Action Spec
 
 Natural-language input may be accepted, but this route always normalizes it to:
