@@ -159,3 +159,20 @@ Success should mean:
 - cleanup does not change frame count, pose intent, or contact timing;
 - output remains Aseprite/Godot-friendly;
 - failures are reported per frame rather than hidden behind a generated preview.
+
+## Route A Implementation
+
+Implemented entry point:
+
+```text
+scripts/package_artist_authored_walk_cleanup.py
+```
+
+Default output:
+
+```text
+outputs/adoptable/artist_authored_8frame_walk_cleanup/
+```
+
+This implementation is intentionally limited to deterministic cleanup and packaging. It does not
+create the rough art. A human-authored 8-frame rough remains required input.

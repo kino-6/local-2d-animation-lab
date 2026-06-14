@@ -227,3 +227,23 @@ baseline_complete_but_not_artistically_viable
   - Route B: Reference-derived character redesign + deterministic animation.
   - Route C: Pose-template image generation per keyframe.
 - [x] Recommend Route A as the next implementation target.
+
+## Route A Implementation
+
+- [x] Implement `artist_authored_8frame_walk_cleanup` as the next route.
+- [x] Keep the current deterministic renderer stopped as a technical baseline only.
+- [x] Require exactly 8 artist-authored PNG rough frames as input.
+- [x] Keep human control over pose and silhouette.
+- [x] Limit automation to deterministic cleanup and packaging.
+- [x] Do not add ComfyUI, Wan, ControlNet, video generation, or new model integrations.
+- [x] Do not generate 120-frame outputs.
+- [x] Do not generate new poses or character art.
+- [x] Add `scripts/package_artist_authored_walk_cleanup.py`.
+- [x] Add `docs/artist_authored_8frame_walk_cleanup.md`.
+- [x] Add tests for:
+  - exact 8-frame input;
+  - output layout;
+  - transparent PNG frames;
+  - spritesheet, preview GIF, contact sheet, manifest, cleanup report;
+  - backend usage flags all false;
+  - rejection of wrong frame count.
