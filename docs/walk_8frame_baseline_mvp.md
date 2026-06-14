@@ -56,13 +56,23 @@ The adopted directory must contain:
 
 1. Load one full-body reference image.
 2. Create a transparent cutout from alpha or connected background removal.
-3. Mirror the cutout to the fixed right-facing route by default.
-4. Fit it to a stable game canvas.
-5. Generate exactly eight frames using a small whole-body bob and lower-body offset.
-6. Export frames, spritesheet, preview GIF, contact sheet, manifest, and notes.
+3. Derive a simple identity palette from the reference.
+4. Render a stylized right-facing 8-phase sprite walk cycle by default.
+5. Export frames, spritesheet, preview GIF, contact sheet, manifest, and notes.
 
 This is not a claim of production animation quality. It is an adoptable MVP route that prevents the
 project from drifting back into open-ended PDCA research before a concrete game asset exists.
+
+## Quality Pass Finding
+
+The first cutout-shift baseline was not evaluation-worthy: it produced a valid package, but the
+preview looked like a cutout wobble rather than a walk cycle. A second cutout-preserving attempt
+with synthetic legs improved motion readability but the legs did not match the source art style.
+
+The current default route therefore uses a stylized reference-derived renderer. It keeps visible
+identity cues from the reference, such as pink hair, side-view profile, sailor uniform, red tie,
+skirt trim, dark socks, and brown shoes. This is less faithful to the source image, but it is more
+game-friendly and reviewable as an 8-frame walk MVP.
 
 ## Review Bar
 

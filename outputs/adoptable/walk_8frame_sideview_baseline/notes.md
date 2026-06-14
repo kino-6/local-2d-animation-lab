@@ -15,9 +15,9 @@ This is a deliberately conservative MVP package for game import review.
 
 ## What This Is
 
-The package starts from one reference cutout and applies a tiny deterministic walk-cycle baseline:
-whole-body bob plus a small lower-body offset. It preserves one character silhouette and stable canvas
-layout over motion realism.
+The package starts from one reference image, derives identity colors, and renders a stylized
+8-phase side-view walk cycle. The default renderer intentionally favors readable game motion over
+direct cutout fidelity, because the cutout-shift preview was not evaluation-worthy.
 
 ## What This Is Not
 
@@ -26,6 +26,7 @@ layout over motion realism.
 - Not a 120-frame candidate.
 - Not attack, hit, run, weapon, or broad action generation.
 - Not proof that the generative pipeline can make final-quality walk cycles.
+- Not a faithful redraw of every reference-image detail.
 
 Use this as the boring concrete artifact route: `frames/*.png`, `spritesheet.png`, and `preview.gif`
 are the review targets.

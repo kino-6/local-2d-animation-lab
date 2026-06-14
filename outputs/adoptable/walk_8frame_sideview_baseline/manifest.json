@@ -45,7 +45,100 @@
     "uses_comfyui": false,
     "uses_wan_video": false,
     "uses_120_frame_generation": false,
-    "motion": "whole-body bob plus small lower-body offset; no generative redraw",
+    "renderer": "stylized_sprite_cycle",
+    "motion": "stylized reference-derived 8-phase sprite walk cycle",
+    "palette": {
+      "skin": [
+        236,
+        173,
+        156,
+        254
+      ],
+      "skin_shadow": [
+        194,
+        142,
+        128,
+        254
+      ],
+      "sock": [
+        49,
+        42,
+        46,
+        212
+      ],
+      "sock_shadow": [
+        37,
+        32,
+        35,
+        212
+      ],
+      "shoe": [
+        129,
+        53,
+        42,
+        248
+      ],
+      "shoe_shadow": [
+        93,
+        38,
+        30,
+        248
+      ],
+      "hair": [
+        231,
+        160,
+        141,
+        254
+      ],
+      "hair_shadow": [
+        180,
+        125,
+        110,
+        254
+      ],
+      "blouse": [
+        244,
+        248,
+        250,
+        255
+      ],
+      "uniform_shadow": [
+        183,
+        194,
+        208,
+        255
+      ],
+      "skirt": [
+        246,
+        248,
+        250,
+        255
+      ],
+      "trim": [
+        206,
+        45,
+        38,
+        255
+      ],
+      "tie": [
+        220,
+        47,
+        38,
+        255
+      ],
+      "eye": [
+        38,
+        35,
+        35,
+        255
+      ],
+      "outline": [
+        26,
+        23,
+        28,
+        210
+      ]
+    },
     "cutout": {
       "mask_mode": "connected_background",
       "source_size": {
@@ -61,6 +154,38 @@
       "pad": 24,
       "mirror_to_direction_right": true
     }
+  },
+  "motion_metrics": {
+    "mean_diff_from_first": [
+      0.0,
+      4.053,
+      3.955,
+      4.47,
+      1.643,
+      4.54,
+      3.611,
+      3.379
+    ],
+    "max_mean_diff_from_first": 4.54,
+    "unique_alpha_boxes": 4,
+    "phase_labels": [
+      "contact",
+      "down",
+      "passing",
+      "up",
+      "opposite_contact",
+      "opposite_down",
+      "opposite_passing",
+      "opposite_up"
+    ]
+  },
+  "visual_review": {
+    "agent_decision": "review_worthy_mvp_not_production",
+    "notes": [
+      "The first cutout-shift preview was not evaluation-worthy.",
+      "The default renderer now prioritizes readable 8-frame walk poses over direct cutout fidelity.",
+      "This is a stylized reference-derived game sprite, not production art and not a faithful redraw of the source image."
+    ]
   },
   "quality_bar": {
     "exactly_one_character_expected": true,

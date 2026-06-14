@@ -74,6 +74,21 @@ def test_build_walk_8frame_baseline_output_contract(tmp_path: Path) -> None:
     }
     assert manifest["method"]["uses_wan_video"] is False
     assert manifest["method"]["uses_120_frame_generation"] is False
+    assert manifest["method"]["renderer"] == "stylized_sprite_cycle"
+    assert manifest["method"]["motion"] == "stylized reference-derived 8-phase sprite walk cycle"
+    assert manifest["motion_metrics"]["max_mean_diff_from_first"] > 0.5
+    assert manifest["motion_metrics"]["unique_alpha_boxes"] >= 2
+    assert manifest["motion_metrics"]["phase_labels"] == [
+        "contact",
+        "down",
+        "passing",
+        "up",
+        "opposite_contact",
+        "opposite_down",
+        "opposite_passing",
+        "opposite_up",
+    ]
+    assert manifest["visual_review"]["agent_decision"] == "review_worthy_mvp_not_production"
 
 
 def _make_reference(path: Path) -> None:

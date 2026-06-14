@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps, ImageStat
 
 try:
     from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
@@ -47,6 +47,11 @@ def main() -> None:
     parser.add_argument("--background-min-channel", default=205, type=int)
     parser.add_argument("--pad", default=24, type=int)
     parser.add_argument("--mirror-to-right", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument(
+        "--renderer",
+        choices=["stylized_sprite_cycle", "cutout_synthetic_legs"],
+        default="stylized_sprite_cycle",
+    )
     parser.add_argument("--clean", action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
 
@@ -62,6 +67,7 @@ def main() -> None:
         background_min_channel=args.background_min_channel,
         pad=args.pad,
         mirror_to_right=args.mirror_to_right,
+        renderer=args.renderer,
         clean=args.clean,
     )
     print(json.dumps(manifest, indent=2, ensure_ascii=False))
@@ -79,6 +85,7 @@ def build_walk_8frame_baseline(
     background_min_channel: int = 205,
     pad: int = 24,
     mirror_to_right: bool = True,
+    renderer: str = "stylized_sprite_cycle",
     clean: bool = True,
 ) -> dict[str, Any]:
     if ACTION_SPEC["frame_count"] != 8:
@@ -101,7 +108,16 @@ def build_walk_8frame_baseline(
         cutout = ImageOps.mirror(cutout)
     cutout_report["mirror_to_direction_right"] = mirror_to_right
     fitted = _fit_cutout_to_canvas(cutout, frame_width, frame_height, target_height)
-    frame_paths = _write_walk_frames(fitted, frames_dir)
+    palette = _derive_character_palette(fitted)
+    if renderer == "stylized_sprite_cycle":
+        frame_paths = _write_stylized_walk_frames(frames_dir, frame_width, frame_height, palette)
+        motion_description = "stylized reference-derived 8-phase sprite walk cycle"
+    elif renderer == "cutout_synthetic_legs":
+        frame_paths = _write_walk_frames(fitted, frames_dir, palette)
+        motion_description = "reference-preserving upper body plus deterministic 8-phase synthetic leg walk cycle"
+    else:
+        raise ValueError(f"Unsupported renderer: {renderer}")
+    motion_metrics = _measure_motion(frame_paths)
 
     spritesheet = make_sprite_sheet(frame_paths, output_dir / "spritesheet.png", columns=8)
     preview = make_preview_gif(frame_paths, output_dir / "preview.gif", duration_ms=round(1000 / fps), loop=True)
@@ -132,8 +148,19 @@ def build_walk_8frame_baseline(
             "uses_comfyui": False,
             "uses_wan_video": False,
             "uses_120_frame_generation": False,
-            "motion": "whole-body bob plus small lower-body offset; no generative redraw",
+            "renderer": renderer,
+            "motion": motion_description,
+            "palette": palette,
             "cutout": cutout_report,
+        },
+        "motion_metrics": motion_metrics,
+        "visual_review": {
+            "agent_decision": "review_worthy_mvp_not_production",
+            "notes": [
+                "The first cutout-shift preview was not evaluation-worthy.",
+                "The default renderer now prioritizes readable 8-frame walk poses over direct cutout fidelity.",
+                "This is a stylized reference-derived game sprite, not production art and not a faithful redraw of the source image.",
+            ],
         },
         "quality_bar": {
             "exactly_one_character_expected": True,
@@ -211,43 +238,467 @@ def _fit_cutout_to_canvas(
     return canvas
 
 
-def _write_walk_frames(base: Image.Image, frames_dir: Path) -> list[Path]:
-    # Keep the effect deliberately small: this is an adoptable baseline, not animation synthesis.
+def _write_stylized_walk_frames(
+    frames_dir: Path,
+    frame_width: int,
+    frame_height: int,
+    palette: dict[str, list[int]],
+) -> list[Path]:
     cycle = [
-        {"body_x": 0, "body_y": 0, "lower_x": 0},
-        {"body_x": 1, "body_y": -2, "lower_x": 3},
-        {"body_x": 1, "body_y": -4, "lower_x": 6},
-        {"body_x": 0, "body_y": -2, "lower_x": 3},
-        {"body_x": 0, "body_y": 0, "lower_x": 0},
-        {"body_x": -1, "body_y": 1, "lower_x": -3},
-        {"body_x": -1, "body_y": 2, "lower_x": -6},
-        {"body_x": 0, "body_y": 1, "lower_x": -3},
+        {"phase": "contact", "bob": 0, "front": 46, "rear": -40, "front_knee": 18, "rear_knee": -18, "arm": -12},
+        {"phase": "down", "bob": 4, "front": 30, "rear": -26, "front_knee": 12, "rear_knee": -8, "arm": -8},
+        {"phase": "passing", "bob": -2, "front": -4, "rear": 16, "front_knee": -2, "rear_knee": 12, "arm": 2},
+        {"phase": "up", "bob": -5, "front": -28, "rear": 32, "front_knee": -14, "rear_knee": 18, "arm": 10},
+        {"phase": "opposite_contact", "bob": 0, "front": -40, "rear": 46, "front_knee": -18, "rear_knee": 18, "arm": 12},
+        {"phase": "opposite_down", "bob": 4, "front": -26, "rear": 30, "front_knee": -8, "rear_knee": 12, "arm": 8},
+        {"phase": "opposite_passing", "bob": -2, "front": 16, "rear": -4, "front_knee": 12, "rear_knee": -2, "arm": -2},
+        {"phase": "opposite_up", "bob": -5, "front": 32, "rear": -28, "front_knee": 18, "rear_knee": -14, "arm": -10},
     ]
     frame_paths: list[Path] = []
     for index, motion in enumerate(cycle):
-        frame = _compose_walk_frame(base, motion["body_x"], motion["body_y"], motion["lower_x"])
+        frame = _compose_stylized_walk_frame(frame_width, frame_height, palette, motion)
         path = frames_dir / f"walk_{index:03d}.png"
         frame.save(path)
         frame_paths.append(path)
     return frame_paths
 
 
-def _compose_walk_frame(base: Image.Image, body_x: int, body_y: int, lower_x: int) -> Image.Image:
-    width, height = base.size
+def _compose_stylized_walk_frame(
+    width: int,
+    height: int,
+    palette: dict[str, list[int]],
+    motion: dict[str, Any],
+) -> Image.Image:
+    scale = 3
+    canvas = Image.new("RGBA", (width * scale, height * scale), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(canvas)
+    p = {name: tuple(value) for name, value in palette.items()}
+    cx = width * scale // 2
+    ground = round(height * 0.89 * scale)
+    bob = int(motion["bob"]) * scale
+    hip_y = round(height * 0.56 * scale) + bob
+    body_y = round(height * 0.31 * scale) + bob
+    head_y = round(height * 0.235 * scale) + bob
+
+    _draw_stylized_leg(
+        draw,
+        hip=(cx - 10 * scale, hip_y),
+        knee=(cx + int(motion["rear_knee"]) * scale, round(height * 0.71 * scale)),
+        foot=(cx + int(motion["rear"]) * scale, ground),
+        palette=p,
+        rear=True,
+        scale=scale,
+    )
+    _draw_stylized_arm(draw, (cx - 28 * scale, body_y + 42 * scale), int(motion["arm"]) * scale, p, scale, rear=True)
+    _draw_stylized_body(draw, cx, body_y, hip_y, p, scale)
+    _draw_stylized_head(draw, cx, head_y, p, scale)
+    _draw_stylized_leg(
+        draw,
+        hip=(cx + 8 * scale, hip_y),
+        knee=(cx + int(motion["front_knee"]) * scale, round(height * 0.71 * scale)),
+        foot=(cx + int(motion["front"]) * scale, ground),
+        palette=p,
+        rear=False,
+        scale=scale,
+    )
+    _draw_stylized_arm(draw, (cx - 18 * scale, body_y + 44 * scale), -int(motion["arm"]) * scale, p, scale, rear=False)
+
+    return canvas.resize((width, height), Image.Resampling.LANCZOS)
+
+
+def _draw_stylized_body(
+    draw: ImageDraw.ImageDraw,
+    cx: int,
+    body_y: int,
+    hip_y: int,
+    palette: dict[str, tuple[int, int, int, int]],
+    scale: int,
+) -> None:
+    outline = palette["outline"]
+    blouse = palette["blouse"]
+    shadow = palette["uniform_shadow"]
+    tie = palette["tie"]
+    skirt = palette["skirt"]
+    trim = palette["trim"]
+    skin = palette["skin"]
+    draw.rounded_rectangle(
+        (cx - 10 * scale, body_y - 20 * scale, cx + 12 * scale, body_y + 10 * scale),
+        radius=4 * scale,
+        fill=outline,
+    )
+    draw.rounded_rectangle(
+        (cx - 7 * scale, body_y - 20 * scale, cx + 10 * scale, body_y + 12 * scale),
+        radius=4 * scale,
+        fill=skin,
+    )
+    body = [
+        (cx - 30 * scale, body_y),
+        (cx + 28 * scale, body_y + 4 * scale),
+        (cx + 38 * scale, hip_y - 20 * scale),
+        (cx - 38 * scale, hip_y - 18 * scale),
+    ]
+    draw.polygon([(x, y + 2 * scale) for x, y in body], fill=outline)
+    draw.polygon(body, fill=blouse)
+    draw.line((cx - 24 * scale, body_y + 16 * scale, cx + 28 * scale, body_y + 18 * scale), fill=shadow, width=3 * scale)
+    draw.polygon(
+        [
+            (cx - 10 * scale, body_y + 4 * scale),
+            (cx + 22 * scale, body_y + 8 * scale),
+            (cx + 4 * scale, body_y + 25 * scale),
+        ],
+        fill=shadow,
+    )
+    draw.polygon(
+        [
+            (cx + 4 * scale, body_y + 8 * scale),
+            (cx + 15 * scale, body_y + 30 * scale),
+            (cx + 4 * scale, body_y + 56 * scale),
+            (cx - 5 * scale, body_y + 28 * scale),
+        ],
+        fill=tie,
+    )
+    skirt_poly = [
+        (cx - 40 * scale, hip_y - 24 * scale),
+        (cx + 42 * scale, hip_y - 24 * scale),
+        (cx + 56 * scale, hip_y + 38 * scale),
+        (cx - 52 * scale, hip_y + 38 * scale),
+    ]
+    draw.polygon([(x, y + 2 * scale) for x, y in skirt_poly], fill=outline)
+    draw.polygon(skirt_poly, fill=skirt)
+    for offset in (-34, -12, 10, 32):
+        draw.line((cx + offset * scale, hip_y - 20 * scale, cx + (offset - 8) * scale, hip_y + 34 * scale), fill=shadow, width=2 * scale)
+    draw.line((cx - 50 * scale, hip_y + 31 * scale, cx + 54 * scale, hip_y + 31 * scale), fill=trim, width=3 * scale)
+
+
+def _draw_stylized_head(
+    draw: ImageDraw.ImageDraw,
+    cx: int,
+    head_y: int,
+    palette: dict[str, tuple[int, int, int, int]],
+    scale: int,
+) -> None:
+    outline = palette["outline"]
+    skin = palette["skin"]
+    hair = palette["hair"]
+    hair_shadow = palette["hair_shadow"]
+    eye = palette["eye"]
+    draw.ellipse((cx - 30 * scale, head_y - 28 * scale, cx + 36 * scale, head_y + 38 * scale), fill=outline)
+    draw.ellipse((cx - 24 * scale, head_y - 22 * scale, cx + 34 * scale, head_y + 36 * scale), fill=skin)
+    draw.pieslice((cx - 48 * scale, head_y - 42 * scale, cx + 36 * scale, head_y + 44 * scale), 98, 348, fill=hair)
+    draw.pieslice((cx - 48 * scale, head_y - 42 * scale, cx + 36 * scale, head_y + 44 * scale), 125, 235, fill=hair_shadow)
+    draw.rectangle((cx - 42 * scale, head_y + 6 * scale, cx - 18 * scale, head_y + 48 * scale), fill=hair)
+    draw.polygon(
+        [
+            (cx + 28 * scale, head_y + 4 * scale),
+            (cx + 44 * scale, head_y + 12 * scale),
+            (cx + 28 * scale, head_y + 18 * scale),
+        ],
+        fill=skin,
+    )
+    draw.line((cx + 12 * scale, head_y + 4 * scale, cx + 24 * scale, head_y + 4 * scale), fill=eye, width=2 * scale)
+    draw.arc((cx - 26 * scale, head_y - 18 * scale, cx + 20 * scale, head_y + 20 * scale), 220, 315, fill=(255, 235, 235, 210), width=2 * scale)
+
+
+def _draw_stylized_arm(
+    draw: ImageDraw.ImageDraw,
+    shoulder: tuple[int, int],
+    swing: int,
+    palette: dict[str, tuple[int, int, int, int]],
+    scale: int,
+    rear: bool,
+) -> None:
+    outline = palette["outline"]
+    sleeve = palette["blouse"]
+    skin = palette["skin_shadow"] if rear else palette["skin"]
+    x, y = shoulder
+    elbow = (x + swing // 2, y + 42 * scale)
+    hand = (x + swing, y + 78 * scale)
+    draw.line([shoulder, elbow, hand], fill=outline, width=9 * scale, joint="curve")
+    draw.line([shoulder, elbow], fill=sleeve, width=7 * scale, joint="curve")
+    draw.line([elbow, hand], fill=skin, width=5 * scale, joint="curve")
+    draw.ellipse((hand[0] - 4 * scale, hand[1] - 2 * scale, hand[0] + 5 * scale, hand[1] + 7 * scale), fill=skin)
+
+
+def _draw_stylized_leg(
+    draw: ImageDraw.ImageDraw,
+    hip: tuple[int, int],
+    knee: tuple[int, int],
+    foot: tuple[int, int],
+    palette: dict[str, tuple[int, int, int, int]],
+    rear: bool,
+    scale: int,
+) -> None:
+    outline = palette["outline"]
+    skin = palette["skin_shadow"] if rear else palette["skin"]
+    sock = palette["sock_shadow"] if rear else palette["sock"]
+    shoe = palette["shoe_shadow"] if rear else palette["shoe"]
+    leg_width = 10 * scale if rear else 11 * scale
+    draw.line([hip, knee, foot], fill=outline, width=leg_width + 5 * scale, joint="curve")
+    draw.line([hip, knee], fill=skin, width=leg_width, joint="curve")
+    draw.line([knee, foot], fill=sock, width=leg_width, joint="curve")
+    direction = 1 if foot[0] >= knee[0] else -1
+    shoe_poly = [
+        (foot[0] - 14 * scale, foot[1] - 7 * scale),
+        (foot[0] + direction * 28 * scale, foot[1] - 8 * scale),
+        (foot[0] + direction * 36 * scale, foot[1] - 1 * scale),
+        (foot[0] + direction * 12 * scale, foot[1] + 6 * scale),
+        (foot[0] - 14 * scale, foot[1] + 4 * scale),
+    ]
+    draw.polygon(shoe_poly, fill=outline)
+    inner = [(round(x * 0.92 + foot[0] * 0.08), round(y * 0.86 + foot[1] * 0.14)) for x, y in shoe_poly]
+    draw.polygon(inner, fill=shoe)
+
+
+def _write_walk_frames(base: Image.Image, frames_dir: Path, palette: dict[str, list[int]]) -> list[Path]:
+    cycle = [
+        {
+            "phase": "contact",
+            "bob": 0,
+            "front": ((0.07, 0.02), (0.20, 0.46), (0.38, 0.95)),
+            "rear": ((-0.07, 0.02), (-0.18, 0.50), (-0.34, 0.95)),
+        },
+        {
+            "phase": "down",
+            "bob": 3,
+            "front": ((0.07, 0.02), (0.16, 0.48), (0.25, 0.95)),
+            "rear": ((-0.07, 0.02), (-0.08, 0.52), (-0.18, 0.95)),
+        },
+        {
+            "phase": "passing",
+            "bob": -2,
+            "front": ((0.07, 0.02), (0.03, 0.45), (-0.03, 0.88)),
+            "rear": ((-0.07, 0.02), (0.02, 0.43), (0.15, 0.86)),
+        },
+        {
+            "phase": "up",
+            "bob": -4,
+            "front": ((0.07, 0.02), (-0.08, 0.48), (-0.23, 0.95)),
+            "rear": ((-0.07, 0.02), (0.12, 0.46), (0.24, 0.90)),
+        },
+        {
+            "phase": "opposite_contact",
+            "bob": 0,
+            "front": ((0.07, 0.02), (-0.18, 0.50), (-0.34, 0.95)),
+            "rear": ((-0.07, 0.02), (0.20, 0.46), (0.38, 0.95)),
+        },
+        {
+            "phase": "opposite_down",
+            "bob": 3,
+            "front": ((0.07, 0.02), (-0.08, 0.52), (-0.18, 0.95)),
+            "rear": ((-0.07, 0.02), (0.16, 0.48), (0.25, 0.95)),
+        },
+        {
+            "phase": "opposite_passing",
+            "bob": -2,
+            "front": ((0.07, 0.02), (0.02, 0.43), (0.15, 0.86)),
+            "rear": ((-0.07, 0.02), (0.03, 0.45), (-0.03, 0.88)),
+        },
+        {
+            "phase": "opposite_up",
+            "bob": -4,
+            "front": ((0.07, 0.02), (0.12, 0.46), (0.24, 0.90)),
+            "rear": ((-0.07, 0.02), (-0.08, 0.48), (-0.23, 0.95)),
+        },
+    ]
+    frame_paths: list[Path] = []
+    for index, motion in enumerate(cycle):
+        frame = _compose_walk_frame(base, motion, palette)
+        path = frames_dir / f"walk_{index:03d}.png"
+        frame.save(path)
+        frame_paths.append(path)
+    return frame_paths
+
+
+def _compose_walk_frame(base: Image.Image, motion: dict[str, Any], palette: dict[str, list[int]]) -> Image.Image:
     bbox = base.getchannel("A").getbbox()
     if bbox is None:
         return Image.new("RGBA", base.size, (0, 0, 0, 0))
 
     left, top, right, bottom = bbox
-    hip_y = top + round((bottom - top) * 0.56)
-    overlap = 10
-    upper = base.crop((left, top, right, min(bottom, hip_y + overlap)))
-    lower = base.crop((left, max(top, hip_y - overlap), right, bottom))
+    subject_width = right - left
+    subject_height = bottom - top
+    hem_y = top + round(subject_height * 0.59)
+    ground_y = bottom
+    center_x = left + subject_width // 2
+    leg_span = max(66, round(subject_width * 0.42))
+    leg_width = max(8, round(subject_width * 0.046))
+    outline_width = leg_width + 4
+    shoe_width = max(28, round(subject_width * 0.15))
+    shoe_height = max(10, round(subject_height * 0.026))
+    bob = int(motion["bob"])
 
+    upper = base.crop((left, top, right, min(bottom, hem_y + 18)))
     frame = Image.new("RGBA", base.size, (0, 0, 0, 0))
-    frame.alpha_composite(lower, (left + body_x + lower_x, max(top, hip_y - overlap) + body_y))
-    frame.alpha_composite(upper, (left + body_x, top + body_y))
+    draw = ImageDraw.Draw(frame)
+    leg_hem_y = hem_y + bob
+    rear = [_resolve_leg_point(point, center_x, leg_hem_y, ground_y, leg_span) for point in motion["rear"]]
+    front = [_resolve_leg_point(point, center_x, leg_hem_y, ground_y, leg_span) for point in motion["front"]]
+
+    _draw_leg(draw, rear, palette, outline_width, leg_width, shoe_width, shoe_height, rear=True)
+    _draw_leg(draw, front, palette, outline_width, leg_width, shoe_width, shoe_height, rear=False)
+    frame.alpha_composite(upper, (left, top + bob))
     return frame
+
+
+def _resolve_leg_point(
+    point: tuple[float, float],
+    center_x: int,
+    hem_y: int,
+    ground_y: int,
+    leg_span: int,
+) -> tuple[int, int]:
+    x_norm, y_norm = point
+    return (center_x + round(x_norm * leg_span), hem_y + round(y_norm * (ground_y - hem_y)))
+
+
+def _draw_leg(
+    draw: ImageDraw.ImageDraw,
+    points: list[tuple[int, int]],
+    palette: dict[str, list[int]],
+    outline_width: int,
+    leg_width: int,
+    shoe_width: int,
+    shoe_height: int,
+    rear: bool,
+) -> None:
+    hip, knee, foot = points
+    outline = tuple(palette["outline"])
+    skin = tuple(palette["skin_shadow"] if rear else palette["skin"])
+    sock = tuple(palette["sock_shadow"] if rear else palette["sock"])
+    shoe = tuple(palette["shoe_shadow"] if rear else palette["shoe"])
+    draw.line([hip, knee, foot], fill=outline, width=outline_width, joint="curve")
+    draw.line([hip, knee], fill=skin, width=leg_width, joint="curve")
+    draw.line([knee, foot], fill=sock, width=max(leg_width - 1, 4), joint="curve")
+    _draw_shoe(draw, foot, shoe, outline, shoe_width, shoe_height)
+
+
+def _draw_shoe(
+    draw: ImageDraw.ImageDraw,
+    foot: tuple[int, int],
+    shoe: tuple[int, int, int, int],
+    outline: tuple[int, int, int, int],
+    width: int,
+    height: int,
+) -> None:
+    x, y = foot
+    outline_poly = [
+        (x - round(width * 0.35), y - height),
+        (x + round(width * 0.42), y - height),
+        (x + round(width * 0.55), y - round(height * 0.25)),
+        (x + round(width * 0.15), y + round(height * 0.2)),
+        (x - round(width * 0.42), y + round(height * 0.1)),
+    ]
+    fill_poly = [
+        (x - round(width * 0.30), y - height + 2),
+        (x + round(width * 0.36), y - height + 2),
+        (x + round(width * 0.47), y - round(height * 0.18)),
+        (x + round(width * 0.10), y - 1),
+        (x - round(width * 0.36), y - 1),
+    ]
+    draw.polygon(outline_poly, fill=outline)
+    draw.polygon(fill_poly, fill=shoe)
+
+
+def _derive_character_palette(image: Image.Image) -> dict[str, list[int]]:
+    opaque = _opaque_pixels(image)
+    skin_candidates = [
+        pixel
+        for pixel in opaque
+        if pixel[0] > 160 and pixel[1] > 95 and pixel[2] > 70 and pixel[0] > pixel[2] + 35
+    ]
+    dark_candidates = [pixel for pixel in opaque if max(pixel[:3]) < 95]
+    brown_candidates = [
+        pixel
+        for pixel in opaque
+        if pixel[0] > 55 and pixel[1] < 95 and pixel[2] < 85 and pixel[0] > pixel[2] + 15
+    ]
+    hair_candidates = [
+        pixel
+        for pixel in opaque
+        if pixel[0] > 170 and 70 < pixel[1] < 190 and 80 < pixel[2] < 190 and pixel[0] > pixel[2] + 20
+    ]
+    outline_candidates = [pixel for pixel in opaque if max(pixel[:3]) < 60]
+    skin = _average_rgba(skin_candidates, (232, 164, 128, 255))
+    sock = _average_rgba(dark_candidates, (24, 30, 50, 255))
+    shoe = _average_rgba(brown_candidates, (96, 42, 28, 255))
+    hair = _average_rgba(hair_candidates, (230, 126, 122, 255))
+    outline = _average_rgba(outline_candidates, (28, 24, 24, 255))
+    return {
+        "skin": list(skin),
+        "skin_shadow": list(_shade(skin, 0.82)),
+        "sock": list(sock),
+        "sock_shadow": list(_shade(sock, 0.76)),
+        "shoe": list(shoe),
+        "shoe_shadow": list(_shade(shoe, 0.72)),
+        "hair": list(hair),
+        "hair_shadow": list(_shade(hair, 0.78)),
+        "blouse": [244, 248, 250, 255],
+        "uniform_shadow": [183, 194, 208, 255],
+        "skirt": [246, 248, 250, 255],
+        "trim": [206, 45, 38, 255],
+        "tie": [220, 47, 38, 255],
+        "eye": [38, 35, 35, 255],
+        "outline": list(outline),
+    }
+
+
+def _opaque_pixels(image: Image.Image) -> list[tuple[int, int, int, int]]:
+    rgba = image.convert("RGBA")
+    pixels = rgba.load()
+    out: list[tuple[int, int, int, int]] = []
+    for y in range(rgba.height):
+        for x in range(rgba.width):
+            pixel = pixels[x, y]
+            if pixel[3] > 0:
+                out.append(pixel)
+    return out
+
+
+def _average_rgba(pixels: list[tuple[int, int, int, int]], fallback: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
+    if not pixels:
+        return fallback
+    red = round(sum(pixel[0] for pixel in pixels) / len(pixels))
+    green = round(sum(pixel[1] for pixel in pixels) / len(pixels))
+    blue = round(sum(pixel[2] for pixel in pixels) / len(pixels))
+    alpha = round(sum(pixel[3] for pixel in pixels) / len(pixels))
+    return (red, green, blue, alpha)
+
+
+def _shade(color: tuple[int, int, int, int], factor: float) -> tuple[int, int, int, int]:
+    return (
+        max(0, min(255, round(color[0] * factor))),
+        max(0, min(255, round(color[1] * factor))),
+        max(0, min(255, round(color[2] * factor))),
+        color[3],
+    )
+
+
+def _measure_motion(frame_paths: list[Path]) -> dict[str, Any]:
+    frames = [Image.open(path).convert("RGBA") for path in frame_paths]
+    first = frames[0]
+    diff_scores = []
+    alpha_boxes = []
+    for frame in frames:
+        bbox = frame.getchannel("A").getbbox()
+        alpha_boxes.append(list(bbox) if bbox else None)
+        diff = ImageChops.difference(first, frame).convert("L")
+        diff_scores.append(round(ImageStat.Stat(diff).mean[0], 3))
+    unique_alpha_boxes = len({tuple(box) for box in alpha_boxes if box is not None})
+    return {
+        "mean_diff_from_first": diff_scores,
+        "max_mean_diff_from_first": max(diff_scores),
+        "unique_alpha_boxes": unique_alpha_boxes,
+        "phase_labels": [
+            "contact",
+            "down",
+            "passing",
+            "up",
+            "opposite_contact",
+            "opposite_down",
+            "opposite_passing",
+            "opposite_up",
+        ],
+    }
 
 
 def _flatten(image: Image.Image) -> Image.Image:
@@ -332,9 +783,9 @@ This is a deliberately conservative MVP package for game import review.
 
 ## What This Is
 
-The package starts from one reference cutout and applies a tiny deterministic walk-cycle baseline:
-whole-body bob plus a small lower-body offset. It preserves one character silhouette and stable canvas
-layout over motion realism.
+The package starts from one reference image, derives identity colors, and renders a stylized
+8-phase side-view walk cycle. The default renderer intentionally favors readable game motion over
+direct cutout fidelity, because the cutout-shift preview was not evaluation-worthy.
 
 ## What This Is Not
 
@@ -343,6 +794,7 @@ layout over motion realism.
 - Not a 120-frame candidate.
 - Not attack, hit, run, weapon, or broad action generation.
 - Not proof that the generative pipeline can make final-quality walk cycles.
+- Not a faithful redraw of every reference-image detail.
 
 Use this as the boring concrete artifact route: `frames/*.png`, `spritesheet.png`, and `preview.gif`
 are the review targets.
