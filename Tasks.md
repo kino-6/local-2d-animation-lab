@@ -295,3 +295,36 @@ source_kind: ai_generated_rough_for_route_a_v2
   - v2 is the current stronger candidate because it has stronger outline and clearer game-sprite readability.
   - Still not production art.
   - Route A remains the practical path because the rough frames can be edited in Aseprite.
+
+## Production Target
+
+- [x] Treat v2 as the fixed motion rough for productionization.
+- [x] Do not return to prompt exploration or broad generation for this step.
+- [x] Add a production gate for `production_walk_8frame_sideview`.
+- [x] Write production review outputs:
+  - `production_review.json`
+  - `production_review.md`
+- [x] Gate checks:
+  - no alpha edge touch;
+  - stable ground line;
+  - stable head height;
+  - stable body height;
+  - root motion not excessive;
+  - 128/192/256 game previews exist.
+- [x] Current gate result:
+
+```text
+decision: candidate_ready_for_manual_polish
+blocking_issues: none
+production_ready: false
+```
+
+- [x] Keep production honesty rule:
+  - Do not mark production-ready until a human accepts the loop at game size.
+  - Do not mark production-ready until frame-level polish is completed.
+  - Do not mark production-ready until final production review flips `production_ready` to true.
+- [ ] Next production work:
+  - manually clean line jitter around hair tips, sleeves, skirt hem, socks, and shoes;
+  - polish shoe/contact shape on contact/down frames;
+  - normalize tiny color/value differences after manual edits;
+  - run the production gate again.

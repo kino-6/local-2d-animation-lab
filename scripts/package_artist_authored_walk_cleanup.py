@@ -140,6 +140,12 @@ def package_artist_authored_walk_cleanup(
     }
     cleanup_report_path = output_dir / "cleanup_report.json"
     cleanup_report_path.write_text(json.dumps(cleanup_report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    game_readiness = _game_readiness_metrics(frame_entries, out_width, out_height, game_previews)
+    production_gate = _production_gate(game_readiness, source_kind)
+    production_review_path = output_dir / "production_review.json"
+    production_review_path.write_text(json.dumps(production_gate, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    production_review_md = output_dir / "production_review.md"
+    production_review_md.write_text(_production_review_notes(production_gate), encoding="utf-8")
 
     manifest = {
         "route": ROUTE,
@@ -168,9 +174,12 @@ def package_artist_authored_walk_cleanup(
             "preview_gif": str(preview_gif.relative_to(output_dir)).replace("\\", "/"),
             "contact_sheet": str(contact_sheet.relative_to(output_dir)).replace("\\", "/"),
             "cleanup_report": str(cleanup_report_path.relative_to(output_dir)).replace("\\", "/"),
+            "production_review": str(production_review_path.relative_to(output_dir)).replace("\\", "/"),
+            "production_review_md": str(production_review_md.relative_to(output_dir)).replace("\\", "/"),
             "game_previews": game_previews,
         },
-        "game_readiness": _game_readiness_metrics(frame_entries, out_width, out_height, game_previews),
+        "game_readiness": game_readiness,
+        "production_gate": production_gate,
         "source": {
             "rough_frames_dir": str(rough_frames_dir),
             "reference_image": str(reference_image) if reference_image else None,
@@ -340,6 +349,45 @@ def _game_readiness_metrics(
     }
 
 
+def _production_gate(game_readiness: dict[str, Any], source_kind: str) -> dict[str, Any]:
+    checks = {
+        "no_alpha_edge_touch": len(game_readiness["alpha_edge_touch_frames"]) == 0,
+        "stable_ground_line": game_readiness["estimated_ground_y_range"] <= 10,
+        "stable_head_height": game_readiness["estimated_head_y_range"] <= 16,
+        "stable_body_height": game_readiness["estimated_bbox_height_range"] <= 12,
+        "root_motion_not_excessive": game_readiness["estimated_center_x_range"] <= 36,
+        "game_previews_exist": set(game_readiness["preview_heights"]) >= {"height_128", "height_192", "height_256"},
+    }
+    blocking = [name for name, passed in checks.items() if not passed]
+    manual_polish_required = source_kind != "artist_authored_rough"
+    manual_polish_queue = [
+        "Open the 128px and 192px previews in Aseprite or Godot and confirm the loop in motion.",
+        "Clean remaining per-frame line jitter around hair tips, sleeves, skirt hem, socks, and shoes.",
+        "Check shoe contact and foot shape in contact/down frames.",
+        "Normalize tiny color/value differences across frames after manual edits.",
+    ]
+    if manual_polish_required:
+        manual_polish_queue.insert(
+            0,
+            "Human art review is required because this package uses an AI-generated rough candidate.",
+        )
+    decision = "candidate_ready_for_manual_polish" if not blocking else "needs_retake_before_manual_polish"
+    return {
+        "target": "production_walk_8frame_sideview",
+        "decision": decision,
+        "production_ready": False,
+        "checks": checks,
+        "blocking_issues": blocking,
+        "manual_polish_required": manual_polish_required,
+        "manual_polish_queue": manual_polish_queue,
+        "do_not_claim_production_until": [
+            "a human accepts the loop at game size",
+            "frame-level polish is completed",
+            "a final production review marks production_ready true",
+        ],
+    }
+
+
 def _flatten(image: Image.Image) -> Image.Image:
     background = Image.new("RGBA", image.size, (255, 255, 255, 255))
     background.alpha_composite(image)
@@ -436,6 +484,7 @@ This package is Route A: {source_summary}.
 - background: `{manifest["background"]}`
 - AI/model scope: `{manifest["ai_scope"]}`
 - game_readiness: `{manifest["game_readiness"]["decision"]}`
+- production_gate: `{manifest["production_gate"]["decision"]}`
 - production_ready: `{manifest["review"]["production_ready"]}`
 
 ## What This Route Does
@@ -443,6 +492,7 @@ This package is Route A: {source_summary}.
 - {pose_control_summary}
 - Produces transparent frames, spritesheet, preview GIF, contact sheet, manifest, and cleanup report.
 - Produces 128, 192, and 256 px-height game-size preview packages by default.
+- Produces production review JSON/Markdown for the manual polish gate.
 - Uses deterministic cleanup only.
 
 ## What This Route Does Not Do
@@ -455,6 +505,38 @@ This package is Route A: {source_summary}.
 ## Cleanup Warnings
 
 {warning_text}
+"""
+
+
+def _production_review_notes(production_gate: dict[str, Any]) -> str:
+    checks = "\n".join(
+        f"- [{'x' if passed else ' '}] {name}" for name, passed in production_gate["checks"].items()
+    )
+    blocking = production_gate["blocking_issues"] or ["none"]
+    blocking_text = "\n".join(f"- {issue}" for issue in blocking)
+    polish_text = "\n".join(f"- {item}" for item in production_gate["manual_polish_queue"])
+    return f"""# Production Review
+
+- target: `{production_gate["target"]}`
+- decision: `{production_gate["decision"]}`
+- production_ready: `{production_gate["production_ready"]}`
+
+## Checks
+
+{checks}
+
+## Blocking Issues
+
+{blocking_text}
+
+## Manual Polish Queue
+
+{polish_text}
+
+## Production Rule
+
+Do not mark this asset production-ready until a human accepts the loop at game size, frame-level
+polish is completed, and a final production review explicitly flips `production_ready` to true.
 """
 
 

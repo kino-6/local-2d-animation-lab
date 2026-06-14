@@ -51,6 +51,8 @@ The package contains:
 - `game_previews/height_256/`
 - `manifest.json`
 - `cleanup_report.json`
+- `production_review.json`
+- `production_review.md`
 - `notes.md`
 
 ## Command
@@ -70,7 +72,7 @@ Allowed:
 - green-dominant chroma cleanup and despill for generated rough sheets;
 - plain-background removal when the rough has a removable solid background;
 - alpha normalization;
-- spritesheet, contact sheet, preview GIF, game-size previews, manifest, and cleanup report generation.
+- spritesheet, contact sheet, preview GIF, game-size previews, manifest, cleanup report, and production review generation.
 
 Not allowed:
 
@@ -118,3 +120,21 @@ character. The cleanup script now also recognizes green-dominant connected backg
 The current packaged output also includes game-size previews at 128, 192, and 256 px height. These
 are for reviewing whether the motion still reads at practical 2D game sizes before doing any manual
 Aseprite cleanup.
+
+## Production Gate
+
+The current v2 package passes the mechanical production gate:
+
+```text
+decision: candidate_ready_for_manual_polish
+blocking_issues: none
+```
+
+This does not mean `production_ready`. The remaining production work is manual polish:
+
+- human review of the 128px and 192px loop in motion;
+- cleanup of small line jitter around hair tips, sleeves, skirt hem, socks, and shoes;
+- shoe/contact polish on contact and down frames;
+- final color/value normalization after edits.
+
+The asset must stay `production_ready: false` until those manual polish steps are accepted.

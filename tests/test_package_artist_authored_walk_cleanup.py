@@ -43,6 +43,8 @@ def test_artist_authored_walk_cleanup_contract(tmp_path: Path) -> None:
     assert (output_dir / "contact_sheet.png").exists()
     assert (output_dir / "manifest.json").exists()
     assert (output_dir / "cleanup_report.json").exists()
+    assert (output_dir / "production_review.json").exists()
+    assert (output_dir / "production_review.md").exists()
     assert (output_dir / "notes.md").exists()
     assert (output_dir / "game_previews" / "height_128" / "preview.gif").exists()
     assert (output_dir / "game_previews" / "height_192" / "spritesheet.png").exists()
@@ -88,6 +90,13 @@ def test_artist_authored_walk_cleanup_contract(tmp_path: Path) -> None:
     assert manifest["game_readiness"]["fixed_best_rough"] is True
     assert manifest["game_readiness"]["generated_new_motion"] is False
     assert manifest["game_readiness"]["decision"] == "reviewable_rough_candidate_not_production"
+    assert manifest["outputs"]["production_review"] == "production_review.json"
+    assert manifest["outputs"]["production_review_md"] == "production_review.md"
+    assert manifest["production_gate"]["target"] == "production_walk_8frame_sideview"
+    assert manifest["production_gate"]["decision"] == "candidate_ready_for_manual_polish"
+    assert manifest["production_gate"]["production_ready"] is False
+    assert manifest["production_gate"]["manual_polish_required"] is False
+    assert (output_dir / "production_review.md").read_text(encoding="utf-8").startswith("# Production Review")
 
 
 def test_artist_authored_walk_cleanup_rejects_wrong_frame_count(tmp_path: Path) -> None:

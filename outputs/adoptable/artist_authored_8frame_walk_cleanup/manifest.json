@@ -46,6 +46,8 @@
     "preview_gif": "preview.gif",
     "contact_sheet": "contact_sheet.png",
     "cleanup_report": "cleanup_report.json",
+    "production_review": "production_review.json",
+    "production_review_md": "production_review.md",
     "game_previews": {
       "height_128": {
         "frame_size": {
@@ -123,10 +125,37 @@
     "game_preview_review_required": true,
     "decision": "reviewable_rough_candidate_not_production"
   },
+  "production_gate": {
+    "target": "production_walk_8frame_sideview",
+    "decision": "candidate_ready_for_manual_polish",
+    "production_ready": false,
+    "checks": {
+      "no_alpha_edge_touch": true,
+      "stable_ground_line": true,
+      "stable_head_height": true,
+      "stable_body_height": true,
+      "root_motion_not_excessive": true,
+      "game_previews_exist": true
+    },
+    "blocking_issues": [],
+    "manual_polish_required": true,
+    "manual_polish_queue": [
+      "Human art review is required because this package uses an AI-generated rough candidate.",
+      "Open the 128px and 192px previews in Aseprite or Godot and confirm the loop in motion.",
+      "Clean remaining per-frame line jitter around hair tips, sleeves, skirt hem, socks, and shoes.",
+      "Check shoe contact and foot shape in contact/down frames.",
+      "Normalize tiny color/value differences across frames after manual edits."
+    ],
+    "do_not_claim_production_until": [
+      "a human accepts the loop at game size",
+      "frame-level polish is completed",
+      "a final production review marks production_ready true"
+    ]
+  },
   "source": {
     "rough_frames_dir": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames",
     "reference_image": "assets\\reference\\Anima_00013_.png",
-    "note": "Generated with built-in image_gen as a second rough candidate for Route A; fixed as the current motion rough and packaged with green-dominance chroma cleanup, despill, stability metrics, and game-size previews."
+    "note": "Generated with built-in image_gen as a second rough candidate for Route A; fixed as the current motion rough and packaged with green-dominance chroma cleanup, despill, stability metrics, game-size previews, and production manual-polish gate."
   },
   "frames": [
     {
