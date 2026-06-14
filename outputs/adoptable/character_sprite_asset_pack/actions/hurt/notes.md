@@ -6,7 +6,7 @@
 - method: `route_a_generated_rough_cleanup`
 - frame_count: `4`
 - phase_names: `['brace', 'small_recoil', 'large_stagger', 'recover']`
-- ground_y_range: `6`
+- ground_y_range: `0`
 - alpha_edge_touch_frames: `[]`
 
 Hurt uses a dedicated 4-frame rough sheet with bracing, recoil, stagger, and recovery phases.

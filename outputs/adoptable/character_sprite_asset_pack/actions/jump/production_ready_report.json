@@ -69,7 +69,7 @@
       "contact_sheet": "game_previews/height_256/contact_sheet.png"
     }
   },
-  "ground_y_range": 147,
+  "ground_y_range": 187,
   "alpha_edge_touch_frames": [],
   "production_ready": true,
   "review_note": "Jump uses a dedicated 6-frame rough sheet with anticipation, takeoff, airborne, and landing phases."

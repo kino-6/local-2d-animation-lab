@@ -48,8 +48,13 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
 
     assert (output_dir / "manifest.json").exists()
     assert (output_dir / "identity_report.json").exists()
+    assert (output_dir / "runtime_manifest.json").exists()
     assert (output_dir / "production_gate.json").exists()
     assert (output_dir / "notes.md").exists()
+    assert (output_dir / "pack_review" / "all_actions_contact_sheet.png").exists()
+    assert (output_dir / "pack_review" / "consistency_report.json").exists()
+    assert (output_dir / "pack_review" / "godot_import_manifest.json").exists()
+    assert (output_dir / "pack_review" / "aseprite_import_notes.md").exists()
 
     walk_frames = sorted((output_dir / "actions" / "walk" / "frames").glob("walk_*.png"))
     idle_frames = sorted((output_dir / "actions" / "idle" / "frames").glob("idle_*.png"))
@@ -104,10 +109,14 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert manifest["production_ready"] is True
     assert manifest["actions"]["walk"]["frame_count"] == 8
     assert manifest["actions"]["walk"]["production_ready"] is True
+    assert manifest["actions"]["walk"]["runtime"]["loop"] is True
+    assert manifest["actions"]["walk"]["runtime"]["origin"]["policy"] == "bottom_center_canvas"
     assert manifest["actions"]["idle"]["frame_count"] == 4
     assert manifest["actions"]["idle"]["production_ready"] is True
+    assert manifest["actions"]["idle"]["runtime"]["loop"] is True
     assert manifest["actions"]["run"]["frame_count"] == 8
     assert manifest["actions"]["run"]["production_ready"] is True
+    assert manifest["actions"]["run"]["runtime"]["loop"] is True
     assert manifest["actions"]["run"]["phase_names"] == [
         "right_contact",
         "right_down",
@@ -120,6 +129,9 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     ]
     assert manifest["actions"]["jump"]["frame_count"] == 6
     assert manifest["actions"]["jump"]["production_ready"] is True
+    assert manifest["actions"]["jump"]["runtime"]["loop"] is False
+    assert manifest["actions"]["jump"]["runtime"]["playback_frame_count"] == 8
+    assert manifest["actions"]["jump"]["runtime"]["playback_frame_indices"] == [0, 0, 1, 2, 3, 4, 5, 5]
     assert manifest["actions"]["jump"]["phase_names"] == [
         "anticipation",
         "takeoff",
@@ -130,6 +142,9 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     ]
     assert manifest["actions"]["hurt"]["frame_count"] == 4
     assert manifest["actions"]["hurt"]["production_ready"] is True
+    assert manifest["actions"]["hurt"]["runtime"]["loop"] is False
+    assert manifest["actions"]["hurt"]["runtime"]["playback_frame_count"] == 6
+    assert manifest["actions"]["hurt"]["runtime"]["playback_frame_indices"] == [0, 1, 1, 2, 2, 3]
     assert manifest["actions"]["hurt"]["phase_names"] == [
         "brace",
         "small_recoil",
@@ -143,6 +158,30 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
         "uses_new_model_backend": False,
         "uses_120_frame_generation": False,
     }
+    assert manifest["runtime_manifest"] == "runtime_manifest.json"
+    assert manifest["pack_review"] == {
+        "all_actions_contact_sheet": "pack_review/all_actions_contact_sheet.png",
+        "consistency_report": "pack_review/consistency_report.json",
+        "godot_import_manifest": "pack_review/godot_import_manifest.json",
+        "aseprite_import_notes": "pack_review/aseprite_import_notes.md",
+    }
+
+    runtime_manifest = json.loads((output_dir / "runtime_manifest.json").read_text(encoding="utf-8"))
+    assert runtime_manifest["origin_policy"] == "bottom_center_canvas"
+    assert set(runtime_manifest["actions"]) == {"walk", "idle", "run", "jump", "hurt"}
+    assert runtime_manifest["actions"]["jump"]["loop"] is False
+
+    consistency = json.loads((output_dir / "pack_review" / "consistency_report.json").read_text(encoding="utf-8"))
+    assert consistency["passed"] is True
+    assert consistency["runtime_import_decision"] == "ready_for_godot_aseprite_import_review"
+    assert consistency["checks"]["runtime_metadata_present"] is True
+    assert consistency["checks"]["common_canvas_size"] is True
+    assert consistency["checks"]["loop_flags_expected"] is True
+
+    godot_manifest = json.loads((output_dir / "pack_review" / "godot_import_manifest.json").read_text(encoding="utf-8"))
+    assert godot_manifest["asset_kind"] == "AnimatedSprite2D_action_pack"
+    assert godot_manifest["actions"]["walk"]["loop"] is True
+    assert godot_manifest["actions"]["hurt"]["loop"] is False
 
     identity = json.loads((output_dir / "identity_report.json").read_text(encoding="utf-8"))
     assert identity["all_required_cues_pass"] is True
@@ -162,6 +201,9 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert gate["checks"]["run_production_ready"] is True
     assert gate["checks"]["jump_production_ready"] is True
     assert gate["checks"]["hurt_production_ready"] is True
+    assert gate["checks"]["runtime_metadata_present"] is True
+    assert gate["checks"]["pack_review_generated"] is True
+    assert gate["checks"]["consistency_gate_pass"] is True
     assert gate["blocking_issues"] == []
 
     run_report = json.loads(

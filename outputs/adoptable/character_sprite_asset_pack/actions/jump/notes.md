@@ -6,7 +6,7 @@
 - method: `route_a_generated_rough_cleanup`
 - frame_count: `6`
 - phase_names: `['anticipation', 'takeoff', 'rise', 'apex', 'fall', 'landing_recovery']`
-- ground_y_range: `147`
+- ground_y_range: `187`
 - alpha_edge_touch_frames: `[]`
 
 Jump uses a dedicated 6-frame rough sheet with anticipation, takeoff, airborne, and landing phases.

@@ -1,0 +1,159 @@
+{
+  "asset_kind": "AnimatedSprite2D_action_pack",
+  "origin_policy": "bottom_center_canvas",
+  "actions": {
+    "walk": {
+      "spritesheet": "actions/walk/spritesheet.png",
+      "frames": [
+        "actions/walk/frames/walk_000.png",
+        "actions/walk/frames/walk_001.png",
+        "actions/walk/frames/walk_002.png",
+        "actions/walk/frames/walk_003.png",
+        "actions/walk/frames/walk_004.png",
+        "actions/walk/frames/walk_005.png",
+        "actions/walk/frames/walk_006.png",
+        "actions/walk/frames/walk_007.png"
+      ],
+      "fps": 8,
+      "loop": true,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 20,
+        "y": 20,
+        "width": 310,
+        "height": 431
+      },
+      "transition_notes": [
+        "idle",
+        "run",
+        "jump",
+        "hurt"
+      ]
+    },
+    "idle": {
+      "spritesheet": "actions/idle/spritesheet.png",
+      "frames": [
+        "actions/idle/frames/idle_000.png",
+        "actions/idle/frames/idle_001.png",
+        "actions/idle/frames/idle_002.png",
+        "actions/idle/frames/idle_003.png"
+      ],
+      "fps": 8,
+      "loop": true,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 87,
+        "y": 23,
+        "width": 166,
+        "height": 428
+      },
+      "transition_notes": [
+        "walk",
+        "run",
+        "jump",
+        "hurt"
+      ]
+    },
+    "run": {
+      "spritesheet": "actions/run/spritesheet.png",
+      "frames": [
+        "actions/run/frames/run_000.png",
+        "actions/run/frames/run_001.png",
+        "actions/run/frames/run_002.png",
+        "actions/run/frames/run_003.png",
+        "actions/run/frames/run_004.png",
+        "actions/run/frames/run_005.png",
+        "actions/run/frames/run_006.png",
+        "actions/run/frames/run_007.png"
+      ],
+      "fps": 8,
+      "loop": true,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 26,
+        "y": 49,
+        "width": 305,
+        "height": 368
+      },
+      "transition_notes": [
+        "idle",
+        "walk",
+        "jump",
+        "hurt"
+      ]
+    },
+    "jump": {
+      "spritesheet": "actions/jump/spritesheet.png",
+      "frames": [
+        "actions/jump/frames/jump_000.png",
+        "actions/jump/frames/jump_001.png",
+        "actions/jump/frames/jump_002.png",
+        "actions/jump/frames/jump_003.png",
+        "actions/jump/frames/jump_004.png",
+        "actions/jump/frames/jump_005.png"
+      ],
+      "fps": 8,
+      "loop": false,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 0,
+        "y": 0,
+        "width": 349,
+        "height": 451
+      },
+      "transition_notes": [
+        "idle",
+        "walk",
+        "run",
+        "hurt"
+      ]
+    },
+    "hurt": {
+      "spritesheet": "actions/hurt/spritesheet.png",
+      "frames": [
+        "actions/hurt/frames/hurt_000.png",
+        "actions/hurt/frames/hurt_001.png",
+        "actions/hurt/frames/hurt_002.png",
+        "actions/hurt/frames/hurt_003.png"
+      ],
+      "fps": 8,
+      "loop": false,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 48,
+        "y": 20,
+        "width": 241,
+        "height": 431
+      },
+      "transition_notes": [
+        "idle",
+        "walk"
+      ]
+    }
+  }
+}

@@ -9,8 +9,11 @@
     "jump_production_ready": true,
     "hurt_production_ready": true,
     "identity_cues_pass": true,
-    "unsupported_backends_unused": true
+    "unsupported_backends_unused": true,
+    "runtime_metadata_present": true,
+    "pack_review_generated": true,
+    "consistency_gate_pass": true
   },
   "blocking_issues": [],
-  "scope_statement": "walk, idle, run, jump, and hurt are production-ready for this MVP pack."
+  "scope_statement": "walk, idle, run, jump, and hurt are production-ready and ready for runtime import review."
 }

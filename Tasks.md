@@ -1,31 +1,50 @@
-﻿# Tasks: Character Identity Sprite Asset Pack MVP
+# Tasks: Dense Source Frames for Jump and Hurt
 
-Archived checkpoint:
+Archived checkpoints:
 
 ```text
-docs/archive/Tasks_20260614_walk_production_ready_completed.md
+docs/archive/Tasks_20260614_character_sprite_pack_polish_godot_completed.md
+docs/output_cleanup_20260614_character_sprite_pack.md
 ```
 
 ## Upper Rule
 
-- [x] Keep the current `walk` production-ready output as a valid result, but do not pretend it solves every action.
-- [x] Address the two remaining risks explicitly:
-  - source-reference drift, where the game sprite becomes almost a different character;
-  - action coverage, where only `walk` exists.
-- [x] Stay scoped to a small adoptable 2D game asset pack.
-- [x] Do not return to 120-frame generation, Wan/video generation, ComfyUI exploration, ControlNet research, or broad model integration work.
-- [x] Use Route A as the repeatable action expansion path: action-specific rough sheet first, then local cleanup, packaging, tests, and gate.
-- [x] Allow built-in image generation or I2I for rough source art when local generation is not producing usable assets, but record it as non-local rough creation.
-
-## Deliverable
-
-- [x] Create one adopted package:
+- [ ] Do not return to 120-frame generation, Wan/video generation, ComfyUI exploration, ControlNet research, or broad model integration work.
+- [ ] Keep the current adopted pack path:
 
 ```text
 outputs/adoptable/character_sprite_asset_pack/
 ```
 
-- [x] Include a character identity contract derived from the reference:
+- [ ] Improve source-frame density for the weakest current actions:
+  - `jump`
+  - `hurt`
+- [ ] Do not claim cross-fade or optical-flow interpolation as production art.
+- [ ] Prefer Route A: denser action-specific rough sheets first, then local cleanup, scale normalization, packaging, Godot validation, and visual review.
+
+## Current Findings
+
+- [ ] Record that Godot viewer centering now separates review centering from runtime `bottom_center_canvas` origin.
+- [ ] Record that `jump` and `hurt` were previously off-scale because whole-cell rough resize was used.
+- [ ] Record that foreground alpha-bbox normalization fixed the most visible scale mismatch.
+- [ ] Record that runtime `playback_frame_indices` is only timing expansion:
+  - current `jump`: 6 source frames, 8 playback frames;
+  - current `hurt`: 4 source frames, 6 playback frames.
+
+## Deliverable
+
+- [ ] Add denser rough sources:
+
+```text
+assets/artist_authored_roughs/imagegen_jump_8frame_20260614/
+assets/artist_authored_roughs/imagegen_hurt_6frame_20260614/
+```
+
+- [ ] Update the adopted pack so:
+  - `jump` has 8 source frames;
+  - `hurt` has at least 6 source frames;
+  - both keep transparent frames, spritesheets, GIFs, contact sheets, runtime metadata, and Godot playback.
+- [ ] Preserve the current identity contract:
   - pink bob hair;
   - side-profile anime girl;
   - sailor-style white top;
@@ -33,100 +52,63 @@ outputs/adoptable/character_sprite_asset_pack/
   - navy skirt;
   - dark socks;
   - brown shoes.
-- [x] Include action folders:
-  - `actions/walk/` copied from the current production-ready walk package;
-  - `actions/idle/` as the first additional production-ready action;
-  - `actions/run/` as a dedicated production-ready run action from an accepted rough.
-  - `actions/jump/` as a dedicated production-ready jump action from an accepted rough.
-  - `actions/hurt/` as a dedicated production-ready small-damage reaction from an accepted rough.
-- [x] Include:
-  - `manifest.json`;
-  - `identity_report.json`;
-  - `production_gate.json`;
-  - `notes.md`;
-  - action-level `preview.gif`, `spritesheet.png`, `contact_sheet.png`, and frames where applicable.
 
 ## Implementation
 
-- [x] Add `scripts/build_character_sprite_asset_pack.py`.
-- [x] The script must consume:
-  - `assets/reference/Anima_00013_.png`;
-  - `outputs/adoptable/artist_authored_8frame_walk_cleanup/production_ready/`.
-- [x] The script must consume the accepted run rough when available:
-  - `assets/artist_authored_roughs/imagegen_run_8frame_20260614/rough_frames/`.
-- [x] The script must consume accepted jump and hurt roughs when available:
-  - `assets/artist_authored_roughs/imagegen_jump_6frame_20260614/rough_frames/`;
-  - `assets/artist_authored_roughs/imagegen_hurt_4frame_20260614/rough_frames/`.
-- [x] The script must not call model or video backends.
-- [x] Build `walk` by copying the accepted production-ready walk output.
-- [x] Build `idle` deterministically from the accepted walk character art:
-  - exactly 4 frames;
-  - transparent background;
-  - consistent canvas;
-  - one character only;
-  - stable ground;
-  - subtle idle motion only.
-- [x] Add reference identity checks for required color/costume cues.
-- [x] Add pack-level production gate:
-  - `walk.production_ready == true`;
-  - `idle.production_ready == true`;
-  - `run.production_ready == true`;
-  - `jump.production_ready == true`;
-  - `hurt.production_ready == true`;
-  - identity cue checks pass for the adopted actions;
-  - no unsupported backend usage;
-  - route can still honestly report that broad action coverage is incomplete.
+- [ ] Generate or author a new 8-frame jump rough sheet.
+- [ ] Generate or author a new 6-frame hurt rough sheet.
+- [ ] Store each source sheet and prompt metadata under `assets/artist_authored_roughs/`.
+- [ ] Split rough sheets into `rough_frames/`.
+- [ ] Update `scripts/build_character_sprite_asset_pack.py` defaults:
+  - `DEFAULT_JUMP_ROUGH`;
+  - `DEFAULT_HURT_ROUGH`;
+  - jump frame count and phase names;
+  - hurt frame count and phase names.
+- [ ] Keep foreground alpha-bbox normalization for rough actions.
+- [ ] Update runtime playback metadata so source-frame count and playback-frame count are not misleading.
+- [ ] Regenerate `outputs/adoptable/character_sprite_asset_pack/`.
+- [ ] Keep `outputs/` restricted to adopted outputs and required walk source.
+
+## Godot Review
+
+- [ ] Confirm `godot --path godot` opens the character sprite pack viewer.
+- [ ] Confirm headless Godot pack validation passes:
+
+```powershell
+godot --headless --path godot --script res://tests/pack_e2e_runner.gd -- --manifest outputs/adoptable/character_sprite_asset_pack/manifest.json
+```
+
+- [ ] Confirm viewer centering remains correct after action switching.
+- [ ] Agent-review `pack_review/all_actions_contact_sheet.png` for:
+  - scale consistency;
+  - action readability;
+  - no duplicate character;
+  - no obvious green-key residue;
+  - `jump` and `hurt` benefiting from denser source frames.
 
 ## Documentation
 
-- [x] Add `docs/character_identity_sprite_asset_pack.md`.
-- [x] Add the repeatable action expansion Skill:
-  - `docs/local_skills/route-a-action-rough-to-pack/SKILL.md`.
-- [x] Document that `production_ready` for this pack means:
-  - current walk is accepted;
-  - current idle is accepted;
-  - current run is accepted;
-  - current jump is accepted;
-  - current hurt is accepted;
-  - character identity cues are tracked;
-  - future stronger actions are gated instead of silently claimed.
-- [x] Document that this does not solve faithful animation of arbitrary reference illustrations.
-- [x] Document that current AI-assisted rough generation is not local-only, while committed rough-frame packaging is locally reproducible.
+- [ ] Update `docs/character_identity_sprite_asset_pack.md` with the denser `jump/hurt` source-frame counts.
+- [ ] Update `docs/local_skills/route-a-action-rough-to-pack/SKILL.md` with the source-frame-density rule:
+  - use more drawn/source frames for production motion;
+  - use playback holds only as runtime timing support.
+- [ ] Update `docs/output_cleanup_20260614_character_sprite_pack.md` if retained outputs change.
 
 ## Tests
 
-- [x] Add `tests/test_build_character_sprite_asset_pack.py`.
-- [x] Verify the output directory layout.
-- [x] Verify `walk` has 8 frames and is production-ready.
-- [x] Verify `idle` has 4 frames and is production-ready.
-- [x] Verify `run` has 8 frames and is production-ready.
-- [x] Verify `jump` has 6 frames and is production-ready.
-- [x] Verify `hurt` has 4 frames and is production-ready.
-- [x] Verify `identity_report.json` contains all required cues.
-- [x] Verify `production_gate.json` marks the pack as `production_ready`.
-- [x] Verify no model/video backend is invoked.
-- [x] Generate a dedicated run rough sheet with built-in image generation and store it under:
-
-```text
-assets/artist_authored_roughs/imagegen_run_8frame_20260614/
-```
-
-- [x] Split the run rough sheet into 8 frames.
-- [x] Remove the green key background, trim alpha noise, keep the largest character component, and package run previews.
-- [x] Generate dedicated jump and hurt rough sheets with built-in image generation and store them under:
-
-```text
-assets/artist_authored_roughs/imagegen_jump_6frame_20260614/
-assets/artist_authored_roughs/imagegen_hurt_4frame_20260614/
-```
-
-- [x] Split the jump rough sheet into 6 frames.
-- [x] Split the hurt rough sheet into 4 frames.
-- [x] Remove the green key background, trim alpha noise, keep the largest character component, and package jump/hurt previews.
+- [ ] Update `tests/test_build_character_sprite_asset_pack.py`.
+- [ ] Update `tests/test_godot_character_sprite_pack.py`.
+- [ ] Verify:
+  - `jump` source frame count is 8;
+  - `hurt` source frame count is at least 6;
+  - Godot playback action count remains 5;
+  - loop flags remain correct;
+  - production gate remains `production_ready`;
+  - consistency gate remains passing.
 
 ## Completion
 
-- [x] Generate `outputs/adoptable/character_sprite_asset_pack/`.
-- [x] Agent-review the `walk`, `idle`, `run`, `jump`, and `hurt` contact sheets.
-- [x] Run focused tests.
-- [x] Commit and push the completed pack.
+- [ ] Run focused tests.
+- [ ] Run Godot headless validation.
+- [ ] Agent-review the regenerated pack contact sheet.
+- [ ] Commit and push the completed dense-frame upgrade.

@@ -20,9 +20,11 @@ The package contains:
 - `actions/jump/`
 - `actions/hurt/`
 - `manifest.json`
+- `runtime_manifest.json`
 - `identity_report.json`
 - `production_gate.json`
 - `notes.md`
+- `pack_review/`
 
 ## Identity Contract
 
@@ -63,6 +65,73 @@ Built-in image generation or image-to-image is acceptable for rough source art w
 is not producing usable assets. In that case, record the rough creation as non-local in `prompt.md`;
 the local reproducible pipeline begins from the committed rough frames.
 
+## Runtime Import Contract
+
+The pack now includes runtime metadata so it can be reviewed as a small game asset package rather
+than only as loose images.
+
+Generated files:
+
+- `runtime_manifest.json`: action `fps`, loop flag, frame duration, bottom-center origin, visible
+  bounding box, approximate collision box, phase events, and transition notes.
+- `pack_review/all_actions_contact_sheet.png`: one side-by-side review sheet for `walk`, `idle`,
+  `run`, `jump`, and `hurt`.
+- `pack_review/consistency_report.json`: deterministic checks for common canvas size, runtime
+  metadata presence, identity cue pass status, loop flag expectations, and backend usage.
+- `pack_review/godot_import_manifest.json`: compact import hints for Godot `AnimatedSprite2D` or
+  `SpriteFrames`.
+- `pack_review/aseprite_import_notes.md`: tag/import notes for Aseprite review.
+
+Runtime assumptions:
+
+- Keep every frame on the same transparent canvas.
+- Use `bottom_center_canvas` as the stable origin/pivot policy.
+- Treat `walk`, `idle`, and `run` as loops.
+- Treat `jump` and `hurt` as one-shot actions.
+- Collision boxes are approximate review boxes, not final gameplay hitboxes.
+- `jump` and `hurt` use runtime playback timing expansion:
+  - `jump`: 6 source frames, 8 playback frames;
+  - `hurt`: 4 source frames, 6 playback frames.
+- Playback timing expansion only repeats source frames for limited-animation feel. True inbetween art
+  still requires an authored or I2I rough retake with more drawn frames.
+
+## Godot Viewer
+
+The Godot project includes a pack viewer at:
+
+```text
+godot/scenes/character_sprite_pack_viewer.tscn
+```
+
+It loads:
+
+```text
+outputs/adoptable/character_sprite_asset_pack/manifest.json
+```
+
+and registers each action as an `AnimatedSprite2D` animation:
+
+- `walk`
+- `idle`
+- `run`
+- `jump`
+- `hurt`
+
+The viewer applies the `bottom_center_canvas` origin from runtime metadata so scale and foot/ground
+alignment are reviewed in the same coordinate system a game import should use.
+
+Run it from the repository root with:
+
+```powershell
+godot --path godot
+```
+
+Headless validation is available with:
+
+```powershell
+godot --headless --path godot --script res://tests/pack_e2e_runner.gd -- --manifest outputs/adoptable/character_sprite_asset_pack/manifest.json
+```
+
 ## Production Ready Meaning
 
 `production_ready` for this pack means:
@@ -73,6 +142,17 @@ the local reproducible pipeline begins from the committed rough frames.
 - `jump.production_ready == true`;
 - `hurt.production_ready == true`;
 - required identity cues pass on the reference, walk, idle, run, jump, and hurt assets;
+- runtime metadata and pack review artifacts exist;
+- consistency gate passes for current action coverage;
 - no model or video backend is used.
 
 It does not mean arbitrary future actions are complete.
+
+## Next Work
+
+The next useful step is not more action sprawl. Prefer one of:
+
+- import the current pack into Godot or Aseprite and review actual runtime feel;
+- use image-to-image to improve visual consistency across existing actions;
+- add one new action only after preparing an action-specific rough sheet and preserving the runtime
+  metadata contract.

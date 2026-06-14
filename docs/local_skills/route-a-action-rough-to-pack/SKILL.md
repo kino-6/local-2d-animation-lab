@@ -100,10 +100,17 @@ The builder should:
 - remove green-key background;
 - threshold low alpha;
 - keep the largest alpha component;
-- normalize to the accepted pack frame size;
+- normalize foreground scale from the alpha bounding box instead of resizing the whole rough cell;
+- align grounded actions to the accepted walk ground line;
+- preserve vertical arc for airborne actions such as `jump`;
 - keep all outputs under `outputs/adoptable/character_sprite_asset_pack/actions/<action>/`;
 - create `frames/`, `spritesheet.png`, `preview.gif`, `contact_sheet.png`, `game_previews/`, `production_ready_report.json`, and `notes.md`;
 - update pack-level `manifest.json`, `identity_report.json`, `production_gate.json`, and `notes.md`;
+- update `runtime_manifest.json` and every action's `runtime` metadata;
+- update `pack_review/all_actions_contact_sheet.png`;
+- update `pack_review/consistency_report.json`;
+- update `pack_review/godot_import_manifest.json`;
+- update `pack_review/aseprite_import_notes.md`;
 - write text artifacts with LF newlines for clean diffs.
 
 Run:
@@ -128,6 +135,33 @@ An action may be marked `production_ready` only when:
 
 The gate may accept a game-ready redesign. It does not require faithful pixel animation of the original illustration.
 
+## Runtime Review Contract
+
+Every promoted action must preserve the runtime import contract:
+
+- stable transparent canvas;
+- `bottom_center_canvas` origin/pivot;
+- action `fps`;
+- `loop` flag;
+- frame duration;
+- phase events;
+- approximate visible bounding box;
+- approximate collision box;
+- transition notes.
+
+Expected current loop flags:
+
+- loop: `walk`, `idle`, `run`;
+- one-shot: `jump`, `hurt`.
+
+If adding a new action, explicitly choose loop or one-shot in `ACTION_RUNTIME_SPECS` before packaging it.
+Do not leave the action as loose image files without runtime metadata.
+
+For runtime feel, use `playback_frame_indices` only for limited-animation timing expansion. This may
+repeat source frames, but it is not a substitute for true drawn inbetweens. When motion still feels
+under-sampled, retake the rough sheet with more action-specific frames rather than cross-fading
+frames, because cross-fade interpolation creates ghosted game sprites.
+
 ## Tests
 
 Update `tests/test_build_character_sprite_asset_pack.py` for each promoted action.
@@ -139,7 +173,14 @@ Tests should verify:
 - frames are transparent at the corner after cleanup;
 - `preview.gif`, `spritesheet.png`, `contact_sheet.png`, `game_previews/`, and `production_ready_report.json` exist;
 - manifest includes the action, phase names, frame count, and `production_ready: true`;
+- manifest includes action-level `runtime` metadata;
+- `runtime_manifest.json` exists and includes the action;
+- `pack_review/all_actions_contact_sheet.png` exists;
+- `pack_review/consistency_report.json` passes;
+- `pack_review/godot_import_manifest.json` exists;
+- `pack_review/aseprite_import_notes.md` exists;
 - production gate includes `<action>_production_ready: true`;
+- production gate includes `runtime_metadata_present`, `pack_review_generated`, and `consistency_gate_pass`;
 - backend usage remains false for ComfyUI, Wan/video, ControlNet, new model backend, and 120-frame generation.
 
 Run focused tests:

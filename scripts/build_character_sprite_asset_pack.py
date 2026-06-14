@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 try:
     from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
@@ -34,6 +34,59 @@ IDENTITY_CUES = {
     "navy_skirt": "navy skirt",
     "dark_socks": "dark socks",
     "brown_shoes": "brown shoes",
+}
+
+ACTION_RUNTIME_SPECS = {
+    "walk": {
+        "loop": True,
+        "phase_names": [
+            "right_contact",
+            "right_down",
+            "right_passing",
+            "right_up",
+            "left_contact",
+            "left_down",
+            "left_passing",
+            "left_up",
+        ],
+        "transition_notes": ["idle", "run", "jump", "hurt"],
+        "review_role": "baseline locomotion loop",
+    },
+    "idle": {
+        "loop": True,
+        "phase_names": ["neutral", "breathe_up", "breathe_peak", "breathe_down"],
+        "transition_notes": ["walk", "run", "jump", "hurt"],
+        "review_role": "subtle standing loop",
+    },
+    "run": {
+        "loop": True,
+        "phase_names": [
+            "right_contact",
+            "right_down",
+            "flight_forward",
+            "left_reach",
+            "left_contact",
+            "left_down",
+            "flight_backward",
+            "right_reach",
+        ],
+        "transition_notes": ["idle", "walk", "jump", "hurt"],
+        "review_role": "faster locomotion loop",
+    },
+    "jump": {
+        "loop": False,
+        "phase_names": ["anticipation", "takeoff", "rise", "apex", "fall", "landing_recovery"],
+        "playback_frame_indices": [0, 0, 1, 2, 3, 4, 5, 5],
+        "transition_notes": ["idle", "walk", "run", "hurt"],
+        "review_role": "non-looping jump arc",
+    },
+    "hurt": {
+        "loop": False,
+        "phase_names": ["brace", "small_recoil", "large_stagger", "recover"],
+        "playback_frame_indices": [0, 1, 1, 2, 2, 3],
+        "transition_notes": ["idle", "walk"],
+        "review_role": "non-looping small damage reaction",
+    },
 }
 
 
@@ -97,12 +150,14 @@ def build_character_sprite_asset_pack(
         run_rough_frames_dir=run_rough_frames_dir,
     )
     target_size = Image.open(walk_frames[0]).size
+    scale_reference = _scale_reference_from_frames(walk_frames)
     jump_action = _build_named_rough_action(
         action="jump",
         rough_frames_dir=jump_rough_frames_dir,
         action_dir=actions_dir / "jump",
         fps=fps,
         target_size=target_size,
+        scale_reference=scale_reference,
         frame_count=6,
         phase_names=["anticipation", "takeoff", "rise", "apex", "fall", "landing_recovery"],
         source_slug="imagegen_jump_6frame_20260614_rough",
@@ -114,6 +169,7 @@ def build_character_sprite_asset_pack(
         action_dir=actions_dir / "hurt",
         fps=fps,
         target_size=target_size,
+        scale_reference=scale_reference,
         frame_count=4,
         phase_names=["brace", "small_recoil", "large_stagger", "recover"],
         source_slug="imagegen_hurt_4frame_20260614_rough",
@@ -137,7 +193,23 @@ def build_character_sprite_asset_pack(
         "jump": jump_action,
         "hurt": hurt_action,
     }
-    production_gate = _build_production_gate(actions, identity_report)
+    backend_usage = {
+        "uses_comfyui": False,
+        "uses_wan_video": False,
+        "uses_controlnet": False,
+        "uses_new_model_backend": False,
+        "uses_120_frame_generation": False,
+    }
+    runtime_manifest = _build_runtime_manifest(actions)
+    _write_text(output_dir / "runtime_manifest.json", json.dumps(runtime_manifest, indent=2, ensure_ascii=False) + "\n")
+    pack_review = _build_pack_review(
+        output_dir=output_dir,
+        actions_dir=actions_dir,
+        actions=actions,
+        identity_report=identity_report,
+        backend_usage=backend_usage,
+    )
+    production_gate = _build_production_gate(actions, identity_report, pack_review["consistency_report"])
 
     _write_text(output_dir / "identity_report.json", json.dumps(identity_report, indent=2, ensure_ascii=False) + "\n")
     _write_text(output_dir / "production_gate.json", json.dumps(production_gate, indent=2, ensure_ascii=False) + "\n")
@@ -151,14 +223,15 @@ def build_character_sprite_asset_pack(
             **actions,
         },
         "identity_report": "identity_report.json",
-        "production_gate": production_gate,
-        "backend_usage": {
-            "uses_comfyui": False,
-            "uses_wan_video": False,
-            "uses_controlnet": False,
-            "uses_new_model_backend": False,
-            "uses_120_frame_generation": False,
+        "runtime_manifest": "runtime_manifest.json",
+        "pack_review": {
+            "all_actions_contact_sheet": "pack_review/all_actions_contact_sheet.png",
+            "consistency_report": "pack_review/consistency_report.json",
+            "godot_import_manifest": "pack_review/godot_import_manifest.json",
+            "aseprite_import_notes": "pack_review/aseprite_import_notes.md",
         },
+        "production_gate": production_gate,
+        "backend_usage": backend_usage,
         "production_ready": production_gate["production_ready"],
         "known_limits": [
             "The accepted sprite is a game-ready redesign, not a faithful frame-by-frame animation of the original illustration.",
@@ -177,6 +250,8 @@ def _copy_walk_action(source_dir: Path, action_dir: Path) -> dict[str, Any]:
     shutil.copytree(source_dir, action_dir)
     report_path = action_dir / "production_ready_report.json"
     report = json.loads(report_path.read_text(encoding="utf-8"))
+    frame_paths = sorted((action_dir / "frames").glob("walk_*.png"))
+    phase_names = ACTION_RUNTIME_SPECS["walk"]["phase_names"]
     return {
         "action": "walk",
         "frame_count": report["frame_count"],
@@ -184,10 +259,12 @@ def _copy_walk_action(source_dir: Path, action_dir: Path) -> dict[str, Any]:
         "production_ready": report["production_ready"],
         "status": report["status"],
         "source": "artist_authored_8frame_walk_cleanup/production_ready",
+        "phase_names": phase_names,
         "frames": [f"actions/walk/frames/walk_{index:03d}.png" for index in range(report["frame_count"])],
         "spritesheet": "actions/walk/spritesheet.png",
         "preview_gif": "actions/walk/preview.gif",
         "contact_sheet": "actions/walk/contact_sheet.png",
+        "runtime": _build_action_runtime("walk", frame_paths, fps=8, phase_names=phase_names),
     }
 
 
@@ -233,12 +310,19 @@ def _build_idle_action(walk_frames: list[Path], action_dir: Path, fps: int) -> d
         "production_ready": report["production_ready"],
         "status": report["status"],
         "source": source.name,
+        "phase_names": ACTION_RUNTIME_SPECS["idle"]["phase_names"],
         "frames": [f"actions/idle/frames/idle_{index:03d}.png" for index in range(4)],
         "spritesheet": "actions/idle/spritesheet.png",
         "preview_gif": "actions/idle/preview.gif",
         "contact_sheet": "actions/idle/contact_sheet.png",
         "game_previews": _prefix_preview_paths(game_previews, "actions/idle"),
         "production_ready_report": "actions/idle/production_ready_report.json",
+        "runtime": _build_action_runtime(
+            "idle",
+            idle_paths,
+            fps=fps,
+            phase_names=ACTION_RUNTIME_SPECS["idle"]["phase_names"],
+        ),
     }
 
 
@@ -351,6 +435,7 @@ def _build_run_action(
         "contact_sheet": "actions/run/contact_sheet.png",
         "game_previews": _prefix_preview_paths(game_previews, "actions/run"),
         "production_ready_report": "actions/run/production_ready_report.json",
+        "runtime": _build_action_runtime("run", run_paths, fps=fps, phase_names=report["phase_names"]),
     }
 
 
@@ -432,7 +517,74 @@ def _build_run_action_from_rough(
         "contact_sheet": "actions/run/contact_sheet.png",
         "game_previews": _prefix_preview_paths(game_previews, "actions/run"),
         "production_ready_report": "actions/run/production_ready_report.json",
+        "runtime": _build_action_runtime("run", run_paths, fps=fps, phase_names=phase_names),
     }
+
+
+def _scale_reference_from_frames(frame_paths: list[Path]) -> dict[str, int]:
+    boxes = [_alpha_bbox(Image.open(path).convert("RGBA")) for path in frame_paths]
+    heights = [box[3] - box[1] for box in boxes]
+    widths = [box[2] - box[0] for box in boxes]
+    bottoms = [box[3] for box in boxes]
+    centers = [(box[0] + box[2]) // 2 for box in boxes]
+    return {
+        "target_height": max(heights),
+        "target_width": max(widths),
+        "ground_y": max(bottoms),
+        "center_x": sorted(centers)[len(centers) // 2],
+    }
+
+
+def _normalize_rough_sequence(
+    frames: list[Image.Image],
+    action: str,
+    target_size: tuple[int, int],
+    scale_reference: dict[str, int],
+) -> list[Image.Image]:
+    boxes = [_alpha_bbox(frame) for frame in frames]
+    source_heights = [box[3] - box[1] for box in boxes]
+    source_widths = [box[2] - box[0] for box in boxes]
+    source_bottoms = [box[3] for box in boxes]
+    source_centers = [(box[0] + box[2]) / 2 for box in boxes]
+
+    max_source_height = max(source_heights)
+    max_source_width = max(source_widths)
+    target_height = scale_reference["target_height"]
+    target_width_limit = int(target_size[0] * 0.9)
+    height_scale = target_height / max_source_height
+    width_scale = target_width_limit / max_source_width
+    scale = min(height_scale, width_scale)
+
+    if action == "hurt":
+        scale = min(scale, 1.12)
+
+    source_ground = max(source_bottoms)
+    source_center = sorted(source_centers)[len(source_centers) // 2]
+    target_ground = scale_reference["ground_y"]
+    target_center = scale_reference["center_x"]
+    preserve_vertical_arc = action == "jump"
+
+    normalized_frames: list[Image.Image] = []
+    for frame, box in zip(frames, boxes):
+        crop = frame.crop(box)
+        crop_width = max(1, round(crop.width * scale))
+        crop_height = max(1, round(crop.height * scale))
+        resized = crop.resize((crop_width, crop_height), Image.Resampling.LANCZOS)
+        output = Image.new("RGBA", target_size, (0, 0, 0, 0))
+
+        source_frame_center = (box[0] + box[2]) / 2
+        target_x = target_center + round((source_frame_center - source_center) * scale)
+        if preserve_vertical_arc:
+            target_bottom = target_ground + round((box[3] - source_ground) * scale)
+        else:
+            target_bottom = target_ground
+
+        paste_x = round(target_x - crop_width / 2)
+        paste_y = target_bottom - crop_height
+        output.alpha_composite(resized, (paste_x, paste_y))
+        normalized_frames.append(_keep_inside_canvas(output, margin=2))
+
+    return normalized_frames
 
 
 def _build_named_rough_action(
@@ -441,6 +593,7 @@ def _build_named_rough_action(
     action_dir: Path,
     fps: int,
     target_size: tuple[int, int],
+    scale_reference: dict[str, int],
     frame_count: int,
     phase_names: list[str],
     source_slug: str,
@@ -456,14 +609,23 @@ def _build_named_rough_action(
     frames_dir = action_dir / "frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
 
-    frame_paths: list[Path] = []
-    for index, source in enumerate(rough_paths):
+    cleaned_frames: list[Image.Image] = []
+    for source in rough_paths:
         image = Image.open(source).convert("RGBA")
         cleaned = _clean_green_background(image)
-        normalized = cleaned.resize(target_size, Image.Resampling.LANCZOS)
-        normalized = _threshold_alpha(normalized, minimum_alpha=24)
-        normalized = _keep_largest_alpha_component(normalized)
-        normalized = _keep_inside_canvas(normalized, margin=2)
+        cleaned = _threshold_alpha(cleaned, minimum_alpha=24)
+        cleaned = _keep_largest_alpha_component(cleaned)
+        cleaned_frames.append(cleaned)
+
+    normalized_frames = _normalize_rough_sequence(
+        cleaned_frames,
+        action=action,
+        target_size=target_size,
+        scale_reference=scale_reference,
+    )
+
+    frame_paths: list[Path] = []
+    for index, normalized in enumerate(normalized_frames):
         output = frames_dir / f"{action}_{index:03d}.png"
         normalized.save(output)
         frame_paths.append(output)
@@ -505,6 +667,7 @@ def _build_named_rough_action(
         "contact_sheet": f"actions/{action}/contact_sheet.png",
         "game_previews": _prefix_preview_paths(game_previews, f"actions/{action}"),
         "production_ready_report": f"actions/{action}/production_ready_report.json",
+        "runtime": _build_action_runtime(action, frame_paths, fps=fps, phase_names=phase_names),
     }
 
 
@@ -687,6 +850,269 @@ def _prefix_preview_paths(previews: dict[str, Any], prefix: str) -> dict[str, An
     return prefixed
 
 
+def _build_action_runtime(
+    action: str,
+    frame_paths: list[Path],
+    fps: int,
+    phase_names: list[str],
+) -> dict[str, Any]:
+    spec = ACTION_RUNTIME_SPECS[action]
+    metrics = _action_metrics(frame_paths)
+    boxes = [_alpha_bbox(Image.open(path).convert("RGBA")) for path in frame_paths]
+    union = _union_bbox(boxes)
+    padded_collision = _pad_bbox(union, metrics["frame_size"]["width"], metrics["frame_size"]["height"], padding=4)
+    origin = {
+        "policy": "bottom_center_canvas",
+        "x": metrics["frame_size"]["width"] // 2,
+        "y": metrics["frame_size"]["height"],
+    }
+    playback_indices = spec.get("playback_frame_indices", list(range(len(frame_paths))))
+    return {
+        "fps": fps,
+        "frame_duration_ms": round(1000 / fps),
+        "loop": spec["loop"],
+        "source_frame_count": len(frame_paths),
+        "playback_frame_indices": playback_indices,
+        "playback_frame_count": len(playback_indices),
+        "frame_density_note": (
+            "Playback indices may add limited-animation holds for runtime feel. "
+            "True inbetween art should come from an authored or I2I rough retake."
+        ),
+        "origin": origin,
+        "pivot": origin,
+        "origin_note": "Use a stable bottom-center canvas origin so action transitions do not jump.",
+        "collision_box": _bbox_to_rect(padded_collision),
+        "visible_bbox": _bbox_to_rect(union),
+        "ground_y_range": metrics["ground_y_range"],
+        "phase_events": [
+            {
+                "frame": index,
+                "phase": phase_names[index] if index < len(phase_names) else f"frame_{index:03d}",
+            }
+            for index in range(len(frame_paths))
+        ],
+        "transition_notes": spec["transition_notes"],
+        "review_role": spec["review_role"],
+        "import_assumptions": {
+            "godot": "SpriteFrames or AnimatedSprite2D per action; use origin as bottom-center canvas.",
+            "aseprite": "Import frames as one tag per action; keep transparent canvas size unchanged.",
+        },
+    }
+
+
+def _build_runtime_manifest(actions: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "origin_policy": "bottom_center_canvas",
+        "frame_canvas_policy": "stable_canvas_per_pack",
+        "actions": {
+            action: action_info["runtime"]
+            for action, action_info in actions.items()
+        },
+    }
+
+
+def _build_pack_review(
+    output_dir: Path,
+    actions_dir: Path,
+    actions: dict[str, dict[str, Any]],
+    identity_report: dict[str, Any],
+    backend_usage: dict[str, bool],
+) -> dict[str, Any]:
+    review_dir = output_dir / "pack_review"
+    review_dir.mkdir(parents=True, exist_ok=True)
+
+    all_actions_contact_sheet = review_dir / "all_actions_contact_sheet.png"
+    _write_all_actions_contact_sheet(actions_dir, actions, all_actions_contact_sheet)
+
+    consistency_report = _build_consistency_report(
+        actions=actions,
+        identity_report=identity_report,
+        backend_usage=backend_usage,
+        all_actions_contact_sheet=all_actions_contact_sheet,
+    )
+    _write_text(
+        review_dir / "consistency_report.json",
+        json.dumps(consistency_report, indent=2, ensure_ascii=False) + "\n",
+    )
+
+    godot_import_manifest = _build_godot_import_manifest(actions)
+    _write_text(
+        review_dir / "godot_import_manifest.json",
+        json.dumps(godot_import_manifest, indent=2, ensure_ascii=False) + "\n",
+    )
+    _write_text(review_dir / "aseprite_import_notes.md", _aseprite_import_notes(actions))
+
+    return {
+        "all_actions_contact_sheet": "pack_review/all_actions_contact_sheet.png",
+        "consistency_report": consistency_report,
+        "godot_import_manifest": "pack_review/godot_import_manifest.json",
+        "aseprite_import_notes": "pack_review/aseprite_import_notes.md",
+    }
+
+
+def _write_all_actions_contact_sheet(
+    actions_dir: Path,
+    actions: dict[str, dict[str, Any]],
+    output_path: Path,
+) -> None:
+    columns = max(action_info["frame_count"] for action_info in actions.values())
+    thumb_h = 128
+    cell_w = 116
+    cell_h = 164
+    label_w = 84
+    pad = 8
+    width = label_w + columns * cell_w + pad * 2
+    height = len(actions) * cell_h + pad * 2
+    sheet = Image.new("RGBA", (width, height), (245, 245, 245, 255))
+    draw = ImageDraw.Draw(sheet)
+
+    for row, (action, action_info) in enumerate(actions.items()):
+        y = pad + row * cell_h
+        draw.text((pad, y + 8), action, fill=(20, 20, 20, 255))
+        draw.text((pad, y + 28), f"{action_info['frame_count']}f", fill=(80, 80, 80, 255))
+        draw.text((pad, y + 48), "loop" if action_info["runtime"]["loop"] else "once", fill=(80, 80, 80, 255))
+
+        for index in range(action_info["frame_count"]):
+            source = actions_dir / action / "frames" / f"{action}_{index:03d}.png"
+            image = Image.open(source).convert("RGBA")
+            scale = thumb_h / image.height
+            thumb_w = round(image.width * scale)
+            thumb = image.resize((thumb_w, thumb_h), Image.Resampling.LANCZOS)
+            x = label_w + index * cell_w + (cell_w - thumb_w) // 2
+            sheet.alpha_composite(thumb, (x, y + 8))
+            draw.text((label_w + index * cell_w + 6, y + thumb_h + 16), f"{index:02d}", fill=(70, 70, 70, 255))
+
+    sheet.save(output_path)
+
+
+def _build_consistency_report(
+    actions: dict[str, dict[str, Any]],
+    identity_report: dict[str, Any],
+    backend_usage: dict[str, bool],
+    all_actions_contact_sheet: Path,
+) -> dict[str, Any]:
+    frame_sizes = {
+        action: (action_info["frame_size"]["width"], action_info["frame_size"]["height"])
+        for action, action_info in actions.items()
+    }
+    loop_flags = {action: action_info["runtime"]["loop"] for action, action_info in actions.items()}
+    runtime_metadata_present = all("runtime" in action_info for action_info in actions.values())
+    common_canvas_size = len(set(frame_sizes.values())) == 1
+    unsupported_backends_unused = not any(backend_usage.values())
+    review_artifacts_present = all_actions_contact_sheet.exists()
+    action_reports = {
+        action: {
+            "frame_count": action_info["frame_count"],
+            "frame_size": action_info["frame_size"],
+            "loop": action_info["runtime"]["loop"],
+            "fps": action_info["runtime"]["fps"],
+            "ground_y_range": action_info["runtime"]["ground_y_range"],
+            "visible_bbox": action_info["runtime"]["visible_bbox"],
+            "collision_box": action_info["runtime"]["collision_box"],
+            "origin": action_info["runtime"]["origin"],
+        }
+        for action, action_info in actions.items()
+    }
+    checks = {
+        "runtime_metadata_present": runtime_metadata_present,
+        "common_canvas_size": common_canvas_size,
+        "identity_cues_pass": identity_report["all_required_cues_pass"] is True,
+        "unsupported_backends_unused": unsupported_backends_unused,
+        "review_artifacts_present": review_artifacts_present,
+        "loop_flags_expected": loop_flags == {
+            "walk": True,
+            "idle": True,
+            "run": True,
+            "jump": False,
+            "hurt": False,
+        },
+    }
+    blocking = [name for name, passed in checks.items() if not passed]
+    return {
+        "status": "pass" if not blocking else "needs_review",
+        "passed": not blocking,
+        "checks": checks,
+        "blocking_issues": blocking,
+        "action_reports": action_reports,
+        "review_artifacts": {
+            "all_actions_contact_sheet": "pack_review/all_actions_contact_sheet.png",
+        },
+        "runtime_import_decision": "ready_for_godot_aseprite_import_review" if not blocking else "needs_pack_review",
+    }
+
+
+def _build_godot_import_manifest(actions: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "asset_kind": "AnimatedSprite2D_action_pack",
+        "origin_policy": "bottom_center_canvas",
+        "actions": {
+            action: {
+                "spritesheet": action_info["spritesheet"],
+                "frames": action_info["frames"],
+                "fps": action_info["runtime"]["fps"],
+                "loop": action_info["runtime"]["loop"],
+                "frame_duration_ms": action_info["runtime"]["frame_duration_ms"],
+                "origin": action_info["runtime"]["origin"],
+                "collision_box": action_info["runtime"]["collision_box"],
+                "transition_notes": action_info["runtime"]["transition_notes"],
+            }
+            for action, action_info in actions.items()
+        },
+    }
+
+
+def _aseprite_import_notes(actions: dict[str, dict[str, Any]]) -> str:
+    rows = [
+        "# Aseprite Import Notes",
+        "",
+        "Keep the transparent canvas size unchanged for every action.",
+        "Use one Aseprite tag per action and keep the bottom-center canvas origin stable in the game runtime.",
+        "",
+        "| action | frames | fps | loop | role |",
+        "| --- | ---: | ---: | --- | --- |",
+    ]
+    for action, action_info in actions.items():
+        runtime = action_info["runtime"]
+        rows.append(
+            f"| {action} | {action_info['frame_count']} | {runtime['fps']} | {runtime['loop']} | {runtime['review_role']} |"
+        )
+    rows.append("")
+    rows.append("This pack is ready for runtime import review, not a guarantee that every future action is solved.")
+    return "\n".join(rows) + "\n"
+
+
+def _union_bbox(boxes: list[tuple[int, int, int, int]]) -> tuple[int, int, int, int]:
+    return (
+        min(box[0] for box in boxes),
+        min(box[1] for box in boxes),
+        max(box[2] for box in boxes),
+        max(box[3] for box in boxes),
+    )
+
+
+def _pad_bbox(
+    box: tuple[int, int, int, int],
+    width: int,
+    height: int,
+    padding: int,
+) -> tuple[int, int, int, int]:
+    return (
+        max(0, box[0] - padding),
+        max(0, box[1] - padding),
+        min(width, box[2] + padding),
+        min(height, box[3] + padding),
+    )
+
+
+def _bbox_to_rect(box: tuple[int, int, int, int]) -> dict[str, int]:
+    return {
+        "x": box[0],
+        "y": box[1],
+        "width": box[2] - box[0],
+        "height": box[3] - box[1],
+    }
+
+
 def _build_identity_report(reference_image: Path, action_dirs: dict[str, Path]) -> dict[str, Any]:
     reference = Image.open(reference_image).convert("RGBA")
     reference_counts = _cue_counts([reference])
@@ -721,13 +1147,20 @@ def _build_identity_report(reference_image: Path, action_dirs: dict[str, Path]) 
     }
 
 
-def _build_production_gate(actions: dict[str, dict[str, Any]], identity_report: dict[str, Any]) -> dict[str, Any]:
+def _build_production_gate(
+    actions: dict[str, dict[str, Any]],
+    identity_report: dict[str, Any],
+    consistency_report: dict[str, Any],
+) -> dict[str, Any]:
     checks = {
         f"{action}_production_ready": action_info["production_ready"] is True
         for action, action_info in actions.items()
     }
     checks["identity_cues_pass"] = identity_report["all_required_cues_pass"] is True
     checks["unsupported_backends_unused"] = True
+    checks["runtime_metadata_present"] = consistency_report["checks"]["runtime_metadata_present"] is True
+    checks["pack_review_generated"] = consistency_report["checks"]["review_artifacts_present"] is True
+    checks["consistency_gate_pass"] = consistency_report["passed"] is True
     blocking = [name for name, passed in checks.items() if not passed]
     return {
         "target": "character_sprite_asset_pack_mvp",
@@ -735,7 +1168,7 @@ def _build_production_gate(actions: dict[str, dict[str, Any]], identity_report: 
         "production_ready": not blocking,
         "checks": checks,
         "blocking_issues": blocking,
-        "scope_statement": "walk, idle, run, jump, and hurt are production-ready for this MVP pack.",
+        "scope_statement": "walk, idle, run, jump, and hurt are production-ready and ready for runtime import review.",
     }
 
 
@@ -802,6 +1235,8 @@ def _notes(manifest: dict[str, Any]) -> str:
 - route: `{manifest["route"]}`
 - production_ready: `{manifest["production_ready"]}`
 - current production actions: `{", ".join(manifest["actions"].keys())}`
+- runtime_manifest: `{manifest["runtime_manifest"]}`
+- pack_review: `pack_review/all_actions_contact_sheet.png`
 
 ## Identity Contract
 
@@ -811,6 +1246,12 @@ sailor-style white top, red tie, navy skirt, dark socks, and brown shoes.
 The current sprite is accepted as a reference-derived game sprite design. It is not a faithful copy
 of the original illustration, and future actions must preserve the same tracked cues before they can
 be marked production-ready.
+
+## Runtime Review
+
+Use the all-actions contact sheet, Godot import manifest, and Aseprite notes to review this as a
+small game asset package rather than as loose image files. Collision boxes are approximate review
+boxes, not final gameplay hitboxes.
 """
 
 
