@@ -104,6 +104,37 @@ def test_artist_authored_walk_cleanup_rejects_wrong_frame_count(tmp_path: Path) 
     assert "requires exactly 8 PNG rough frames" in completed.stderr
 
 
+def test_artist_authored_walk_cleanup_removes_green_dominant_background(tmp_path: Path) -> None:
+    rough = tmp_path / "rough"
+    rough.mkdir()
+    for index in range(8):
+        _make_green_key_rough_frame(rough / f"walk_{index:03d}.png")
+
+    output_dir = tmp_path / "artist_authored_8frame_walk_cleanup"
+    subprocess.run(
+        [
+            sys.executable,
+            str(_SCRIPT),
+            "--rough-frames-dir",
+            str(rough),
+            "--output-dir",
+            str(output_dir),
+            "--background-min-channel",
+            "0",
+            "--background-threshold",
+            "120",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    frame = Image.open(output_dir / "frames" / "walk_000.png").convert("RGBA")
+    assert frame.getpixel((0, 0))[3] == 0
+    assert frame.getpixel((48, 48))[3] == 255
+    assert frame.getpixel((48, 48))[:3] == (20, 30, 70)
+
+
 def _make_rough_frame(path: Path, index: int) -> None:
     image = Image.new("RGBA", (96, 96), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
@@ -119,4 +150,16 @@ def _make_rough_frame(path: Path, index: int) -> None:
     draw.line((cx + 6, 67, cx + rear, ground - 4), fill=(35, 35, 50, 255), width=5)
     draw.rectangle((cx + front - 7, ground - 5, cx + front + 10, ground), fill=(110, 45, 30, 255))
     draw.rectangle((cx + rear - 7, ground - 5, cx + rear + 10, ground), fill=(110, 45, 30, 255))
+    image.save(path)
+
+
+def _make_green_key_rough_frame(path: Path) -> None:
+    image = Image.new("RGBA", (96, 96), (0, 255, 0, 255))
+    pixels = image.load()
+    for y in range(image.height):
+        for x in range(image.width):
+            pixels[x, y] = (0, max(120, 255 - y // 3), x % 12, 255)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((32, 24, 64, 72), fill=(20, 30, 70, 255))
+    draw.ellipse((38, 10, 58, 30), fill=(246, 174, 154, 255))
     image.save(path)

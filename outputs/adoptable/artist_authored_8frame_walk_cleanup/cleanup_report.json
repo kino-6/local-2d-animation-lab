@@ -4,135 +4,85 @@
   "reports": [
     {
       "index": 0,
-      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_000.png",
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames\\walk_000.png",
       "original_size": {
-        "width": 384,
-        "height": 512
+        "width": 374,
+        "height": 502
       },
       "output_size": {
         "width": 448,
         "height": 512
       },
       "alpha_bbox": [
-        122,
-        31,
-        376,
-        465
+        110,
+        29,
+        348,
+        451
       ],
       "background_removed": true,
       "estimated_background": [
-        9,
-        239,
-        14
+        79,
+        244,
+        84
       ],
-      "removed_pixel_count": 162119
+      "removed_pixel_count": 152285
     },
     {
       "index": 1,
-      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_001.png",
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames\\walk_001.png",
       "original_size": {
-        "width": 384,
-        "height": 512
+        "width": 374,
+        "height": 502
       },
       "output_size": {
         "width": 448,
         "height": 512
       },
       "alpha_bbox": [
-        110,
-        39,
-        306,
-        471
+        125,
+        37,
+        304,
+        453
       ],
       "background_removed": true,
       "estimated_background": [
-        6,
-        240,
-        12
+        69,
+        245,
+        72
       ],
-      "removed_pixel_count": 162042
+      "removed_pixel_count": 154446
     },
     {
       "index": 2,
-      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_002.png",
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames\\walk_002.png",
       "original_size": {
-        "width": 384,
-        "height": 512
+        "width": 374,
+        "height": 502
       },
       "output_size": {
         "width": 448,
         "height": 512
       },
       "alpha_bbox": [
-        56,
-        31,
-        416,
-        468
+        114,
+        30,
+        311,
+        452
       ],
       "background_removed": true,
       "estimated_background": [
-        6,
-        240,
-        12
+        69,
+        245,
+        71
       ],
-      "removed_pixel_count": 160627
+      "removed_pixel_count": 154730
     },
     {
       "index": 3,
-      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_003.png",
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames\\walk_003.png",
       "original_size": {
-        "width": 384,
-        "height": 512
-      },
-      "output_size": {
-        "width": 448,
-        "height": 512
-      },
-      "alpha_bbox": [
-        32,
-        28,
-        260,
-        468
-      ],
-      "background_removed": true,
-      "estimated_background": [
-        8,
-        239,
-        12
-      ],
-      "removed_pixel_count": 163979
-    },
-    {
-      "index": 4,
-      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_004.png",
-      "original_size": {
-        "width": 384,
-        "height": 512
-      },
-      "output_size": {
-        "width": 448,
-        "height": 512
-      },
-      "alpha_bbox": [
-        110,
-        13,
-        365,
-        447
-      ],
-      "background_removed": true,
-      "estimated_background": [
-        8,
-        240,
-        13
-      ],
-      "removed_pixel_count": 162283
-    },
-    {
-      "index": 5,
-      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_005.png",
-      "original_size": {
-        "width": 384,
-        "height": 512
+        "width": 374,
+        "height": 502
       },
       "output_size": {
         "width": 448,
@@ -140,67 +90,117 @@
       },
       "alpha_bbox": [
         99,
-        19,
-        278,
+        29,
+        371,
         452
       ],
       "background_removed": true,
       "estimated_background": [
-        5,
-        242,
-        11
+        104,
+        246,
+        111
       ],
-      "removed_pixel_count": 163157
+      "removed_pixel_count": 154848
+    },
+    {
+      "index": 4,
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames\\walk_004.png",
+      "original_size": {
+        "width": 374,
+        "height": 502
+      },
+      "output_size": {
+        "width": 448,
+        "height": 512
+      },
+      "alpha_bbox": [
+        87,
+        25,
+        337,
+        444
+      ],
+      "background_removed": true,
+      "estimated_background": [
+        30,
+        240,
+        28
+      ],
+      "removed_pixel_count": 152685
+    },
+    {
+      "index": 5,
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames\\walk_005.png",
+      "original_size": {
+        "width": 374,
+        "height": 502
+      },
+      "output_size": {
+        "width": 448,
+        "height": 512
+      },
+      "alpha_bbox": [
+        136,
+        29,
+        294,
+        447
+      ],
+      "background_removed": true,
+      "estimated_background": [
+        20,
+        245,
+        14
+      ],
+      "removed_pixel_count": 157288
     },
     {
       "index": 6,
-      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_006.png",
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames\\walk_006.png",
       "original_size": {
-        "width": 384,
-        "height": 512
+        "width": 374,
+        "height": 502
       },
       "output_size": {
         "width": 448,
         "height": 512
       },
       "alpha_bbox": [
-        44,
-        19,
-        416,
-        451
+        122,
+        26,
+        311,
+        446
       ],
       "background_removed": true,
       "estimated_background": [
-        4,
-        241,
-        11
+        23,
+        243,
+        15
       ],
-      "removed_pixel_count": 162122
+      "removed_pixel_count": 155773
     },
     {
       "index": 7,
-      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames\\walk_007.png",
+      "source": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames\\walk_007.png",
       "original_size": {
-        "width": 384,
-        "height": 512
+        "width": 374,
+        "height": 502
       },
       "output_size": {
         "width": 448,
         "height": 512
       },
       "alpha_bbox": [
-        32,
-        19,
-        241,
-        450
+        69,
+        26,
+        338,
+        444
       ],
       "background_removed": true,
       "estimated_background": [
-        8,
-        240,
-        12
+        66,
+        248,
+        68
       ],
-      "removed_pixel_count": 164822
+      "removed_pixel_count": 154575
     }
   ],
   "warnings": []

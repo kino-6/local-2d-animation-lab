@@ -1,10 +1,10 @@
 # Artist-Authored 8-Frame Walk Cleanup
 
-This package is Route A: a rough walk cycle packaged for review from `ai_generated_rough_for_route_a`.
+This package is Route A: a rough walk cycle packaged for review from `ai_generated_rough_for_route_a_v2`.
 
 - route: `artist_authored_8frame_walk_cleanup`
 - route_status: `requires_artist_authored_rough`
-- source_kind: `ai_generated_rough_for_route_a`
+- source_kind: `ai_generated_rough_for_route_a_v2`
 - frame_count: `8`
 - background: `transparent`
 - AI/model scope: `cleanup_only_no_pose_or_silhouette_generation`

@@ -251,10 +251,12 @@ baseline_complete_but_not_artistically_viable
 ## Route A Generated Rough Candidate
 
 - [x] Generate one anime-style 4x2 walk-cycle source sheet as a rough candidate.
+- [x] Generate a second stricter game-sprite rough candidate after v1 proved usable but still too illustration-like.
 - [x] Store the generated source and prompt under:
 
 ```text
 assets/artist_authored_roughs/imagegen_walk_8frame_20260614/
+assets/artist_authored_roughs/imagegen_walk_8frame_20260614_v2/
 ```
 
 - [x] Split the source sheet into exactly 8 rough PNG frames.
@@ -268,12 +270,14 @@ outputs/adoptable/artist_authored_8frame_walk_cleanup/
 - [x] Mark the manifest source honestly as:
 
 ```text
-source_kind: ai_generated_rough_for_route_a
+source_kind: ai_generated_rough_for_route_a_v2
 ```
 
+- [x] Add green-dominance chroma cleanup after v2 showed that visually green backgrounds may not be perfectly uniform.
 - [x] Agent-review `contact_sheet.png`.
 - [x] Honest assessment:
   - Much better than the geometric puppet baseline.
   - Reviewable as a 2D game walk rough candidate.
+  - v2 is the current stronger candidate because it has stronger outline and clearer game-sprite readability.
   - Still not production art.
   - Route A remains the practical path because the rough frames can be edited in Aseprite.

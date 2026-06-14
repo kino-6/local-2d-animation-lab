@@ -294,11 +294,14 @@ def _connected_background_mask(
     pixels = image.load()
     candidate = Image.new("L", image.size, 0)
     candidate_pixels = candidate.load()
+    green_key = background[1] >= max(background[0], background[2]) + 80
     for y in range(height):
         for x in range(width):
             red, green, blue = pixels[x, y]
             distance = abs(red - background[0]) + abs(green - background[1]) + abs(blue - background[2])
-            if distance <= threshold and min(red, green, blue) >= min_channel:
+            matches_distance = distance <= threshold and min(red, green, blue) >= min_channel
+            matches_green_key = green_key and green >= 120 and green >= max(red, blue) + 55
+            if matches_distance or matches_green_key:
                 candidate_pixels[x, y] = 255
 
     out = Image.new("L", image.size, 0)

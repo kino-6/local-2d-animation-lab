@@ -2,7 +2,7 @@
   "route": "artist_authored_8frame_walk_cleanup",
   "route_status": "requires_artist_authored_rough",
   "asset_kind": "2d_game_sprite",
-  "source_kind": "ai_generated_rough_for_route_a",
+  "source_kind": "ai_generated_rough_for_route_a_v2",
   "output_status": "cleanup_packaged_for_review",
   "frame_count": 8,
   "fps": 8,
@@ -48,9 +48,9 @@
     "cleanup_report": "cleanup_report.json"
   },
   "source": {
-    "rough_frames_dir": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614\\rough_frames",
+    "rough_frames_dir": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames",
     "reference_image": "assets\\reference\\Anima_00013_.png",
-    "note": "Generated with built-in image_gen as a rough candidate for Route A; not a human-authored final sprite. Repackaged with transparent horizontal safety padding."
+    "note": "Generated with built-in image_gen as a second rough candidate for Route A; stricter game-sprite prompt, split with 5px grid inset, packaged with green-dominance chroma cleanup."
   },
   "frames": [
     {
@@ -59,10 +59,10 @@
       "file": "frames/walk_000.png",
       "duration_ms": 125,
       "bbox": [
-        122,
-        31,
-        376,
-        465
+        110,
+        29,
+        348,
+        451
       ]
     },
     {
@@ -71,10 +71,10 @@
       "file": "frames/walk_001.png",
       "duration_ms": 125,
       "bbox": [
-        110,
-        39,
-        306,
-        471
+        125,
+        37,
+        304,
+        453
       ]
     },
     {
@@ -83,10 +83,10 @@
       "file": "frames/walk_002.png",
       "duration_ms": 125,
       "bbox": [
-        56,
-        31,
-        416,
-        468
+        114,
+        30,
+        311,
+        452
       ]
     },
     {
@@ -95,10 +95,10 @@
       "file": "frames/walk_003.png",
       "duration_ms": 125,
       "bbox": [
-        32,
-        28,
-        260,
-        468
+        99,
+        29,
+        371,
+        452
       ]
     },
     {
@@ -107,10 +107,10 @@
       "file": "frames/walk_004.png",
       "duration_ms": 125,
       "bbox": [
-        110,
-        13,
-        365,
-        447
+        87,
+        25,
+        337,
+        444
       ]
     },
     {
@@ -119,10 +119,10 @@
       "file": "frames/walk_005.png",
       "duration_ms": 125,
       "bbox": [
-        99,
-        19,
-        278,
-        452
+        136,
+        29,
+        294,
+        447
       ]
     },
     {
@@ -131,10 +131,10 @@
       "file": "frames/walk_006.png",
       "duration_ms": 125,
       "bbox": [
-        44,
-        19,
-        416,
-        451
+        122,
+        26,
+        311,
+        446
       ]
     },
     {
@@ -143,10 +143,10 @@
       "file": "frames/walk_007.png",
       "duration_ms": 125,
       "bbox": [
-        32,
-        19,
-        241,
-        450
+        69,
+        26,
+        338,
+        444
       ]
     }
   ],

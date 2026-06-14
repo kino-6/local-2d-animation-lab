@@ -90,6 +90,12 @@ A first AI-generated rough candidate is stored as a Route A input experiment:
 assets/artist_authored_roughs/imagegen_walk_8frame_20260614/
 ```
 
+The current stronger candidate is:
+
+```text
+assets/artist_authored_roughs/imagegen_walk_8frame_20260614_v2/
+```
+
 Packaged review output:
 
 ```text
@@ -99,4 +105,8 @@ outputs/adoptable/artist_authored_8frame_walk_cleanup/
 This candidate is useful because it avoids the geometric puppet failure mode and produces a
 reviewable anime-style 8-frame side-view walk sheet. It is still not production art, and it should
 not be treated as proof that fully automated generation is solved. The manifest marks it as
-`source_kind: ai_generated_rough_for_route_a` for honesty.
+`source_kind: ai_generated_rough_for_route_a_v2` for honesty.
+
+v2 required a cleanup improvement: the generated green background looked uniform but contained
+enough variation that distance-threshold chroma removal either left green panels or damaged the
+character. The cleanup script now also recognizes green-dominant connected background regions.
