@@ -22,8 +22,8 @@ ROUTE = "character_sprite_asset_pack"
 DEFAULT_REFERENCE = Path("assets/reference/Anima_00013_.png")
 DEFAULT_WALK_READY = Path("outputs/adoptable/artist_authored_8frame_walk_cleanup/production_ready")
 DEFAULT_RUN_ROUGH = Path("assets/artist_authored_roughs/imagegen_run_8frame_20260614/rough_frames")
-DEFAULT_JUMP_ROUGH = Path("assets/artist_authored_roughs/imagegen_jump_6frame_20260614/rough_frames")
-DEFAULT_HURT_ROUGH = Path("assets/artist_authored_roughs/imagegen_hurt_4frame_20260614/rough_frames")
+DEFAULT_JUMP_ROUGH = Path("assets/artist_authored_roughs/imagegen_jump_8frame_20260614/rough_frames")
+DEFAULT_HURT_ROUGH = Path("assets/artist_authored_roughs/imagegen_hurt_6frame_20260614/rough_frames")
 DEFAULT_OUTPUT = Path("outputs/adoptable/character_sprite_asset_pack")
 
 IDENTITY_CUES = {
@@ -75,15 +75,29 @@ ACTION_RUNTIME_SPECS = {
     },
     "jump": {
         "loop": False,
-        "phase_names": ["anticipation", "takeoff", "rise", "apex", "fall", "landing_recovery"],
-        "playback_frame_indices": [0, 0, 1, 2, 3, 4, 5, 5],
+        "phase_names": [
+            "anticipation_crouch",
+            "takeoff",
+            "early_rise",
+            "rising_tuck",
+            "apex_tuck",
+            "falling_extend",
+            "landing_contact",
+            "landing_recovery",
+        ],
         "transition_notes": ["idle", "walk", "run", "hurt"],
         "review_role": "non-looping jump arc",
     },
     "hurt": {
         "loop": False,
-        "phase_names": ["brace", "small_recoil", "large_stagger", "recover"],
-        "playback_frame_indices": [0, 1, 1, 2, 2, 3],
+        "phase_names": [
+            "neutral_brace",
+            "impact_recoil",
+            "stagger_step",
+            "peak_stagger",
+            "settle",
+            "recover",
+        ],
         "transition_notes": ["idle", "walk"],
         "review_role": "non-looping small damage reaction",
     },
@@ -158,10 +172,13 @@ def build_character_sprite_asset_pack(
         fps=fps,
         target_size=target_size,
         scale_reference=scale_reference,
-        frame_count=6,
-        phase_names=["anticipation", "takeoff", "rise", "apex", "fall", "landing_recovery"],
-        source_slug="imagegen_jump_6frame_20260614_rough",
-        review_note="Jump uses a dedicated 6-frame rough sheet with anticipation, takeoff, airborne, and landing phases.",
+        frame_count=8,
+        phase_names=ACTION_RUNTIME_SPECS["jump"]["phase_names"],
+        source_slug="imagegen_jump_8frame_20260614_rough",
+        review_note=(
+            "Jump uses a dedicated 8-frame rough sheet with anticipation, takeoff, rise, tuck, fall, "
+            "landing, and recovery phases."
+        ),
     )
     hurt_action = _build_named_rough_action(
         action="hurt",
@@ -170,10 +187,12 @@ def build_character_sprite_asset_pack(
         fps=fps,
         target_size=target_size,
         scale_reference=scale_reference,
-        frame_count=4,
-        phase_names=["brace", "small_recoil", "large_stagger", "recover"],
-        source_slug="imagegen_hurt_4frame_20260614_rough",
-        review_note="Hurt uses a dedicated 4-frame rough sheet with bracing, recoil, stagger, and recovery phases.",
+        frame_count=6,
+        phase_names=ACTION_RUNTIME_SPECS["hurt"]["phase_names"],
+        source_slug="imagegen_hurt_6frame_20260614_rough",
+        review_note=(
+            "Hurt uses a dedicated 6-frame rough sheet with brace, recoil, stagger, settle, and recovery phases."
+        ),
     )
 
     identity_report = _build_identity_report(

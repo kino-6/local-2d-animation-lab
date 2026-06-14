@@ -105,7 +105,9 @@
         "actions/jump/frames/jump_002.png",
         "actions/jump/frames/jump_003.png",
         "actions/jump/frames/jump_004.png",
-        "actions/jump/frames/jump_005.png"
+        "actions/jump/frames/jump_005.png",
+        "actions/jump/frames/jump_006.png",
+        "actions/jump/frames/jump_007.png"
       ],
       "fps": 8,
       "loop": false,
@@ -116,9 +118,9 @@
         "y": 480
       },
       "collision_box": {
-        "x": 0,
+        "x": 5,
         "y": 0,
-        "width": 349,
+        "width": 333,
         "height": 451
       },
       "transition_notes": [
@@ -134,7 +136,9 @@
         "actions/hurt/frames/hurt_000.png",
         "actions/hurt/frames/hurt_001.png",
         "actions/hurt/frames/hurt_002.png",
-        "actions/hurt/frames/hurt_003.png"
+        "actions/hurt/frames/hurt_003.png",
+        "actions/hurt/frames/hurt_004.png",
+        "actions/hurt/frames/hurt_005.png"
       ],
       "fps": 8,
       "loop": false,
@@ -145,9 +149,9 @@
         "y": 480
       },
       "collision_box": {
-        "x": 48,
+        "x": 0,
         "y": 20,
-        "width": 241,
+        "width": 352,
         "height": 431
       },
       "transition_notes": [

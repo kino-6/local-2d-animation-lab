@@ -8,7 +8,7 @@ Use one Aseprite tag per action and keep the bottom-center canvas origin stable 
 | walk | 8 | 8 | True | baseline locomotion loop |
 | idle | 4 | 8 | True | subtle standing loop |
 | run | 8 | 8 | True | faster locomotion loop |
-| jump | 6 | 8 | False | non-looping jump arc |
-| hurt | 4 | 8 | False | non-looping small damage reaction |
+| jump | 8 | 8 | False | non-looping jump arc |
+| hurt | 6 | 8 | False | non-looping small damage reaction |
 
 This pack is ready for runtime import review, not a guarantee that every future action is solved.

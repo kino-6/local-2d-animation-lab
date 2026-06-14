@@ -92,17 +92,17 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     run_gif = Image.open(output_dir / "actions" / "run" / "preview.gif")
     assert getattr(run_gif, "n_frames", 1) >= 4
     jump_frames = sorted((output_dir / "actions" / "jump" / "frames").glob("jump_*.png"))
-    assert len(jump_frames) == 6
+    assert len(jump_frames) == 8
     assert {Image.open(path).size for path in jump_frames} == {(96, 96)}
     assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in jump_frames)
     jump_gif = Image.open(output_dir / "actions" / "jump" / "preview.gif")
     assert getattr(jump_gif, "n_frames", 1) >= 4
     hurt_frames = sorted((output_dir / "actions" / "hurt" / "frames").glob("hurt_*.png"))
-    assert len(hurt_frames) == 4
+    assert len(hurt_frames) == 6
     assert {Image.open(path).size for path in hurt_frames} == {(96, 96)}
     assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in hurt_frames)
     hurt_gif = Image.open(output_dir / "actions" / "hurt" / "preview.gif")
-    assert getattr(hurt_gif, "n_frames", 1) == 4
+    assert getattr(hurt_gif, "n_frames", 1) == 6
 
     manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["route"] == "character_sprite_asset_pack"
@@ -127,28 +127,32 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
         "flight_backward",
         "right_reach",
     ]
-    assert manifest["actions"]["jump"]["frame_count"] == 6
+    assert manifest["actions"]["jump"]["frame_count"] == 8
     assert manifest["actions"]["jump"]["production_ready"] is True
     assert manifest["actions"]["jump"]["runtime"]["loop"] is False
     assert manifest["actions"]["jump"]["runtime"]["playback_frame_count"] == 8
-    assert manifest["actions"]["jump"]["runtime"]["playback_frame_indices"] == [0, 0, 1, 2, 3, 4, 5, 5]
+    assert manifest["actions"]["jump"]["runtime"]["playback_frame_indices"] == list(range(8))
     assert manifest["actions"]["jump"]["phase_names"] == [
-        "anticipation",
+        "anticipation_crouch",
         "takeoff",
-        "rise",
-        "apex",
-        "fall",
+        "early_rise",
+        "rising_tuck",
+        "apex_tuck",
+        "falling_extend",
+        "landing_contact",
         "landing_recovery",
     ]
-    assert manifest["actions"]["hurt"]["frame_count"] == 4
+    assert manifest["actions"]["hurt"]["frame_count"] == 6
     assert manifest["actions"]["hurt"]["production_ready"] is True
     assert manifest["actions"]["hurt"]["runtime"]["loop"] is False
     assert manifest["actions"]["hurt"]["runtime"]["playback_frame_count"] == 6
-    assert manifest["actions"]["hurt"]["runtime"]["playback_frame_indices"] == [0, 1, 1, 2, 2, 3]
+    assert manifest["actions"]["hurt"]["runtime"]["playback_frame_indices"] == list(range(6))
     assert manifest["actions"]["hurt"]["phase_names"] == [
-        "brace",
-        "small_recoil",
-        "large_stagger",
+        "neutral_brace",
+        "impact_recoil",
+        "stagger_step",
+        "peak_stagger",
+        "settle",
         "recover",
     ]
     assert manifest["backend_usage"] == {
@@ -217,13 +221,13 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
         (output_dir / "actions" / "jump" / "production_ready_report.json").read_text(encoding="utf-8")
     )
     assert jump_report["production_ready"] is True
-    assert jump_report["source"] == "imagegen_jump_6frame_20260614_rough"
+    assert jump_report["source"] == "imagegen_jump_8frame_20260614_rough"
 
     hurt_report = json.loads(
         (output_dir / "actions" / "hurt" / "production_ready_report.json").read_text(encoding="utf-8")
     )
     assert hurt_report["production_ready"] is True
-    assert hurt_report["source"] == "imagegen_hurt_4frame_20260614_rough"
+    assert hurt_report["source"] == "imagegen_hurt_6frame_20260614_rough"
 
 
 def _make_reference(path: Path) -> None:
@@ -306,13 +310,15 @@ def _make_run_rough_frames(path: Path) -> None:
 
 def _make_jump_rough_frames(path: Path) -> None:
     path.mkdir(parents=True)
-    offsets = [6, -4, -18, -28, -16, 4]
+    offsets = [6, -4, -14, -24, -30, -16, 4, 6]
     leg_shapes = [
         (-7, 6, 10, 7),
         (-12, 1, 15, 2),
         (-8, -2, 10, -1),
         (-5, -3, 8, -2),
         (-10, -1, 12, 0),
+        (-14, 0, 14, 1),
+        (-8, 4, 9, 5),
         (-8, 5, 9, 6),
     ]
     for index, y_offset in enumerate(offsets):
@@ -330,8 +336,8 @@ def _make_jump_rough_frames(path: Path) -> None:
 
 def _make_hurt_rough_frames(path: Path) -> None:
     path.mkdir(parents=True)
-    leans = [0, -3, -6, 0]
-    arm_reaches = [4, 10, 14, 4]
+    leans = [0, -3, -6, -8, -4, 0]
+    arm_reaches = [4, 10, 14, 16, 9, 4]
     for index, lean in enumerate(leans):
         image = Image.new("RGBA", (96, 96), (0, 255, 0, 255))
         draw = ImageDraw.Draw(image)

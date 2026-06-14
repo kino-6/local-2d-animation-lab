@@ -247,16 +247,16 @@
       "fps": 8,
       "frame_duration_ms": 125,
       "loop": false,
-      "source_frame_count": 6,
+      "source_frame_count": 8,
       "playback_frame_indices": [
-        0,
         0,
         1,
         2,
         3,
         4,
         5,
-        5
+        6,
+        7
       ],
       "playback_frame_count": 8,
       "frame_density_note": "Playback indices may add limited-animation holds for runtime feel. True inbetween art should come from an authored or I2I rough retake.",
@@ -272,22 +272,22 @@
       },
       "origin_note": "Use a stable bottom-center canvas origin so action transitions do not jump.",
       "collision_box": {
-        "x": 0,
+        "x": 5,
         "y": 0,
-        "width": 349,
+        "width": 333,
         "height": 451
       },
       "visible_bbox": {
-        "x": 2,
+        "x": 9,
         "y": 2,
-        "width": 343,
+        "width": 325,
         "height": 445
       },
-      "ground_y_range": 187,
+      "ground_y_range": 121,
       "phase_events": [
         {
           "frame": 0,
-          "phase": "anticipation"
+          "phase": "anticipation_crouch"
         },
         {
           "frame": 1,
@@ -295,18 +295,26 @@
         },
         {
           "frame": 2,
-          "phase": "rise"
+          "phase": "early_rise"
         },
         {
           "frame": 3,
-          "phase": "apex"
+          "phase": "rising_tuck"
         },
         {
           "frame": 4,
-          "phase": "fall"
+          "phase": "apex_tuck"
         },
         {
           "frame": 5,
+          "phase": "falling_extend"
+        },
+        {
+          "frame": 6,
+          "phase": "landing_contact"
+        },
+        {
+          "frame": 7,
           "phase": "landing_recovery"
         }
       ],
@@ -326,14 +334,14 @@
       "fps": 8,
       "frame_duration_ms": 125,
       "loop": false,
-      "source_frame_count": 4,
+      "source_frame_count": 6,
       "playback_frame_indices": [
         0,
         1,
-        1,
         2,
-        2,
-        3
+        3,
+        4,
+        5
       ],
       "playback_frame_count": 6,
       "frame_density_note": "Playback indices may add limited-animation holds for runtime feel. True inbetween art should come from an authored or I2I rough retake.",
@@ -349,33 +357,41 @@
       },
       "origin_note": "Use a stable bottom-center canvas origin so action transitions do not jump.",
       "collision_box": {
-        "x": 48,
+        "x": 0,
         "y": 20,
-        "width": 241,
+        "width": 352,
         "height": 431
       },
       "visible_bbox": {
-        "x": 52,
+        "x": 2,
         "y": 24,
-        "width": 233,
+        "width": 348,
         "height": 423
       },
       "ground_y_range": 0,
       "phase_events": [
         {
           "frame": 0,
-          "phase": "brace"
+          "phase": "neutral_brace"
         },
         {
           "frame": 1,
-          "phase": "small_recoil"
+          "phase": "impact_recoil"
         },
         {
           "frame": 2,
-          "phase": "large_stagger"
+          "phase": "stagger_step"
         },
         {
           "frame": 3,
+          "phase": "peak_stagger"
+        },
+        {
+          "frame": 4,
+          "phase": "settle"
+        },
+        {
+          "frame": 5,
           "phase": "recover"
         }
       ],

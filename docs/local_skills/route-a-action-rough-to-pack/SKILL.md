@@ -209,7 +209,14 @@ If the rough fails visually, do not tune cleanup parameters endlessly. Retake th
 ## Current Accepted Examples
 
 - `run`: `assets/artist_authored_roughs/imagegen_run_8frame_20260614/rough_frames/`
-- `jump`: `assets/artist_authored_roughs/imagegen_jump_6frame_20260614/rough_frames/`
-- `hurt`: `assets/artist_authored_roughs/imagegen_hurt_4frame_20260614/rough_frames/`
+- `jump`: `assets/artist_authored_roughs/imagegen_jump_8frame_20260614/rough_frames/`
+- `hurt`: `assets/artist_authored_roughs/imagegen_hurt_6frame_20260614/rough_frames/`
 
 These examples are reproducible from committed rough frames through local packaging. Their initial rough creation used AI-assisted image generation and should not be described as local-only generation.
+
+Current density rule:
+
+- use real source frames for action readability before adding runtime holds;
+- `jump` should keep at least 8 source frames for anticipation, takeoff, airborne, landing, and recovery;
+- `hurt` should keep at least 6 source frames for brace, recoil, stagger, settle, and recovery;
+- playback holds are acceptable timing support, not production art or true interpolation.

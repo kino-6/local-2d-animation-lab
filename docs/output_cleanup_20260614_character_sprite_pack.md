@@ -58,6 +58,9 @@ Reasons:
   - `jump`: 8-10 source frames;
   - `hurt`: 6-8 source frames;
   - future action attacks: 8-12 source frames.
+- Dense-frame implementation target:
+  - `jump`: 8 source frames with anticipation, takeoff, rise, tuck, fall, landing, and recovery;
+  - `hurt`: 6 source frames with brace, recoil, stagger, settle, and recovery.
 
 ## Next Direction
 

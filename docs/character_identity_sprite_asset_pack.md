@@ -49,8 +49,8 @@ Current production-ready actions:
 - `walk`: copied from `artist_authored_8frame_walk_cleanup/production_ready/`;
 - `idle`: deterministic subtle-idle action derived from the accepted walk sprite.
 - `run`: cleaned and packaged from the dedicated `imagegen_run_8frame_20260614` rough sheet.
-- `jump`: cleaned and packaged from the dedicated `imagegen_jump_6frame_20260614` rough sheet.
-- `hurt`: cleaned and packaged from the dedicated `imagegen_hurt_4frame_20260614` rough sheet.
+- `jump`: cleaned and packaged from the dedicated `imagegen_jump_8frame_20260614` rough sheet.
+- `hurt`: cleaned and packaged from the dedicated `imagegen_hurt_6frame_20260614` rough sheet.
 
 The repeatable workflow for adding actions is documented in
 `docs/local_skills/route-a-action-rough-to-pack/SKILL.md`.
@@ -89,11 +89,12 @@ Runtime assumptions:
 - Treat `walk`, `idle`, and `run` as loops.
 - Treat `jump` and `hurt` as one-shot actions.
 - Collision boxes are approximate review boxes, not final gameplay hitboxes.
-- `jump` and `hurt` use runtime playback timing expansion:
-  - `jump`: 6 source frames, 8 playback frames;
-  - `hurt`: 4 source frames, 6 playback frames.
-- Playback timing expansion only repeats source frames for limited-animation feel. True inbetween art
-  still requires an authored or I2I rough retake with more drawn frames.
+- `jump` and `hurt` now use denser source roughs rather than runtime-only timing expansion:
+  - `jump`: 8 source frames, 8 playback frames;
+  - `hurt`: 6 source frames, 6 playback frames.
+- Playback timing expansion may still be used for runtime holds in future actions, but it must not be
+  described as true inbetween art. When motion feels under-sampled, prefer an authored or I2I rough
+  retake with more drawn frames.
 
 ## Godot Viewer
 
@@ -153,6 +154,7 @@ It does not mean arbitrary future actions are complete.
 The next useful step is not more action sprawl. Prefer one of:
 
 - import the current pack into Godot or Aseprite and review actual runtime feel;
-- use image-to-image to improve visual consistency across existing actions;
+- use image-to-image to improve visual consistency across existing actions without reducing source
+  frame density;
 - add one new action only after preparing an action-specific rough sheet and preserving the runtime
   metadata contract.
