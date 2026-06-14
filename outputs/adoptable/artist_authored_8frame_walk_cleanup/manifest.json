@@ -181,7 +181,83 @@
         }
       },
       "polish_report": "production_polish/polish_report.json",
-      "polish_review": "production_polish/polish_review.md"
+      "polish_review": "production_polish/polish_review.md",
+      "production_candidate": {
+        "frames": [
+          "production_candidate/frames/walk_000.png",
+          "production_candidate/frames/walk_001.png",
+          "production_candidate/frames/walk_002.png",
+          "production_candidate/frames/walk_003.png",
+          "production_candidate/frames/walk_004.png",
+          "production_candidate/frames/walk_005.png",
+          "production_candidate/frames/walk_006.png",
+          "production_candidate/frames/walk_007.png"
+        ],
+        "spritesheet": "production_candidate/spritesheet.png",
+        "preview_gif": "production_candidate/preview.gif",
+        "contact_sheet": "production_candidate/contact_sheet.png",
+        "game_previews": {
+          "height_128": {
+            "frame_size": {
+              "width": 94,
+              "height": 128
+            },
+            "frames": [
+              "production_candidate/game_previews/height_128/frames/walk_000.png",
+              "production_candidate/game_previews/height_128/frames/walk_001.png",
+              "production_candidate/game_previews/height_128/frames/walk_002.png",
+              "production_candidate/game_previews/height_128/frames/walk_003.png",
+              "production_candidate/game_previews/height_128/frames/walk_004.png",
+              "production_candidate/game_previews/height_128/frames/walk_005.png",
+              "production_candidate/game_previews/height_128/frames/walk_006.png",
+              "production_candidate/game_previews/height_128/frames/walk_007.png"
+            ],
+            "spritesheet": "production_candidate/game_previews/height_128/spritesheet.png",
+            "preview_gif": "production_candidate/game_previews/height_128/preview.gif",
+            "contact_sheet": "production_candidate/game_previews/height_128/contact_sheet.png"
+          },
+          "height_192": {
+            "frame_size": {
+              "width": 141,
+              "height": 192
+            },
+            "frames": [
+              "production_candidate/game_previews/height_192/frames/walk_000.png",
+              "production_candidate/game_previews/height_192/frames/walk_001.png",
+              "production_candidate/game_previews/height_192/frames/walk_002.png",
+              "production_candidate/game_previews/height_192/frames/walk_003.png",
+              "production_candidate/game_previews/height_192/frames/walk_004.png",
+              "production_candidate/game_previews/height_192/frames/walk_005.png",
+              "production_candidate/game_previews/height_192/frames/walk_006.png",
+              "production_candidate/game_previews/height_192/frames/walk_007.png"
+            ],
+            "spritesheet": "production_candidate/game_previews/height_192/spritesheet.png",
+            "preview_gif": "production_candidate/game_previews/height_192/preview.gif",
+            "contact_sheet": "production_candidate/game_previews/height_192/contact_sheet.png"
+          },
+          "height_256": {
+            "frame_size": {
+              "width": 188,
+              "height": 256
+            },
+            "frames": [
+              "production_candidate/game_previews/height_256/frames/walk_000.png",
+              "production_candidate/game_previews/height_256/frames/walk_001.png",
+              "production_candidate/game_previews/height_256/frames/walk_002.png",
+              "production_candidate/game_previews/height_256/frames/walk_003.png",
+              "production_candidate/game_previews/height_256/frames/walk_004.png",
+              "production_candidate/game_previews/height_256/frames/walk_005.png",
+              "production_candidate/game_previews/height_256/frames/walk_006.png",
+              "production_candidate/game_previews/height_256/frames/walk_007.png"
+            ],
+            "spritesheet": "production_candidate/game_previews/height_256/spritesheet.png",
+            "preview_gif": "production_candidate/game_previews/height_256/preview.gif",
+            "contact_sheet": "production_candidate/game_previews/height_256/contact_sheet.png"
+          }
+        },
+        "candidate_report": "production_candidate/candidate_report.json",
+        "candidate_review": "production_candidate/candidate_review.md"
+      }
     }
   },
   "game_readiness": {
@@ -347,7 +423,28 @@
         "removed_small_components": 0
       }
     ],
-    "manual_review_required": true
+    "manual_review_required": true,
+    "production_candidate": {
+      "status": "production_candidate_for_human_review",
+      "source": "production_polish",
+      "crop_rect": [
+        45,
+        6,
+        397,
+        486
+      ],
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "canvas_reduction_from_448x512": {
+        "width_delta": 96,
+        "height_delta": 32
+      },
+      "alpha_edge_touch_frames": [],
+      "estimated_ground_y_range": 0,
+      "manual_review_required": true
+    }
   },
   "production_gate": {
     "target": "production_walk_8frame_sideview",
@@ -379,7 +476,7 @@
   "source": {
     "rough_frames_dir": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames",
     "reference_image": "assets\\reference\\Anima_00013_.png",
-    "note": "Generated with built-in image_gen as a second rough candidate for Route A; fixed as the current motion rough and packaged with green-dominance chroma cleanup, despill, stability metrics, game-size previews, production manual-polish gate, and auto production-polish candidate."
+    "note": "Generated with built-in image_gen as a second rough candidate for Route A; fixed as the current motion rough and packaged with green-dominance chroma cleanup, despill, stability metrics, game-size previews, production manual-polish gate, auto production-polish candidate, and stable-canvas production candidate."
   },
   "frames": [
     {

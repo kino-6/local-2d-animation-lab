@@ -54,6 +54,7 @@ The package contains:
 - `production_review.json`
 - `production_review.md`
 - `production_polish/`
+- `production_candidate/`
 - `notes.md`
 
 ## Command
@@ -74,6 +75,7 @@ Allowed:
 - plain-background removal when the rough has a removable solid background;
 - alpha normalization;
 - automatic ground-line alignment for a `production_polish/` candidate;
+- stable shared-canvas trimming for a `production_candidate/` folder;
 - spritesheet, contact sheet, preview GIF, game-size previews, manifest, cleanup report, polish report, and production review generation.
 
 Not allowed:
@@ -165,3 +167,23 @@ max_abs_y_shift: 9
 
 Use `production_polish/` as the base for human review and final Aseprite cleanup. It is still
 `auto_polished_candidate_not_final`, not production art.
+
+## Production Candidate
+
+The current best game-loadable folder is:
+
+```text
+outputs/adoptable/artist_authored_8frame_walk_cleanup/production_candidate/
+```
+
+It is generated from `production_polish/` with a stable shared crop:
+
+```text
+frame_size: 352x480
+crop_rect: [45, 6, 397, 486]
+ground_y_range: 0
+alpha_edge_touch_frames: []
+```
+
+Compared with the 448x512 review canvas, this candidate removes excess empty space while keeping all
+8 frames on the same canvas. Use this folder first for Godot/Aseprite review.

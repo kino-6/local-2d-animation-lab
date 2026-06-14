@@ -1,0 +1,21 @@
+{
+  "status": "production_candidate_for_human_review",
+  "source": "production_polish",
+  "crop_rect": [
+    45,
+    6,
+    397,
+    486
+  ],
+  "frame_size": {
+    "width": 352,
+    "height": 480
+  },
+  "canvas_reduction_from_448x512": {
+    "width_delta": 96,
+    "height_delta": 32
+  },
+  "alpha_edge_touch_frames": [],
+  "estimated_ground_y_range": 0,
+  "manual_review_required": true
+}

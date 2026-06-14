@@ -54,6 +54,10 @@ def test_artist_authored_walk_cleanup_contract(tmp_path: Path) -> None:
     assert (output_dir / "production_polish" / "polish_report.json").exists()
     assert (output_dir / "production_polish" / "polish_review.md").exists()
     assert (output_dir / "production_polish" / "game_previews" / "height_128" / "preview.gif").exists()
+    assert (output_dir / "production_candidate" / "preview.gif").exists()
+    assert (output_dir / "production_candidate" / "spritesheet.png").exists()
+    assert (output_dir / "production_candidate" / "candidate_report.json").exists()
+    assert (output_dir / "production_candidate" / "candidate_review.md").exists()
 
     assert [Image.open(path).size for path in frame_paths] == [(96, 96)] * 8
     assert all(Image.open(path).mode == "RGBA" for path in frame_paths)
@@ -109,6 +113,13 @@ def test_artist_authored_walk_cleanup_contract(tmp_path: Path) -> None:
     assert manifest["outputs"]["production_polish"]["polish_review"] == "production_polish/polish_review.md"
     assert manifest["production_polish"]["status"] == "auto_polished_candidate_not_final"
     assert manifest["production_polish"]["estimated_ground_y_range_after"] == 0
+    candidate = manifest["production_polish"]["production_candidate"]
+    assert candidate["status"] == "production_candidate_for_human_review"
+    assert candidate["source"] == "production_polish"
+    assert candidate["manual_review_required"] is True
+    assert manifest["outputs"]["production_polish"]["production_candidate"]["preview_gif"] == (
+        "production_candidate/preview.gif"
+    )
 
 
 def test_artist_authored_walk_cleanup_rejects_wrong_frame_count(tmp_path: Path) -> None:

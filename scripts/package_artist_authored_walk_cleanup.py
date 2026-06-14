@@ -364,6 +364,7 @@ def _write_production_polish(
     preview_gif = make_preview_gif(polished_paths, polish_dir / "preview.gif", duration_ms=round(1000 / fps), loop=True)
     contact_sheet = make_contact_sheet(polished_paths, polish_dir / "contact_sheet.png", columns=4)
     polish_previews = _write_game_previews(polished_paths, polish_dir, game_preview_heights, fps)
+    production_candidate = _write_production_candidate(polished_paths, output_dir, game_preview_heights, fps)
     polished_boxes = [report["polished_bbox"] for report in frame_reports]
     metrics = {
         "status": "auto_polished_candidate_not_final",
@@ -391,8 +392,9 @@ def _write_production_polish(
             },
             "polish_report": str(report_path.relative_to(output_dir)).replace("\\", "/"),
             "polish_review": str(review_path.relative_to(output_dir)).replace("\\", "/"),
+            "production_candidate": production_candidate["outputs"],
         },
-        "metrics": metrics,
+        "metrics": {**metrics, "production_candidate": production_candidate["metrics"]},
     }
 
 
@@ -403,6 +405,76 @@ def _relativize_preview_paths(preview: dict[str, Any], preview_root: Path, outpu
         "spritesheet": str((preview_root / preview["spritesheet"]).relative_to(output_dir)).replace("\\", "/"),
         "preview_gif": str((preview_root / preview["preview_gif"]).relative_to(output_dir)).replace("\\", "/"),
         "contact_sheet": str((preview_root / preview["contact_sheet"]).relative_to(output_dir)).replace("\\", "/"),
+    }
+
+
+def _write_production_candidate(
+    polished_paths: list[Path],
+    output_dir: Path,
+    game_preview_heights: list[int],
+    fps: int,
+) -> dict[str, Any]:
+    candidate_dir = output_dir / "production_candidate"
+    frames_dir = candidate_dir / "frames"
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    frames = [Image.open(path).convert("RGBA") for path in polished_paths]
+    boxes = [_alpha_bbox(frame) for frame in frames]
+    crop_rect = _stable_crop_rect(boxes, frames[0].size, padding=24, multiple=16)
+
+    candidate_paths: list[Path] = []
+    frame_reports: list[dict[str, Any]] = []
+    for index, frame in enumerate(frames):
+        cropped = frame.crop(crop_rect)
+        output = frames_dir / f"walk_{index:03d}.png"
+        cropped.save(output)
+        candidate_paths.append(output)
+        frame_reports.append(
+            {
+                "index": index,
+                "bbox": list(_alpha_bbox(cropped)),
+            }
+        )
+
+    spritesheet = make_sprite_sheet(candidate_paths, candidate_dir / "spritesheet.png", columns=8)
+    preview_gif = make_preview_gif(
+        candidate_paths,
+        candidate_dir / "preview.gif",
+        duration_ms=round(1000 / fps),
+        loop=True,
+    )
+    contact_sheet = make_contact_sheet(candidate_paths, candidate_dir / "contact_sheet.png", columns=4)
+    game_previews = _write_game_previews(candidate_paths, candidate_dir, game_preview_heights, fps)
+    metrics = {
+        "status": "production_candidate_for_human_review",
+        "source": "production_polish",
+        "crop_rect": list(crop_rect),
+        "frame_size": {"width": crop_rect[2] - crop_rect[0], "height": crop_rect[3] - crop_rect[1]},
+        "canvas_reduction_from_448x512": {
+            "width_delta": 448 - (crop_rect[2] - crop_rect[0]),
+            "height_delta": 512 - (crop_rect[3] - crop_rect[1]),
+        },
+        "alpha_edge_touch_frames": _edge_touch_frames(frame_reports, crop_rect[2] - crop_rect[0], crop_rect[3] - crop_rect[1]),
+        "estimated_ground_y_range": _bbox_bottom_range([report["bbox"] for report in frame_reports]),
+        "manual_review_required": True,
+    }
+    report_path = candidate_dir / "candidate_report.json"
+    report_path.write_text(json.dumps(metrics, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    review_path = candidate_dir / "candidate_review.md"
+    review_path.write_text(_candidate_review_notes(metrics), encoding="utf-8")
+    return {
+        "outputs": {
+            "frames": [str(path.relative_to(output_dir)).replace("\\", "/") for path in candidate_paths],
+            "spritesheet": str(spritesheet.relative_to(output_dir)).replace("\\", "/"),
+            "preview_gif": str(preview_gif.relative_to(output_dir)).replace("\\", "/"),
+            "contact_sheet": str(contact_sheet.relative_to(output_dir)).replace("\\", "/"),
+            "game_previews": {
+                key: _relativize_preview_paths(value, candidate_dir, output_dir)
+                for key, value in game_previews.items()
+            },
+            "candidate_report": str(report_path.relative_to(output_dir)).replace("\\", "/"),
+            "candidate_review": str(review_path.relative_to(output_dir)).replace("\\", "/"),
+        },
+        "metrics": metrics,
     }
 
 
@@ -436,6 +508,44 @@ def _game_readiness_metrics(
         "game_preview_review_required": True,
         "decision": "reviewable_rough_candidate_not_production",
     }
+
+
+def _stable_crop_rect(
+    boxes: list[tuple[int, int, int, int]],
+    frame_size: tuple[int, int],
+    padding: int,
+    multiple: int,
+) -> tuple[int, int, int, int]:
+    frame_width, frame_height = frame_size
+    left = max(0, min(box[0] for box in boxes) - padding)
+    top = max(0, min(box[1] for box in boxes) - padding)
+    right = min(frame_width, max(box[2] for box in boxes) + padding)
+    bottom = min(frame_height, max(box[3] for box in boxes) + padding)
+    width = _round_up(right - left, multiple)
+    height = _round_up(bottom - top, multiple)
+    if left + width > frame_width:
+        left = max(0, frame_width - width)
+    if top + height > frame_height:
+        top = max(0, frame_height - height)
+    return (left, top, min(frame_width, left + width), min(frame_height, top + height))
+
+
+def _round_up(value: int, multiple: int) -> int:
+    return ((value + multiple - 1) // multiple) * multiple
+
+
+def _edge_touch_frames(frame_reports: list[dict[str, Any]], width: int, height: int) -> list[int]:
+    return [
+        report["index"]
+        for report in frame_reports
+        for left, top, right, bottom in [report["bbox"]]
+        if left <= 0 or top <= 0 or right >= width or bottom >= height
+    ]
+
+
+def _bbox_bottom_range(boxes: list[list[int]]) -> int:
+    bottoms = [box[3] for box in boxes]
+    return max(bottoms) - min(bottoms)
 
 
 def _production_gate(game_readiness: dict[str, Any], source_kind: str) -> dict[str, Any]:
@@ -633,6 +743,7 @@ This package is Route A: {source_summary}.
 - Produces transparent frames, spritesheet, preview GIF, contact sheet, manifest, and cleanup report.
 - Produces 128, 192, and 256 px-height game-size preview packages by default.
 - Produces an optional `production_polish/` candidate with ground-line alignment.
+- Produces a trimmed `production_candidate/` folder when production polish is enabled.
 - Produces production review JSON/Markdown for the manual polish gate.
 - Uses deterministic cleanup only.
 
@@ -704,6 +815,25 @@ def _polish_review_notes(metrics: dict[str, Any]) -> str:
 
 This is an automatic polish candidate, not final production art. Review the 128px and 192px
 `production_polish/game_previews/` GIFs before accepting it as the manual-polish base.
+"""
+
+
+def _candidate_review_notes(metrics: dict[str, Any]) -> str:
+    return f"""# Production Candidate Review
+
+- status: `{metrics["status"]}`
+- source: `{metrics["source"]}`
+- frame_size: `{metrics["frame_size"]["width"]}x{metrics["frame_size"]["height"]}`
+- crop_rect: `{metrics["crop_rect"]}`
+- estimated_ground_y_range: `{metrics["estimated_ground_y_range"]}`
+- alpha_edge_touch_frames: `{metrics["alpha_edge_touch_frames"]}`
+- manual_review_required: `{metrics["manual_review_required"]}`
+
+## Review Notes
+
+This is the current best game-loadable candidate canvas. It is trimmed from `production_polish/`
+with a stable crop shared by all 8 frames. Use this folder for Aseprite/Godot review, but keep
+`production_ready` false until a human accepts the loop and frame-level art polish.
 """
 
 

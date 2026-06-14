@@ -339,8 +339,24 @@ status: auto_polished_candidate_not_final
 ```
 
 - [x] Agent-review `production_polish/game_previews/height_128/contact_sheet.png` and `height_192/contact_sheet.png`.
+- [x] Add `production_candidate/` as the current best game-loadable folder.
+- [x] Production candidate actions:
+  - stable shared crop from `production_polish/`;
+  - frame size reduced from 448x512 to 352x480;
+  - regenerated preview GIF, contact sheet, spritesheet, and 128/192/256 px game previews.
+- [x] Current production candidate metrics:
+
+```text
+frame_size: 352x480
+crop_rect: [45, 6, 397, 486]
+ground_y_range: 0
+alpha_edge_touch_frames: []
+status: production_candidate_for_human_review
+```
+
+- [x] Agent-review `production_candidate/game_previews/height_128/contact_sheet.png` and `height_192/contact_sheet.png`.
 - [ ] Next production work:
-  - review `production_polish/preview.gif` in motion;
+  - review `production_candidate/preview.gif` in motion;
   - manually clean line jitter around hair tips, sleeves, skirt hem, socks, and shoes;
   - polish shoe/contact shape on contact/down frames if the stabilized ground line feels too rigid;
   - normalize tiny color/value differences after manual edits;
