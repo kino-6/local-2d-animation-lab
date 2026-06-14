@@ -24,6 +24,9 @@ DEFAULT_WALK_READY = Path("outputs/adoptable/artist_authored_8frame_walk_cleanup
 DEFAULT_RUN_ROUGH = Path("assets/artist_authored_roughs/imagegen_run_8frame_20260614/rough_frames")
 DEFAULT_JUMP_ROUGH = Path("assets/artist_authored_roughs/imagegen_jump_12frame_tiles_20260615/rough_frames")
 DEFAULT_HURT_ROUGH = Path("assets/artist_authored_roughs/imagegen_hurt_8frame_tiles_20260615/rough_frames")
+DEFAULT_ATTACK_SWORD_LIGHT_ROUGH = Path(
+    "assets/artist_authored_roughs/imagegen_attack_sword_light_12frame_tiles_20260615/rough_frames"
+)
 DEFAULT_OUTPUT = Path("outputs/adoptable/character_sprite_asset_pack")
 
 IDENTITY_CUES = {
@@ -49,13 +52,13 @@ ACTION_RUNTIME_SPECS = {
             "left_passing",
             "left_up",
         ],
-        "transition_notes": ["idle", "run", "jump", "hurt"],
+        "transition_notes": ["idle", "run", "jump", "hurt", "attack_sword_light"],
         "review_role": "baseline locomotion loop",
     },
     "idle": {
         "loop": True,
         "phase_names": ["neutral", "breathe_up", "breathe_peak", "breathe_down"],
-        "transition_notes": ["walk", "run", "jump", "hurt"],
+        "transition_notes": ["walk", "run", "jump", "hurt", "attack_sword_light"],
         "review_role": "subtle standing loop",
     },
     "run": {
@@ -70,7 +73,7 @@ ACTION_RUNTIME_SPECS = {
             "flight_backward",
             "right_reach",
         ],
-        "transition_notes": ["idle", "walk", "jump", "hurt"],
+        "transition_notes": ["idle", "walk", "jump", "hurt", "attack_sword_light"],
         "review_role": "faster locomotion loop",
     },
     "jump": {
@@ -89,7 +92,7 @@ ACTION_RUNTIME_SPECS = {
             "landing_settle",
             "landing_recovery",
         ],
-        "transition_notes": ["idle", "walk", "run", "hurt"],
+        "transition_notes": ["idle", "walk", "run", "hurt", "attack_sword_light"],
         "review_role": "non-looping jump arc",
     },
     "hurt": {
@@ -104,8 +107,28 @@ ACTION_RUNTIME_SPECS = {
             "recover_half",
             "recover",
         ],
-        "transition_notes": ["idle", "walk"],
+        "transition_notes": ["idle", "walk", "attack_sword_light"],
         "review_role": "non-looping small damage reaction",
+    },
+    "attack_sword_light": {
+        "loop": False,
+        "phase_names": [
+            "ready",
+            "anticipation",
+            "draw_back",
+            "windup",
+            "slash_start",
+            "active_slash",
+            "active_follow_through",
+            "overshoot",
+            "recoil",
+            "settle",
+            "recover",
+            "ready_return",
+        ],
+        "hit_frames": [5, 6],
+        "transition_notes": ["idle", "walk", "run", "jump", "hurt"],
+        "review_role": "non-looping light one-handed sword attack",
     },
 }
 
@@ -119,6 +142,7 @@ def main() -> None:
     parser.add_argument("--run-rough-frames-dir", default=DEFAULT_RUN_ROUGH, type=Path)
     parser.add_argument("--jump-rough-frames-dir", default=DEFAULT_JUMP_ROUGH, type=Path)
     parser.add_argument("--hurt-rough-frames-dir", default=DEFAULT_HURT_ROUGH, type=Path)
+    parser.add_argument("--attack-sword-light-rough-frames-dir", default=DEFAULT_ATTACK_SWORD_LIGHT_ROUGH, type=Path)
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT, type=Path)
     parser.add_argument("--fps", default=8, type=int)
     parser.add_argument("--clean", action=argparse.BooleanOptionalAction, default=True)
@@ -130,6 +154,7 @@ def main() -> None:
         run_rough_frames_dir=args.run_rough_frames_dir,
         jump_rough_frames_dir=args.jump_rough_frames_dir,
         hurt_rough_frames_dir=args.hurt_rough_frames_dir,
+        attack_sword_light_rough_frames_dir=args.attack_sword_light_rough_frames_dir,
         output_dir=args.output_dir,
         fps=args.fps,
         clean=args.clean,
@@ -143,6 +168,7 @@ def build_character_sprite_asset_pack(
     run_rough_frames_dir: Path | None = DEFAULT_RUN_ROUGH,
     jump_rough_frames_dir: Path | None = DEFAULT_JUMP_ROUGH,
     hurt_rough_frames_dir: Path | None = DEFAULT_HURT_ROUGH,
+    attack_sword_light_rough_frames_dir: Path | None = DEFAULT_ATTACK_SWORD_LIGHT_ROUGH,
     output_dir: Path = DEFAULT_OUTPUT,
     fps: int = 8,
     clean: bool = True,
@@ -200,6 +226,21 @@ def build_character_sprite_asset_pack(
             "Hurt uses dedicated 2x2 tiled rough sheets with 8 source frames for brace, recoil, stagger, settle, and recovery phases."
         ),
     )
+    attack_action = _build_named_rough_action(
+        action="attack_sword_light",
+        rough_frames_dir=attack_sword_light_rough_frames_dir,
+        action_dir=actions_dir / "attack_sword_light",
+        fps=fps,
+        target_size=target_size,
+        scale_reference=scale_reference,
+        frame_count=12,
+        phase_names=ACTION_RUNTIME_SPECS["attack_sword_light"]["phase_names"],
+        source_slug="imagegen_attack_sword_light_12frame_tiles_20260615_rough",
+        review_note=(
+            "Attack sword light uses dedicated 2x2 tiled rough sheets with 12 source frames for anticipation, "
+            "active slash frames, overshoot, recovery, and ready return. Runtime hit frames are 5 and 6."
+        ),
+    )
 
     identity_report = _build_identity_report(
         reference_image=reference_image,
@@ -209,6 +250,7 @@ def build_character_sprite_asset_pack(
             "run": actions_dir / "run",
             "jump": actions_dir / "jump",
             "hurt": actions_dir / "hurt",
+            "attack_sword_light": actions_dir / "attack_sword_light",
         },
     )
     actions = {
@@ -217,6 +259,7 @@ def build_character_sprite_asset_pack(
         "run": run_action,
         "jump": jump_action,
         "hurt": hurt_action,
+        "attack_sword_light": attack_action,
     }
     backend_usage = {
         "uses_comfyui": False,
@@ -260,8 +303,8 @@ def build_character_sprite_asset_pack(
         "production_ready": production_gate["production_ready"],
         "known_limits": [
             "The accepted sprite is a game-ready redesign, not a faithful frame-by-frame animation of the original illustration.",
-            "Walk, idle, run, jump, and hurt are production-ready for this MVP pack.",
-            "Stronger actions still need authored or accepted rough frames before production-ready promotion.",
+            "Walk, idle, run, jump, hurt, and attack_sword_light are production-ready for this MVP pack.",
+            "Weapon actions are reviewed as simple one-handed light attacks; complex weapon arcs still need authored rough frames.",
         ],
     }
     _write_text(output_dir / "manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
@@ -899,6 +942,7 @@ def _build_action_runtime(
         "y": metrics["frame_size"]["height"],
     }
     playback_indices = spec.get("playback_frame_indices", list(range(len(frame_paths))))
+    hit_frames = spec.get("hit_frames", [])
     return {
         "fps": fps,
         "frame_duration_ms": round(1000 / fps),
@@ -906,6 +950,7 @@ def _build_action_runtime(
         "source_frame_count": len(frame_paths),
         "playback_frame_indices": playback_indices,
         "playback_frame_count": len(playback_indices),
+        "hit_frames": hit_frames,
         "frame_density_note": (
             "Playback indices may add limited-animation holds for runtime feel. "
             "True inbetween art should come from an authored or I2I rough retake."
@@ -1057,6 +1102,7 @@ def _build_consistency_report(
             "run": True,
             "jump": False,
             "hurt": False,
+            "attack_sword_light": False,
         },
     }
     blocking = [name for name, passed in checks.items() if not passed]
@@ -1086,6 +1132,7 @@ def _build_godot_import_manifest(actions: dict[str, dict[str, Any]]) -> dict[str
                 "frame_duration_ms": action_info["runtime"]["frame_duration_ms"],
                 "origin": action_info["runtime"]["origin"],
                 "collision_box": action_info["runtime"]["collision_box"],
+                "hit_frames": action_info["runtime"].get("hit_frames", []),
                 "transition_notes": action_info["runtime"]["transition_notes"],
             }
             for action, action_info in actions.items()
@@ -1200,7 +1247,9 @@ def _build_production_gate(
         "production_ready": not blocking,
         "checks": checks,
         "blocking_issues": blocking,
-        "scope_statement": "walk, idle, run, jump, and hurt are production-ready and ready for runtime import review.",
+        "scope_statement": (
+            "walk, idle, run, jump, hurt, and attack_sword_light are production-ready and ready for runtime import review."
+        ),
     }
 
 

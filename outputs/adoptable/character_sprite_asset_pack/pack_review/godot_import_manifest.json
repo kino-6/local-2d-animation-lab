@@ -28,11 +28,13 @@
         "width": 310,
         "height": 431
       },
+      "hit_frames": [],
       "transition_notes": [
         "idle",
         "run",
         "jump",
-        "hurt"
+        "hurt",
+        "attack_sword_light"
       ]
     },
     "idle": {
@@ -57,11 +59,13 @@
         "width": 166,
         "height": 428
       },
+      "hit_frames": [],
       "transition_notes": [
         "walk",
         "run",
         "jump",
-        "hurt"
+        "hurt",
+        "attack_sword_light"
       ]
     },
     "run": {
@@ -90,11 +94,13 @@
         "width": 305,
         "height": 368
       },
+      "hit_frames": [],
       "transition_notes": [
         "idle",
         "walk",
         "jump",
-        "hurt"
+        "hurt",
+        "attack_sword_light"
       ]
     },
     "jump": {
@@ -127,11 +133,13 @@
         "width": 347,
         "height": 442
       },
+      "hit_frames": [],
       "transition_notes": [
         "idle",
         "walk",
         "run",
-        "hurt"
+        "hurt",
+        "attack_sword_light"
       ]
     },
     "hurt": {
@@ -160,9 +168,53 @@
         "width": 270,
         "height": 380
       },
+      "hit_frames": [],
       "transition_notes": [
         "idle",
-        "walk"
+        "walk",
+        "attack_sword_light"
+      ]
+    },
+    "attack_sword_light": {
+      "spritesheet": "actions/attack_sword_light/spritesheet.png",
+      "frames": [
+        "actions/attack_sword_light/frames/attack_sword_light_000.png",
+        "actions/attack_sword_light/frames/attack_sword_light_001.png",
+        "actions/attack_sword_light/frames/attack_sword_light_002.png",
+        "actions/attack_sword_light/frames/attack_sword_light_003.png",
+        "actions/attack_sword_light/frames/attack_sword_light_004.png",
+        "actions/attack_sword_light/frames/attack_sword_light_005.png",
+        "actions/attack_sword_light/frames/attack_sword_light_006.png",
+        "actions/attack_sword_light/frames/attack_sword_light_007.png",
+        "actions/attack_sword_light/frames/attack_sword_light_008.png",
+        "actions/attack_sword_light/frames/attack_sword_light_009.png",
+        "actions/attack_sword_light/frames/attack_sword_light_010.png",
+        "actions/attack_sword_light/frames/attack_sword_light_011.png"
+      ],
+      "fps": 8,
+      "loop": false,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 8,
+        "y": 124,
+        "width": 344,
+        "height": 327
+      },
+      "hit_frames": [
+        5,
+        6
+      ],
+      "transition_notes": [
+        "idle",
+        "walk",
+        "run",
+        "jump",
+        "hurt"
       ]
     }
   }

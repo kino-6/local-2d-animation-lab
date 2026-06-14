@@ -76,7 +76,7 @@ For I2I, provide the accepted sprite or reference as style/identity input and as
 Store the result as:
 
 ```text
-assets/artist_authored_roughs/<source_slug>/source_sheet.png
+assets/artist_authored_roughs/<source_slug>/source_sheets/
 assets/artist_authored_roughs/<source_slug>/rough_frames/<action>_000.png
 assets/artist_authored_roughs/<source_slug>/prompt.md
 ```
@@ -151,14 +151,17 @@ Every promoted action must preserve the runtime import contract:
 - approximate visible bounding box;
 - approximate collision box;
 - transition notes.
+- hit-frame metadata for attacks or other gameplay-relevant active windows.
 
 Expected current loop flags:
 
 - loop: `walk`, `idle`, `run`;
-- one-shot: `jump`, `hurt`.
+- one-shot: `jump`, `hurt`, `attack_sword_light`.
 
 If adding a new action, explicitly choose loop or one-shot in `ACTION_RUNTIME_SPECS` before packaging it.
 Do not leave the action as loose image files without runtime metadata.
+For attacks, define `hit_frames` in `ACTION_RUNTIME_SPECS`; this is review/runtime metadata and not a
+final combat collision box.
 
 For runtime feel, use `playback_frame_indices` only for limited-animation timing expansion. This may
 repeat source frames, but it is not a substitute for true drawn inbetweens. When motion still feels
@@ -214,6 +217,7 @@ If the rough fails visually, do not tune cleanup parameters endlessly. Retake th
 - `run`: `assets/artist_authored_roughs/imagegen_run_8frame_20260614/rough_frames/`
 - `jump`: `assets/artist_authored_roughs/imagegen_jump_12frame_tiles_20260615/rough_frames/`
 - `hurt`: `assets/artist_authored_roughs/imagegen_hurt_8frame_tiles_20260615/rough_frames/`
+- `attack_sword_light`: `assets/artist_authored_roughs/imagegen_attack_sword_light_12frame_tiles_20260615/rough_frames/`
 
 These examples are reproducible from committed rough frames through local packaging. Their initial rough creation used AI-assisted image generation and should not be described as local-only generation.
 
@@ -222,6 +226,9 @@ Current density rule:
 - use real source frames for action readability before adding runtime holds;
 - `jump` should keep at least 12 source frames for anticipation, takeoff, airborne, landing, and recovery;
 - `hurt` should keep at least 8 source frames for brace, recoil, stagger, settle, and recovery;
+- `attack_sword_light` should keep 12 source frames for anticipation, active slash, overshoot,
+  recovery, and ready return;
+- attack actions should record active hit frames in runtime metadata;
 - dense action roughs should use multiple 2x2 source sheets instead of one crowded grid to protect
   per-cell resolution;
 - playback holds are acceptable timing support, not production art or true interpolation.

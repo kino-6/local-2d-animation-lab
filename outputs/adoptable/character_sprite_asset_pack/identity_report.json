@@ -10,7 +10,8 @@
         "idle": 25436,
         "run": 34073,
         "jump": 54043,
-        "hurt": 38322
+        "hurt": 38322,
+        "attack_sword_light": 39259
       },
       "passed": true
     },
@@ -22,7 +23,8 @@
         "idle": 122031,
         "run": 189695,
         "jump": 284385,
-        "hurt": 183541
+        "hurt": 183541,
+        "attack_sword_light": 217290
       },
       "passed": true
     },
@@ -34,7 +36,8 @@
         "idle": 19072,
         "run": 25171,
         "jump": 53416,
-        "hurt": 20939
+        "hurt": 20939,
+        "attack_sword_light": 32018
       },
       "passed": true
     },
@@ -46,7 +49,8 @@
         "idle": 5340,
         "run": 10730,
         "jump": 12173,
-        "hurt": 9472
+        "hurt": 9472,
+        "attack_sword_light": 8902
       },
       "passed": true
     },
@@ -58,7 +62,8 @@
         "idle": 31823,
         "run": 49770,
         "jump": 70803,
-        "hurt": 55262
+        "hurt": 55262,
+        "attack_sword_light": 58141
       },
       "passed": true
     },
@@ -70,7 +75,8 @@
         "idle": 31823,
         "run": 49770,
         "jump": 70803,
-        "hurt": 55262
+        "hurt": 55262,
+        "attack_sword_light": 58141
       },
       "passed": true
     },
@@ -82,7 +88,8 @@
         "idle": 9000,
         "run": 20331,
         "jump": 19712,
-        "hurt": 15749
+        "hurt": 15749,
+        "attack_sword_light": 19624
       },
       "passed": true
     }

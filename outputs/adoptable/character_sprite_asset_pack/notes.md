@@ -2,7 +2,7 @@
 
 - route: `character_sprite_asset_pack`
 - production_ready: `True`
-- current production actions: `walk, idle, run, jump, hurt`
+- current production actions: `walk, idle, run, jump, hurt, attack_sword_light`
 - runtime_manifest: `runtime_manifest.json`
 - pack_review: `pack_review/all_actions_contact_sheet.png`
 

@@ -19,6 +19,7 @@ The package contains:
 - `actions/run/`
 - `actions/jump/`
 - `actions/hurt/`
+- `actions/attack_sword_light/`
 - `manifest.json`
 - `runtime_manifest.json`
 - `identity_report.json`
@@ -51,15 +52,17 @@ Current production-ready actions:
 - `run`: cleaned and packaged from the dedicated `imagegen_run_8frame_20260614` rough sheet.
 - `jump`: cleaned and packaged from the dedicated `imagegen_jump_12frame_tiles_20260615` rough sheets.
 - `hurt`: cleaned and packaged from the dedicated `imagegen_hurt_8frame_tiles_20260615` rough sheets.
+- `attack_sword_light`: cleaned and packaged from the dedicated
+  `imagegen_attack_sword_light_12frame_tiles_20260615` rough sheets.
 
 The repeatable workflow for adding actions is documented in
 `docs/local_skills/route-a-action-rough-to-pack/SKILL.md`.
 
 Future action policy:
 
-Run, jump, and hurt were promoted only after they had dedicated rough sheets with action-specific
-poses. Stronger actions still need authored or accepted rough frames and should not be faked by
-retiming walk frames.
+Run, jump, hurt, and attack were promoted only after they had dedicated rough sheets with
+action-specific poses. Stronger actions still need authored or accepted rough frames and should not
+be faked by retiming walk frames.
 
 Built-in image generation or image-to-image is acceptable for rough source art when local generation
 is not producing usable assets. In that case, record the rough creation as non-local in `prompt.md`;
@@ -75,7 +78,7 @@ Generated files:
 - `runtime_manifest.json`: action `fps`, loop flag, frame duration, bottom-center origin, visible
   bounding box, approximate collision box, phase events, and transition notes.
 - `pack_review/all_actions_contact_sheet.png`: one side-by-side review sheet for `walk`, `idle`,
-  `run`, `jump`, and `hurt`.
+  `run`, `jump`, `hurt`, and `attack_sword_light`.
 - `pack_review/consistency_report.json`: deterministic checks for common canvas size, runtime
   metadata presence, identity cue pass status, loop flag expectations, and backend usage.
 - `pack_review/godot_import_manifest.json`: compact import hints for Godot `AnimatedSprite2D` or
@@ -87,11 +90,15 @@ Runtime assumptions:
 - Keep every frame on the same transparent canvas.
 - Use `bottom_center_canvas` as the stable origin/pivot policy.
 - Treat `walk`, `idle`, and `run` as loops.
-- Treat `jump` and `hurt` as one-shot actions.
+- Treat `jump`, `hurt`, and `attack_sword_light` as one-shot actions.
+- `attack_sword_light` exposes runtime `hit_frames: [5, 6]`; these are review metadata, not final
+  combat collision boxes.
 - Collision boxes are approximate review boxes, not final gameplay hitboxes.
-- `jump` and `hurt` now use denser source roughs rather than runtime-only timing expansion:
+- `jump`, `hurt`, and `attack_sword_light` now use denser source roughs rather than runtime-only
+  timing expansion:
   - `jump`: 12 source frames, 12 playback frames;
   - `hurt`: 8 source frames, 8 playback frames.
+  - `attack_sword_light`: 12 source frames, 12 playback frames, active hit frames 5 and 6.
 - Playback timing expansion may still be used for runtime holds in future actions, but it must not be
   described as true inbetween art. When motion feels under-sampled, prefer an authored or I2I rough
   retake with more drawn frames.
@@ -119,6 +126,7 @@ and registers each action as an `AnimatedSprite2D` animation:
 - `run`
 - `jump`
 - `hurt`
+- `attack_sword_light`
 
 The viewer applies the `bottom_center_canvas` origin from runtime metadata so scale and foot/ground
 alignment are reviewed in the same coordinate system a game import should use.
@@ -144,7 +152,9 @@ godot --headless --path godot --script res://tests/pack_e2e_runner.gd -- --manif
 - `run.production_ready == true`;
 - `jump.production_ready == true`;
 - `hurt.production_ready == true`;
-- required identity cues pass on the reference, walk, idle, run, jump, and hurt assets;
+- `attack_sword_light.production_ready == true`;
+- required identity cues pass on the reference, walk, idle, run, jump, hurt, and
+  attack_sword_light assets;
 - runtime metadata and pack review artifacts exist;
 - consistency gate passes for current action coverage;
 - no model or video backend is used.

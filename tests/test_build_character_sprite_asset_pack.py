@@ -17,12 +17,14 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     run_rough = tmp_path / "run_rough"
     jump_rough = tmp_path / "jump_rough"
     hurt_rough = tmp_path / "hurt_rough"
+    attack_rough = tmp_path / "attack_rough"
     output_dir = tmp_path / "character_sprite_asset_pack"
     _make_reference(reference)
     _make_walk_ready_package(walk_ready)
     _make_run_rough_frames(run_rough)
     _make_jump_rough_frames(jump_rough)
     _make_hurt_rough_frames(hurt_rough)
+    _make_attack_sword_light_rough_frames(attack_rough)
 
     subprocess.run(
         [
@@ -38,6 +40,8 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
             str(jump_rough),
             "--hurt-rough-frames-dir",
             str(hurt_rough),
+            "--attack-sword-light-rough-frames-dir",
+            str(attack_rough),
             "--output-dir",
             str(output_dir),
         ],
@@ -80,6 +84,11 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert (output_dir / "actions" / "hurt" / "contact_sheet.png").exists()
     assert (output_dir / "actions" / "hurt" / "production_ready_report.json").exists()
     assert (output_dir / "actions" / "hurt" / "game_previews" / "height_128" / "contact_sheet.png").exists()
+    assert (output_dir / "actions" / "attack_sword_light" / "preview.gif").exists()
+    assert (output_dir / "actions" / "attack_sword_light" / "spritesheet.png").exists()
+    assert (output_dir / "actions" / "attack_sword_light" / "contact_sheet.png").exists()
+    assert (output_dir / "actions" / "attack_sword_light" / "production_ready_report.json").exists()
+    assert (output_dir / "actions" / "attack_sword_light" / "game_previews" / "height_128" / "contact_sheet.png").exists()
 
     assert {Image.open(path).size for path in idle_frames} == {(96, 96)}
     assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in idle_frames)
@@ -103,6 +112,14 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in hurt_frames)
     hurt_gif = Image.open(output_dir / "actions" / "hurt" / "preview.gif")
     assert getattr(hurt_gif, "n_frames", 1) == 8
+    attack_frames = sorted(
+        (output_dir / "actions" / "attack_sword_light" / "frames").glob("attack_sword_light_*.png")
+    )
+    assert len(attack_frames) == 12
+    assert {Image.open(path).size for path in attack_frames} == {(96, 96)}
+    assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in attack_frames)
+    attack_gif = Image.open(output_dir / "actions" / "attack_sword_light" / "preview.gif")
+    assert getattr(attack_gif, "n_frames", 1) >= 4
 
     manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["route"] == "character_sprite_asset_pack"
@@ -166,6 +183,27 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
         "recover_half",
         "recover",
     ]
+    assert manifest["actions"]["attack_sword_light"]["frame_count"] == 12
+    assert manifest["actions"]["attack_sword_light"]["production_ready"] is True
+    assert manifest["actions"]["attack_sword_light"]["runtime"]["loop"] is False
+    assert manifest["actions"]["attack_sword_light"]["runtime"]["source_frame_count"] == 12
+    assert manifest["actions"]["attack_sword_light"]["runtime"]["playback_frame_count"] == 12
+    assert manifest["actions"]["attack_sword_light"]["runtime"]["playback_frame_indices"] == list(range(12))
+    assert manifest["actions"]["attack_sword_light"]["runtime"]["hit_frames"] == [5, 6]
+    assert manifest["actions"]["attack_sword_light"]["phase_names"] == [
+        "ready",
+        "anticipation",
+        "draw_back",
+        "windup",
+        "slash_start",
+        "active_slash",
+        "active_follow_through",
+        "overshoot",
+        "recoil",
+        "settle",
+        "recover",
+        "ready_return",
+    ]
     assert manifest["backend_usage"] == {
         "uses_comfyui": False,
         "uses_wan_video": False,
@@ -183,8 +221,10 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
 
     runtime_manifest = json.loads((output_dir / "runtime_manifest.json").read_text(encoding="utf-8"))
     assert runtime_manifest["origin_policy"] == "bottom_center_canvas"
-    assert set(runtime_manifest["actions"]) == {"walk", "idle", "run", "jump", "hurt"}
+    assert set(runtime_manifest["actions"]) == {"walk", "idle", "run", "jump", "hurt", "attack_sword_light"}
     assert runtime_manifest["actions"]["jump"]["loop"] is False
+    assert runtime_manifest["actions"]["attack_sword_light"]["loop"] is False
+    assert runtime_manifest["actions"]["attack_sword_light"]["hit_frames"] == [5, 6]
 
     consistency = json.loads((output_dir / "pack_review" / "consistency_report.json").read_text(encoding="utf-8"))
     assert consistency["passed"] is True
@@ -197,6 +237,8 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert godot_manifest["asset_kind"] == "AnimatedSprite2D_action_pack"
     assert godot_manifest["actions"]["walk"]["loop"] is True
     assert godot_manifest["actions"]["hurt"]["loop"] is False
+    assert godot_manifest["actions"]["attack_sword_light"]["loop"] is False
+    assert godot_manifest["actions"]["attack_sword_light"]["hit_frames"] == [5, 6]
 
     identity = json.loads((output_dir / "identity_report.json").read_text(encoding="utf-8"))
     assert identity["all_required_cues_pass"] is True
@@ -216,6 +258,7 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert gate["checks"]["run_production_ready"] is True
     assert gate["checks"]["jump_production_ready"] is True
     assert gate["checks"]["hurt_production_ready"] is True
+    assert gate["checks"]["attack_sword_light_production_ready"] is True
     assert gate["checks"]["runtime_metadata_present"] is True
     assert gate["checks"]["pack_review_generated"] is True
     assert gate["checks"]["consistency_gate_pass"] is True
@@ -239,6 +282,14 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     )
     assert hurt_report["production_ready"] is True
     assert hurt_report["source"] == "imagegen_hurt_8frame_tiles_20260615_rough"
+
+    attack_report = json.loads(
+        (output_dir / "actions" / "attack_sword_light" / "production_ready_report.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert attack_report["production_ready"] is True
+    assert attack_report["source"] == "imagegen_attack_sword_light_12frame_tiles_20260615_rough"
 
 
 def _make_reference(path: Path) -> None:
@@ -366,6 +417,41 @@ def _make_hurt_rough_frames(path: Path) -> None:
         draw.rectangle((x - 13, 87, x + 3, 92), fill=(120, 65, 35, 255))
         draw.rectangle((x + 9, 87, x + 25, 92), fill=(120, 65, 35, 255))
         image.save(path / f"hurt_{index:03d}.png")
+
+
+def _make_attack_sword_light_rough_frames(path: Path) -> None:
+    path.mkdir(parents=True)
+    sword_tips = [
+        (62, 28),
+        (52, 18),
+        (46, 12),
+        (57, 16),
+        (82, 30),
+        (91, 46),
+        (86, 61),
+        (68, 75),
+        (58, 70),
+        (54, 58),
+        (56, 46),
+        (62, 34),
+    ]
+    x_offsets = [0, -1, -2, -2, 1, 3, 4, 3, 1, 0, 0, 0]
+    for index, tip in enumerate(sword_tips):
+        image = Image.new("RGBA", (96, 96), (0, 255, 0, 255))
+        draw = ImageDraw.Draw(image)
+        x = 42 + x_offsets[index]
+        _draw_connected_character(draw, x=x, y_offset=0)
+        hand = (x + 16, 43)
+        draw.line((x + 3, 42, hand[0], hand[1]), fill=(245, 220, 190, 255), width=5)
+        draw.line((hand, tip), fill=(185, 190, 200, 255), width=4)
+        draw.line((hand[0] - 3, hand[1], hand[0] + 4, hand[1]), fill=(95, 55, 35, 255), width=4)
+        if index in {5, 6}:
+            draw.arc((x + 25, 18, x + 72, 70), start=-35, end=55, fill=(220, 220, 230, 255), width=3)
+        draw.line((x - 4, 69, x - 8 + index % 3, 90), fill=(15, 25, 65, 255), width=6)
+        draw.line((x + 10, 69, x + 15 - index % 2, 90), fill=(15, 25, 65, 255), width=6)
+        draw.rectangle((x - 13, 87, x + 3, 92), fill=(120, 65, 35, 255))
+        draw.rectangle((x + 9, 87, x + 25, 92), fill=(120, 65, 35, 255))
+        image.save(path / f"attack_sword_light_{index:03d}.png")
 
 
 def _draw_connected_character(draw: ImageDraw.ImageDraw, x: int, y_offset: int) -> None:
