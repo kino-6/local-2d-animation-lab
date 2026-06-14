@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import subprocess
 import sys
@@ -9,6 +10,11 @@ from PIL import Image, ImageDraw
 
 
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "build_walk_8frame_baseline.py"
+_SPEC = importlib.util.spec_from_file_location("build_walk_8frame_baseline", _SCRIPT)
+assert _SPEC and _SPEC.loader
+_MODULE = importlib.util.module_from_spec(_SPEC)
+sys.modules[_SPEC.name] = _MODULE
+_SPEC.loader.exec_module(_MODULE)
 
 
 def test_build_walk_8frame_baseline_output_contract(tmp_path: Path) -> None:
@@ -53,6 +59,7 @@ def test_build_walk_8frame_baseline_output_contract(tmp_path: Path) -> None:
     assert sizes == [(128, 128)] * 8
     assert modes == ["RGBA"] * 8
     assert all(Image.open(path).getchannel("A").getbbox() is not None for path in frame_paths)
+    assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in frame_paths)
 
     spritesheet = Image.open(output_dir / "spritesheet.png")
     assert spritesheet.size == (128 * 8, 128)
@@ -74,6 +81,7 @@ def test_build_walk_8frame_baseline_output_contract(tmp_path: Path) -> None:
     }
     assert manifest["method"]["uses_wan_video"] is False
     assert manifest["method"]["uses_120_frame_generation"] is False
+    assert manifest["method"]["uses_comfyui"] is False
     assert manifest["method"]["renderer"] == "stylized_sprite_cycle"
     assert manifest["method"]["motion"] == "stylized reference-derived 8-phase sprite walk cycle"
     assert manifest["motion_metrics"]["max_mean_diff_from_first"] > 0.5
@@ -89,6 +97,39 @@ def test_build_walk_8frame_baseline_output_contract(tmp_path: Path) -> None:
         "opposite_up",
     ]
     assert manifest["visual_review"]["agent_decision"] == "review_worthy_mvp_not_production"
+    assert _MODULE.DEFAULT_OUTPUT == Path("outputs/adoptable/walk_8frame_sideview_baseline")
+
+    walk_readability = manifest["walk_readability"]
+    assert walk_readability["frame_count"] == 8
+    assert walk_readability["phase_names"] == [
+        "contact",
+        "down",
+        "passing",
+        "up",
+        "opposite_contact",
+        "opposite_down",
+        "opposite_passing",
+        "opposite_up",
+    ]
+    assert walk_readability["ground_y"] > 0
+    assert walk_readability["contact_foot_by_frame"] == [
+        "front",
+        "front",
+        "none",
+        "none",
+        "rear",
+        "rear",
+        "none",
+        "none",
+    ]
+    head_y_range = walk_readability["estimated_head_y_range"]
+    hip_y_range = walk_readability["estimated_hip_y_range"]
+    assert head_y_range[1] - head_y_range[0] <= 2
+    assert 4 <= hip_y_range[1] - hip_y_range[0] <= 12
+    assert walk_readability["foot_lock_expected"] is True
+    assert walk_readability["loop_expected"] is True
+    assert walk_readability["route_status"] == "baseline_not_production"
+    assert walk_readability["visual_decision"] == "review_worthy_mvp_not_production"
 
 
 def _make_reference(path: Path) -> None:

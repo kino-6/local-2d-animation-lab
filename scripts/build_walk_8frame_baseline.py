@@ -20,8 +20,19 @@ except ModuleNotFoundError:
 
 ROUTE = "walk_8frame_sideview_baseline"
 ROUTE_STATUS = "baseline_not_production"
+VISUAL_DECISION = "review_worthy_mvp_not_production"
 DEFAULT_REFERENCE = Path("assets/reference/generated/anima_00013_sidecar_walk_start_source_20260614.png")
 DEFAULT_OUTPUT = Path("outputs/adoptable/walk_8frame_sideview_baseline")
+PHASE_NAMES = [
+    "contact",
+    "down",
+    "passing",
+    "up",
+    "opposite_contact",
+    "opposite_down",
+    "opposite_passing",
+    "opposite_up",
+]
 ACTION_SPEC = {
     "action": "walk",
     "direction": "right",
@@ -109,8 +120,9 @@ def build_walk_8frame_baseline(
     cutout_report["mirror_to_direction_right"] = mirror_to_right
     fitted = _fit_cutout_to_canvas(cutout, frame_width, frame_height, target_height)
     palette = _derive_character_palette(fitted)
+    walk_readability: dict[str, Any] | None = None
     if renderer == "stylized_sprite_cycle":
-        frame_paths = _write_stylized_walk_frames(frames_dir, frame_width, frame_height, palette)
+        frame_paths, walk_readability = _write_stylized_walk_frames(frames_dir, frame_width, frame_height, palette)
         motion_description = "stylized reference-derived 8-phase sprite walk cycle"
     elif renderer == "cutout_synthetic_legs":
         frame_paths = _write_walk_frames(fitted, frames_dir, palette)
@@ -154,11 +166,12 @@ def build_walk_8frame_baseline(
             "cutout": cutout_report,
         },
         "motion_metrics": motion_metrics,
+        "walk_readability": walk_readability,
         "visual_review": {
-            "agent_decision": "review_worthy_mvp_not_production",
+            "agent_decision": VISUAL_DECISION,
             "notes": [
                 "The first cutout-shift preview was not evaluation-worthy.",
-                "The default renderer now prioritizes readable 8-frame walk poses over direct cutout fidelity.",
+                "The default renderer now uses a small deterministic skeleton with foot-lock metadata.",
                 "This is a stylized reference-derived game sprite, not production art and not a faithful redraw of the source image.",
             ],
         },
@@ -243,24 +256,80 @@ def _write_stylized_walk_frames(
     frame_width: int,
     frame_height: int,
     palette: dict[str, list[int]],
-) -> list[Path]:
-    cycle = [
-        {"phase": "contact", "bob": 0, "front": 46, "rear": -40, "front_knee": 18, "rear_knee": -18, "arm": -12},
-        {"phase": "down", "bob": 4, "front": 30, "rear": -26, "front_knee": 12, "rear_knee": -8, "arm": -8},
-        {"phase": "passing", "bob": -2, "front": -4, "rear": 16, "front_knee": -2, "rear_knee": 12, "arm": 2},
-        {"phase": "up", "bob": -5, "front": -28, "rear": 32, "front_knee": -14, "rear_knee": 18, "arm": 10},
-        {"phase": "opposite_contact", "bob": 0, "front": -40, "rear": 46, "front_knee": -18, "rear_knee": 18, "arm": 12},
-        {"phase": "opposite_down", "bob": 4, "front": -26, "rear": 30, "front_knee": -8, "rear_knee": 12, "arm": 8},
-        {"phase": "opposite_passing", "bob": -2, "front": 16, "rear": -4, "front_knee": 12, "rear_knee": -2, "arm": -2},
-        {"phase": "opposite_up", "bob": -5, "front": 32, "rear": -28, "front_knee": 18, "rear_knee": -14, "arm": -10},
-    ]
+) -> tuple[list[Path], dict[str, Any]]:
+    skeleton = _stylized_walk_skeleton(frame_width, frame_height)
     frame_paths: list[Path] = []
-    for index, motion in enumerate(cycle):
-        frame = _compose_stylized_walk_frame(frame_width, frame_height, palette, motion)
+    for index, motion in enumerate(skeleton["frames"]):
+        frame = _compose_stylized_walk_frame(frame_width, frame_height, palette, motion, skeleton["ground_y"])
         path = frames_dir / f"walk_{index:03d}.png"
         frame.save(path)
         frame_paths.append(path)
-    return frame_paths
+    return frame_paths, _walk_readability_from_skeleton(skeleton)
+
+
+def _stylized_walk_skeleton(frame_width: int, frame_height: int) -> dict[str, Any]:
+    ground_y = round(frame_height * 0.89)
+    hip_base_y = round(frame_height * 0.56)
+    head_base_y = round(frame_height * 0.235)
+    knee_y = round(frame_height * 0.705)
+    return {
+        "ground_y": ground_y,
+        "frames": [
+            _walk_pose("contact", 0, 0, "front", 44, 0, 16, -34, 0, -22, -13),
+            _walk_pose("down", 4, 1, "front", 44, 0, 20, -21, 0, -10, -8),
+            _walk_pose("passing", -2, 0, "none", 5, -18, 0, 20, -28, 16, 1),
+            _walk_pose("up", -5, -1, "none", -24, -9, -16, 34, -18, 20, 9),
+            _walk_pose("opposite_contact", 0, 0, "rear", -34, 0, -22, 44, 0, 16, 13),
+            _walk_pose("opposite_down", 4, 1, "rear", -21, 0, -10, 44, 0, 20, 8),
+            _walk_pose("opposite_passing", -2, 0, "none", 20, -28, 16, 5, -18, 0, -1),
+            _walk_pose("opposite_up", -5, -1, "none", 34, -18, 20, -24, -9, -16, -9),
+        ],
+        "hip_base_y": hip_base_y,
+        "head_base_y": head_base_y,
+        "knee_y": knee_y,
+    }
+
+
+def _walk_pose(
+    phase: str,
+    hip_bob: int,
+    head_bob: int,
+    contact_foot: str,
+    front_foot_x: int,
+    front_foot_lift: int,
+    front_knee_x: int,
+    rear_foot_x: int,
+    rear_foot_lift: int,
+    rear_knee_x: int,
+    arm_swing: int,
+) -> dict[str, Any]:
+    return {
+        "phase": phase,
+        "hip_bob": hip_bob,
+        "head_bob": head_bob,
+        "contact_foot": contact_foot,
+        "front": {"foot_x": front_foot_x, "foot_lift": front_foot_lift, "knee_x": front_knee_x},
+        "rear": {"foot_x": rear_foot_x, "foot_lift": rear_foot_lift, "knee_x": rear_knee_x},
+        "arm_swing": arm_swing,
+    }
+
+
+def _walk_readability_from_skeleton(skeleton: dict[str, Any]) -> dict[str, Any]:
+    frames = skeleton["frames"]
+    head_y_values = [skeleton["head_base_y"] + int(frame["head_bob"]) for frame in frames]
+    hip_y_values = [skeleton["hip_base_y"] + int(frame["hip_bob"]) for frame in frames]
+    return {
+        "frame_count": len(frames),
+        "phase_names": [frame["phase"] for frame in frames],
+        "ground_y": skeleton["ground_y"],
+        "contact_foot_by_frame": [frame["contact_foot"] for frame in frames],
+        "estimated_head_y_range": [min(head_y_values), max(head_y_values)],
+        "estimated_hip_y_range": [min(hip_y_values), max(hip_y_values)],
+        "foot_lock_expected": True,
+        "loop_expected": True,
+        "route_status": ROUTE_STATUS,
+        "visual_decision": VISUAL_DECISION,
+    }
 
 
 def _compose_stylized_walk_frame(
@@ -268,40 +337,47 @@ def _compose_stylized_walk_frame(
     height: int,
     palette: dict[str, list[int]],
     motion: dict[str, Any],
+    ground_y: int,
 ) -> Image.Image:
     scale = 3
     canvas = Image.new("RGBA", (width * scale, height * scale), (0, 0, 0, 0))
     draw = ImageDraw.Draw(canvas)
     p = {name: tuple(value) for name, value in palette.items()}
     cx = width * scale // 2
-    ground = round(height * 0.89 * scale)
-    bob = int(motion["bob"]) * scale
-    hip_y = round(height * 0.56 * scale) + bob
-    body_y = round(height * 0.31 * scale) + bob
-    head_y = round(height * 0.235 * scale) + bob
+    ground = ground_y * scale
+    hip_y = (round(height * 0.56) + int(motion["hip_bob"])) * scale
+    body_y = (round(height * 0.325) + round(int(motion["hip_bob"]) * 0.55)) * scale
+    head_y = (round(height * 0.235) + int(motion["head_bob"])) * scale
+    knee_y = round(height * 0.705) * scale
 
     _draw_stylized_leg(
         draw,
         hip=(cx - 10 * scale, hip_y),
-        knee=(cx + int(motion["rear_knee"]) * scale, round(height * 0.71 * scale)),
-        foot=(cx + int(motion["rear"]) * scale, ground),
+        knee=(cx + int(motion["rear"]["knee_x"]) * scale, knee_y),
+        foot=(
+            cx + int(motion["rear"]["foot_x"]) * scale,
+            ground + int(motion["rear"]["foot_lift"]) * scale,
+        ),
         palette=p,
         rear=True,
         scale=scale,
     )
-    _draw_stylized_arm(draw, (cx - 28 * scale, body_y + 42 * scale), int(motion["arm"]) * scale, p, scale, rear=True)
+    _draw_stylized_arm(draw, (cx - 29 * scale, body_y + 38 * scale), int(motion["arm_swing"]) * scale, p, scale, rear=True)
     _draw_stylized_body(draw, cx, body_y, hip_y, p, scale)
     _draw_stylized_head(draw, cx, head_y, p, scale)
     _draw_stylized_leg(
         draw,
         hip=(cx + 8 * scale, hip_y),
-        knee=(cx + int(motion["front_knee"]) * scale, round(height * 0.71 * scale)),
-        foot=(cx + int(motion["front"]) * scale, ground),
+        knee=(cx + int(motion["front"]["knee_x"]) * scale, knee_y),
+        foot=(
+            cx + int(motion["front"]["foot_x"]) * scale,
+            ground + int(motion["front"]["foot_lift"]) * scale,
+        ),
         palette=p,
         rear=False,
         scale=scale,
     )
-    _draw_stylized_arm(draw, (cx - 18 * scale, body_y + 44 * scale), -int(motion["arm"]) * scale, p, scale, rear=False)
+    _draw_stylized_arm(draw, (cx - 17 * scale, body_y + 40 * scale), -int(motion["arm_swing"]) * scale, p, scale, rear=False)
 
     return canvas.resize((width, height), Image.Resampling.LANCZOS)
 
@@ -436,12 +512,11 @@ def _draw_stylized_leg(
     draw.line([hip, knee, foot], fill=outline, width=leg_width + 5 * scale, joint="curve")
     draw.line([hip, knee], fill=skin, width=leg_width, joint="curve")
     draw.line([knee, foot], fill=sock, width=leg_width, joint="curve")
-    direction = 1 if foot[0] >= knee[0] else -1
     shoe_poly = [
         (foot[0] - 14 * scale, foot[1] - 7 * scale),
-        (foot[0] + direction * 28 * scale, foot[1] - 8 * scale),
-        (foot[0] + direction * 36 * scale, foot[1] - 1 * scale),
-        (foot[0] + direction * 12 * scale, foot[1] + 6 * scale),
+        (foot[0] + 24 * scale, foot[1] - 8 * scale),
+        (foot[0] + 32 * scale, foot[1] - 1 * scale),
+        (foot[0] + 10 * scale, foot[1] + 5 * scale),
         (foot[0] - 14 * scale, foot[1] + 4 * scale),
     ]
     draw.polygon(shoe_poly, fill=outline)
@@ -688,16 +763,7 @@ def _measure_motion(frame_paths: list[Path]) -> dict[str, Any]:
         "mean_diff_from_first": diff_scores,
         "max_mean_diff_from_first": max(diff_scores),
         "unique_alpha_boxes": unique_alpha_boxes,
-        "phase_labels": [
-            "contact",
-            "down",
-            "passing",
-            "up",
-            "opposite_contact",
-            "opposite_down",
-            "opposite_passing",
-            "opposite_up",
-        ],
+        "phase_labels": PHASE_NAMES,
     }
 
 

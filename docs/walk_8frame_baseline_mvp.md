@@ -57,7 +57,7 @@ The adopted directory must contain:
 1. Load one full-body reference image.
 2. Create a transparent cutout from alpha or connected background removal.
 3. Derive a simple identity palette from the reference.
-4. Render a stylized right-facing 8-phase sprite walk cycle by default.
+4. Render a stylized right-facing 8-phase sprite walk cycle from a small explicit skeleton model.
 5. Export frames, spritesheet, preview GIF, contact sheet, manifest, and notes.
 
 This is not a claim of production animation quality. It is an adoptable MVP route that prevents the
@@ -73,6 +73,18 @@ The current default route therefore uses a stylized reference-derived renderer. 
 identity cues from the reference, such as pink hair, side-view profile, sailor uniform, red tie,
 skirt trim, dark socks, and brown shoes. This is less faithful to the source image, but it is more
 game-friendly and reviewable as an 8-frame walk MVP.
+
+The latest quality pass keeps that scope and adds explicit skeleton metadata for:
+
+- stable ground line;
+- contact foot by frame;
+- small hip bob;
+- mostly stable head position;
+- bent knees;
+- right-facing heel/toe foot shapes;
+- opposite arm swing.
+
+`manifest.json` records these checks under `walk_readability`.
 
 ## Review Bar
 

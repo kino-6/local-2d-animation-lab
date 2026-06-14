@@ -119,3 +119,60 @@ outputs/adoptable/walk_8frame_sideview_baseline/
   - Better than the previous preview because the contact/passing/opposite-contact phases are visible.
   - Still not production art and not a faithful redraw of the original reference.
   - This route is useful as a small game-loadable MVP and a clearer baseline for later quality work.
+
+## Skeleton Quality Pass
+
+- [x] Keep the route scoped to `walk_8frame_sideview_baseline`.
+- [x] Keep exactly eight right-facing side-view frames.
+- [x] Keep transparent PNG frames and the existing output contract.
+- [x] Do not add ComfyUI, Wan, ControlNet, video generation, or new model integrations.
+- [x] Add an explicit small skeleton model for the stylized renderer.
+- [x] Define stable `ground_y`.
+- [x] Define exactly these phases:
+  - `contact`
+  - `down`
+  - `passing`
+  - `up`
+  - `opposite_contact`
+  - `opposite_down`
+  - `opposite_passing`
+  - `opposite_up`
+- [x] Add contact-foot labels per frame.
+- [x] Keep contact feet planted on contact/down frames and lift only swing feet on passing/up frames.
+- [x] Add small hip bob while keeping head mostly stable.
+- [x] Strengthen torso/hip/neck/head connection.
+- [x] Add knee bends and heel/toe-oriented foot shapes.
+- [x] Improve arm swing with upper/lower arm segments and plausible hand positions.
+- [x] Preserve identity cues:
+  - pink hair
+  - side profile
+  - sailor-style white top
+  - red tie
+  - dark socks
+  - brown shoes
+- [x] Add `docs/walk_8frame_review_checklist.md`.
+- [x] Add `walk_readability` to `manifest.json`.
+- [x] Update tests for `walk_readability`, phase names, output contract, and no backend invocation.
+- [x] Regenerate `outputs/adoptable/walk_8frame_sideview_baseline/`.
+- [x] Agent-review `contact_sheet.png`.
+
+## Skeleton Quality Pass Result
+
+- [x] Renderer now uses a small deterministic skeleton with:
+  - stable `ground_y`;
+  - explicit phase names;
+  - contact-foot labels;
+  - head and hip y-range metadata;
+  - foot-lock expectation;
+  - loop expectation.
+- [x] Manifest label remains:
+  - `route_status: baseline_not_production`
+  - `visual_decision: review_worthy_mvp_not_production`
+- [x] Output remains:
+  - `outputs/adoptable/walk_8frame_sideview_baseline/`
+- [x] Focused tests:
+  - `uv run pytest tests\test_build_walk_8frame_baseline.py tests\test_output_layout_policy.py`
+  - `5 passed`
+- [x] Honest assessment:
+  - More reviewable than the crude geometric puppet because contact/down foot lock, hip bob, head stability, knee bends, and arm opposition are explicit.
+  - Still not production art.

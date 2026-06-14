@@ -158,15 +158,15 @@
   "motion_metrics": {
     "mean_diff_from_first": [
       0.0,
-      4.053,
-      3.955,
-      4.47,
-      1.643,
-      4.54,
-      3.611,
-      3.379
+      3.141,
+      3.145,
+      3.935,
+      1.63,
+      3.653,
+      2.651,
+      3.37
     ],
-    "max_mean_diff_from_first": 4.54,
+    "max_mean_diff_from_first": 3.935,
     "unique_alpha_boxes": 4,
     "phase_labels": [
       "contact",
@@ -179,11 +179,47 @@
       "opposite_up"
     ]
   },
+  "walk_readability": {
+    "frame_count": 8,
+    "phase_names": [
+      "contact",
+      "down",
+      "passing",
+      "up",
+      "opposite_contact",
+      "opposite_down",
+      "opposite_passing",
+      "opposite_up"
+    ],
+    "ground_y": 456,
+    "contact_foot_by_frame": [
+      "front",
+      "front",
+      "none",
+      "none",
+      "rear",
+      "rear",
+      "none",
+      "none"
+    ],
+    "estimated_head_y_range": [
+      119,
+      121
+    ],
+    "estimated_hip_y_range": [
+      282,
+      291
+    ],
+    "foot_lock_expected": true,
+    "loop_expected": true,
+    "route_status": "baseline_not_production",
+    "visual_decision": "review_worthy_mvp_not_production"
+  },
   "visual_review": {
     "agent_decision": "review_worthy_mvp_not_production",
     "notes": [
       "The first cutout-shift preview was not evaluation-worthy.",
-      "The default renderer now prioritizes readable 8-frame walk poses over direct cutout fidelity.",
+      "The default renderer now uses a small deterministic skeleton with foot-lock metadata.",
       "This is a stylized reference-derived game sprite, not production art and not a faithful redraw of the source image."
     ]
   },
