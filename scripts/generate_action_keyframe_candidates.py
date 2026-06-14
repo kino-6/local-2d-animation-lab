@@ -47,6 +47,32 @@ class ActionKeyframeCandidate:
 
 
 ACTION_CANDIDATES: dict[str, tuple[ActionKeyframeCandidate, ...]] = {
+    "walk_stride": (
+        ActionKeyframeCandidate(
+            name="walk_opposite_contact_small_stride",
+            action="walk_stride",
+            pose_variant="walk_opposite_contact_small_stride",
+            seed_offset=0,
+            positive_template=(
+                "masterpiece, best quality, polished anime game sprite endpoint keyframe, one full-body character only, "
+                "right-facing side-view walk cycle opposite contact pose, small natural stride, front foot and rear foot swapped from the source pose, "
+                "both shoes planted on one ground line, clear ankles, visible knees, arms swing only slightly, "
+                "clean white background, no running, no high kick, no dramatic illustration pose, {identity_traits}"
+            ),
+        ),
+        ActionKeyframeCandidate(
+            name="walk_passing_pose_conservative",
+            action="walk_stride",
+            pose_variant="walk_passing_pose_conservative",
+            seed_offset=700,
+            positive_template=(
+                "masterpiece, best quality, polished anime game sprite endpoint keyframe, one full-body character only, "
+                "right-facing side-view conservative walk passing pose, one foot under the body, the other foot slightly behind, "
+                "readable separated brown shoes, visible lower legs, slight arm swing, clean white background, "
+                "not running, not a kick, not front-facing, {identity_traits}"
+            ),
+        ),
+    ),
     "run": (
         ActionKeyframeCandidate(
             name="run_low_stride",
@@ -360,7 +386,33 @@ def _pose_image(variant: str, width: int, height: int) -> Image.Image:
         "left_knee": [0.465, 0.710],
         "left_ankle": [0.430, 0.905],
     }
-    if variant == "run_low_stride":
+    if variant == "walk_opposite_contact_small_stride":
+        keypoints.update(
+            {
+                "right_elbow": [0.555, 0.420],
+                "right_wrist": [0.535, 0.555],
+                "left_elbow": [0.455, 0.420],
+                "left_wrist": [0.480, 0.555],
+                "right_knee": [0.455, 0.710],
+                "right_ankle": [0.390, 0.905],
+                "left_knee": [0.555, 0.705],
+                "left_ankle": [0.630, 0.905],
+            }
+        )
+    elif variant == "walk_passing_pose_conservative":
+        keypoints.update(
+            {
+                "right_elbow": [0.555, 0.420],
+                "right_wrist": [0.540, 0.555],
+                "left_elbow": [0.455, 0.420],
+                "left_wrist": [0.470, 0.555],
+                "right_knee": [0.515, 0.710],
+                "right_ankle": [0.515, 0.905],
+                "left_knee": [0.450, 0.705],
+                "left_ankle": [0.405, 0.905],
+            }
+        )
+    elif variant == "run_low_stride":
         keypoints.update(
             {
                 "neck": [0.52, 0.250],

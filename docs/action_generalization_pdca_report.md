@@ -212,6 +212,35 @@ Decision:
 - Do not run first/last Wan from these endpoints.
 - Keep `endpoint_delta_too_low` plus visual action-readability as a blocker. A numerically different endpoint is not enough if it does not read as the requested action.
 - Do not expand first/last endpoint work to `hit_light`, `hit_heavy`, or `attack_sword` until `run` produces a clean, visibly action-bearing endpoint.
+
+## 2026-06-14 Walk-Stride Endpoint Gate
+
+Report:
+
+```text
+docs/conservative_walk_endpoint_gate_20260614.md
+```
+
+Implemented a conservative `walk_stride` endpoint action for:
+
+```text
+scripts/generate_action_keyframe_candidates.py
+```
+
+Two endpoint routes were tested from the retained sidecar Anima start source:
+
+| route | output | deterministic result | visual result | decision |
+| --- | --- | --- | --- | --- |
+| full img2img | `outputs/20260614_100851/action_keyframes/anima_00013_walk_stride_keyframes/` | selected `manual_review_or_retake`, `extra_foreground_components_removed` | too close to source; numerical delta mostly redraw, not useful walk endpoint | blocked |
+| lower-body img2img | `outputs/20260614_101109/action_keyframes/anima_00013_walk_stride_keyframes/` | selected `candidate_ok` | rear lower leg/foot becomes an oversized boot-like structure | blocked |
+
+No first/last Wan run was launched. This confirms the prior rule: first/last is only useful when the endpoint itself is clean, sprite-like, and action-bearing.
+
+New endpoint-gate requirement:
+
+```text
+source_delta alone is not enough; endpoint review needs lower-body and shoe-shape checks.
+```
 - For `attack_sword`, the minimum sidecar remains: hand anchors, blade line, slash arc, and weapon mask. The existing weapon consistency gate should continue to reject `weapon_missing`, `weapon_fragmented`, `weapon_not_elongated`, and `weapon_detached`.
 
 Comparison table:

@@ -17,29 +17,36 @@ _SPEC.loader.exec_module(_MODULE)
 
 
 def test_action_candidate_prompt_templates_cover_run_and_hit() -> None:
+    walk = _MODULE.ACTION_CANDIDATES["walk_stride"][0].positive_template.format(identity_traits="black yellow armor")
     run = _MODULE.ACTION_CANDIDATES["run"][0].positive_template.format(identity_traits="black yellow armor")
     hit_light = _MODULE.ACTION_CANDIDATES["hit_light"][0].positive_template.format(identity_traits="black yellow armor")
     hit = _MODULE.ACTION_CANDIDATES["hit_heavy"][0].positive_template.format(identity_traits="black yellow armor")
 
+    assert "opposite contact pose" in walk
     assert "conservative running stride" in run
     assert "light hit reaction" in hit_light
     assert "heavy damage recoil" in hit
+    assert "black yellow armor" in walk
     assert "black yellow armor" in run
     assert "black yellow armor" in hit_light
     assert "black yellow armor" in hit
 
 
 def test_action_pose_images_are_distinct() -> None:
+    walk = _MODULE._pose_image("walk_opposite_contact_small_stride", 256, 256)
     run = _MODULE._pose_image("run_low_stride", 256, 256)
     hit = _MODULE._pose_image("hit_heavy_compact_recoil", 256, 256)
 
+    assert walk.size == (256, 256)
     assert run.size == (256, 256)
     assert hit.size == (256, 256)
+    assert walk.tobytes() != run.tobytes()
     assert run.tobytes() != hit.tobytes()
 
 
 def test_action_catalog_includes_hit_light() -> None:
     assert "hit_light" in _MODULE.ACTION_CANDIDATES
+    assert "walk_stride" in _MODULE.ACTION_CANDIDATES
 
 
 def test_img2img_endpoint_workflow_uses_source_latent() -> None:
