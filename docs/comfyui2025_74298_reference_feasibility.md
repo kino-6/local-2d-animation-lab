@@ -159,6 +159,112 @@ Assessment:
 - the character is still not production-ready because foot/leg afterimages remain in multiple frames
 - the non-armor identity is improved, but the selected start frame still has metallic arm drift
 
+## ProductionOK PDCA Toward Walk Asset
+
+Goal:
+
+```text
+Turn the best motion probe into a ProductionOK-style 2D game walk asset, while preserving the
+Bloodborne-like black hood / cloth-leather identity and avoiding the gold-armor drift.
+```
+
+### Loop 1: remove leaked lower-body guide artifacts
+
+Added:
+
+```text
+scripts/clean_lower_body_walk_artifacts.py
+```
+
+Purpose:
+
+- consume transparent walk frames;
+- remove pale/green lower-body remnants left by control/foot-guide leakage;
+- regenerate `frames/`, `spritesheet.png`, `contact_sheet.png`, `preview.gif`, and a cleanup report.
+
+Outputs:
+
+```text
+outputs/20260615_reference_eval/20260616_000119/sprite_postprocess/comfyui2025_74298_bloodborne_walk_bg190_lower_clean/
+outputs/20260615_reference_eval/20260616_000205/sprite_postprocess/comfyui2025_74298_bloodborne_walk_bg190_lower_clean_aggressive/
+```
+
+Result:
+
+- safe cleanup reduced small residues but did not remove the strong foot/leg ghost frames;
+- aggressive cleanup removed more pixels but still left several visible problem frames;
+- conclusion: some failures are generated-frame retakes, not simple postprocess noise.
+
+### Loop 2: select a cleaner 16-frame walk loop candidate
+
+The full 33-frame clip contained several bad phases. Instead of forcing every frame into the
+asset, the cleaner odd-indexed frames were selected and stabilized.
+
+Selected source frames:
+
+```text
+1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31
+```
+
+Best current package:
+
+```text
+outputs/20260615_reference_eval/20260616_000550/sprite_asset_quality_flow/comfyui2025_74298_walk_16frame_selected_quality_flow/packages/20260616_000559/game_sprite_asset/package/
+```
+
+Local checks:
+
+- frame count: 16
+- canvas: `256x384`
+- transparent background: yes
+- `spritesheet.png`: exists
+- `preview.gif`: exists
+- `contact_sheet.png`: exists
+- motion readability gate: passed
+- LocalVL result: walk readability 5/5, game sprite fit 5/5, adoptable as animation true
+
+Agent visual review:
+
+- better than the 33-frame package;
+- readable as a game-like walk cycle;
+- background and large foot-guide leakage are mostly gone;
+- still not marked final ProductionOK because the loop edge should be checked in-engine and the character design still has gold/metal armor drift from the reference interpretation.
+
+### Loop 3: stronger non-armor regeneration
+
+Command route:
+
+```text
+scripts/generate_fullbody_reference_candidates.py
+```
+
+Output:
+
+```text
+outputs/20260615_reference_eval/20260616_000950/fullbody_reference/comfyui2025_74298_trim/
+```
+
+Result:
+
+- prompt-level "no armor / no metal shoulder / no gold shoulder" helped only partially;
+- the model still tends to amplify tiny gold accents into shoulder armor or gauntlets;
+- several candidates were visually useful, but the automated start-frame gate still rejected them for lower-body or extra-component issues;
+- conclusion: non-armor identity needs either a curated design sheet, stronger reference editing, or a negative identity gate. Prompt-only retry is not enough.
+
+Current best status:
+
+```text
+production_candidate_needs_loop_and_identity_review
+```
+
+Do not call this `production_ready` yet.
+
+Blocking issues:
+
+1. Non-armor identity is not fully controlled; gold accents still become armor-like shoulders/bracers.
+2. The selected 16-frame loop is readable, but the first/last transition needs game playback review.
+3. Deterministic artifact gate over-flags dark sprite legs and boot shadows, while Agent/LocalVL agree the selected package is substantially better.
+
 ## Decision
 
 Current status:
