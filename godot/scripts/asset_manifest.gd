@@ -109,6 +109,90 @@ static func build_sprite_frames(manifest: Dictionary, fps := 8.0, prefer_composi
 	return sprite_frames
 
 
+static func single_sprite_frame_paths(manifest: Dictionary) -> PackedStringArray:
+	var frames: Array = manifest.get("frames", [])
+	var resolved := PackedStringArray()
+	for entry in frames:
+		var file_path := ""
+		if typeof(entry) == TYPE_DICTIONARY:
+			file_path = str(entry.get("file", ""))
+		else:
+			file_path = str(entry)
+		if file_path != "":
+			resolved.append(resolve_asset_path(file_path, manifest))
+	return resolved
+
+
+static func validate_single_sprite_asset(manifest: Dictionary) -> Dictionary:
+	if not manifest.get("ok", false):
+		return {"ok": false, "error": manifest.get("error", "manifest load failed")}
+	if str(manifest.get("asset_kind", "")) != "2d_game_sprite":
+		return {"ok": false, "error": "not a 2d_game_sprite manifest"}
+
+	var expected_count := int(manifest.get("frame_count", 0))
+	var paths := single_sprite_frame_paths(manifest)
+	if expected_count <= 0:
+		return {"ok": false, "error": "frame_count must be positive"}
+	if paths.size() != expected_count:
+		return {
+			"ok": false,
+			"error": "frame count mismatch: expected %d, got %d" % [expected_count, paths.size()],
+		}
+
+	var first_size := Vector2i.ZERO
+	for index in range(paths.size()):
+		var path := paths[index]
+		if not FileAccess.file_exists(path):
+			return {"ok": false, "error": "frame missing: %s" % path}
+		var image := Image.new()
+		var error := image.load(path)
+		if error != OK:
+			return {"ok": false, "error": "frame load failed: %s error=%d" % [path, error]}
+		var size := image.get_size()
+		if size.x <= 0 or size.y <= 0:
+			return {"ok": false, "error": "invalid frame size: %s" % path}
+		if index == 0:
+			first_size = size
+		elif size != first_size:
+			return {
+				"ok": false,
+				"error": "frame size mismatch at %d: expected %s, got %s" % [index, first_size, size],
+			}
+
+	return {
+		"ok": true,
+		"asset_kind": manifest.get("asset_kind", ""),
+		"asset_name": manifest.get("asset_name", ""),
+		"animation": manifest.get("animation", ""),
+		"status": manifest.get("status", ""),
+		"frame_count": paths.size(),
+		"frame_size": {"width": first_size.x, "height": first_size.y},
+		"fps": float(manifest.get("fps", 8.0)),
+		"pivot": manifest.get("pivot", {}),
+	}
+
+
+static func build_single_sprite_frames(manifest: Dictionary) -> SpriteFrames:
+	var animation := str(manifest.get("animation", "asset"))
+	if animation == "":
+		animation = "asset"
+	var sprite_frames := SpriteFrames.new()
+	sprite_frames.remove_animation("default")
+	sprite_frames.add_animation(animation)
+	sprite_frames.set_animation_speed(animation, float(manifest.get("fps", 8.0)))
+	sprite_frames.set_animation_loop(animation, true)
+
+	for path in single_sprite_frame_paths(manifest):
+		var image := Image.new()
+		var error := image.load(path)
+		if error != OK:
+			push_error("Failed to load single sprite frame: %s" % path)
+			continue
+		sprite_frames.add_frame(animation, ImageTexture.create_from_image(image))
+
+	return sprite_frames
+
+
 static func pack_action_names(manifest: Dictionary) -> PackedStringArray:
 	var names := PackedStringArray()
 	var actions: Dictionary = manifest.get("actions", {})

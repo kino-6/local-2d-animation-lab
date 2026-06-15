@@ -265,20 +265,112 @@ Blocking issues:
 2. The selected 16-frame loop is readable, but the first/last transition needs game playback review.
 3. Deterministic artifact gate over-flags dark sprite legs and boot shadows, while Agent/LocalVL agree the selected package is substantially better.
 
+### Loop 4: non-armor identity postprocess
+
+Added:
+
+```text
+scripts/recolor_gold_armor_to_dark_cloth.py
+```
+
+Purpose:
+
+- consume the selected transparent 16-frame walk package;
+- reduce gold/bright armor-like drift by recoloring yellow metal and upper-side shoulder highlights into dark cloth/leather tones;
+- regenerate `frames/`, `spritesheet.png`, `contact_sheet.png`, `preview.gif`, and a recolor report.
+
+Best recolor output:
+
+```text
+outputs/20260616_production_pdca/20260616_010026/sprite_postprocess/comfyui2025_74298_walk_16frame_gold_to_cloth_v5_shoulder/
+```
+
+Result:
+
+- recolored pixels: `11549`
+- gold-like residual pixels after cleanup: `0` by deterministic color gate
+- shoulder/arm highlights read less like gold armor and more like dark cloth/leather trim
+- limitation: the shoulder silhouette is still inherited from the generated frame, so this is color/identity cleanup, not structural costume correction
+
+### Loop 5: ProductionOK candidate package and engine proof
+
+Packaged candidate:
+
+```text
+outputs/20260616_production_pdca/20260616_010059/game_sprite_asset/comfyui2025_74298_walk_16frame_production_ok_candidate_v5/
+```
+
+Contract:
+
+- `frames/`: 16 transparent PNG frames
+- `spritesheet.png`: present
+- `preview.gif`: present
+- `contact_sheet.png`: present
+- `manifest.json`: present
+- canvas: `256x384`
+- fps: `10`
+- status: `production_ready_candidate`
+
+Godot validation:
+
+```text
+godot --headless --path godot --script res://tests/single_sprite_asset_runner.gd -- --manifest outputs/20260616_production_pdca/20260616_010059/game_sprite_asset/comfyui2025_74298_walk_16frame_production_ok_candidate_v5/manifest.json
+```
+
+Result:
+
+```text
+ok=true, animation=walk, frame_count=16, frame_size=256x384, current_frame=2
+```
+
+LocalVL result:
+
+```text
+outputs/20260616_production_pdca/20260616_010119/local_vl_eval/comfyui2025_74298_walk_16frame_production_ok_candidate_v5_localvl/
+```
+
+Scores:
+
+- still image quality: `5/5`
+- game sprite asset fit: `5/5`
+- action readability: `5/5`
+- identity consistency: `5/5`
+- background cleanliness: `5/5`
+- adoptable as animation or walk endpoint: `true`
+- recommended next step: `none`
+
+Deterministic package checks:
+
+- frame count: `16`
+- all frames same size: yes
+- transparent corner/background: yes
+- mean adjacent-frame delta: `5.256`
+- max adjacent-frame delta: `7.808`
+- loop delta: `5.155`
+- loop delta / mean step delta: `0.981`
+
+Current status:
+
+```text
+production_ready_candidate_for_game_sprite_walk
+```
+
+This is ProductionOK for a local proof / game-loadable walk asset candidate. It is not proof of exact reference-faithful animation. The character still contains generated redesign choices, and the shoulder silhouette remains somewhat armor-like even after color cleanup.
+
 ## Decision
 
 Current status:
 
 ```text
-reference_faithful_motion_probe_promising_not_production
+production_ready_candidate_for_game_sprite_walk
 ```
 
-This image is better for testing reference-faithful style retention than the prior examples, but it is still not an adopted game animation source.
+This image is now a usable local proof for a 16-frame walk game asset candidate. It should be treated as a generated game-sprite redesign inspired by the reference, not a faithful direct animation of the original illustration.
 
 Next useful step:
 
-1. Curate or regenerate a cleaner one-character full-body side-view design without armor drift.
-2. Use `animate_pose` with action-specific walk template and foot guide as the first motion route.
-3. Treat VACE lower-body hint as unsuitable for this reference/settings unless its dark-output failure is solved.
-4. Package motion probes through `package_game_sprite_asset.py` before judging game readability.
-5. Add a stricter non-armor identity gate so gold accents do not become full armor.
+1. If exact identity matters, create or edit a clean side-view design sheet before motion generation.
+2. Keep the selected 16-frame odd-index route as the current walk-cycle baseline for this reference.
+3. Use `scripts/recolor_gold_armor_to_dark_cloth.py` when tiny gold accents drift into armor-like costume reads.
+4. Validate single-sprite packages through `godot/tests/single_sprite_asset_runner.gd` before calling them game-loadable.
+5. Distinguish `production_ready_candidate` from exact reference-faithful ProductionOK in future reports.
