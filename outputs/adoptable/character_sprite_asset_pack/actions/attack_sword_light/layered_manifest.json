@@ -27,7 +27,11 @@
         "layers/body/frames/attack_sword_light_008.png",
         "layers/body/frames/attack_sword_light_009.png",
         "layers/body/frames/attack_sword_light_010.png",
-        "layers/body/frames/attack_sword_light_011.png"
+        "layers/body/frames/attack_sword_light_011.png",
+        "layers/body/frames/attack_sword_light_012.png",
+        "layers/body/frames/attack_sword_light_013.png",
+        "layers/body/frames/attack_sword_light_014.png",
+        "layers/body/frames/attack_sword_light_015.png"
       ],
       "spritesheet": "layers/body/spritesheet.png",
       "preview_gif": "layers/body/preview.gif",
@@ -44,7 +48,11 @@
         8,
         9,
         10,
-        11
+        11,
+        12,
+        13,
+        14,
+        15
       ]
     },
     "weapon": {
@@ -60,7 +68,11 @@
         "layers/weapon/frames/attack_sword_light_008.png",
         "layers/weapon/frames/attack_sword_light_009.png",
         "layers/weapon/frames/attack_sword_light_010.png",
-        "layers/weapon/frames/attack_sword_light_011.png"
+        "layers/weapon/frames/attack_sword_light_011.png",
+        "layers/weapon/frames/attack_sword_light_012.png",
+        "layers/weapon/frames/attack_sword_light_013.png",
+        "layers/weapon/frames/attack_sword_light_014.png",
+        "layers/weapon/frames/attack_sword_light_015.png"
       ],
       "spritesheet": "layers/weapon/spritesheet.png",
       "preview_gif": "layers/weapon/preview.gif",
@@ -73,7 +85,10 @@
         5,
         6,
         7,
-        8
+        8,
+        9,
+        10,
+        11
       ]
     },
     "effect": {
@@ -89,14 +104,18 @@
         "layers/effect/frames/attack_sword_light_008.png",
         "layers/effect/frames/attack_sword_light_009.png",
         "layers/effect/frames/attack_sword_light_010.png",
-        "layers/effect/frames/attack_sword_light_011.png"
+        "layers/effect/frames/attack_sword_light_011.png",
+        "layers/effect/frames/attack_sword_light_012.png",
+        "layers/effect/frames/attack_sword_light_013.png",
+        "layers/effect/frames/attack_sword_light_014.png",
+        "layers/effect/frames/attack_sword_light_015.png"
       ],
       "spritesheet": "layers/effect/spritesheet.png",
       "preview_gif": "layers/effect/preview.gif",
       "contact_sheet": "layers/effect/contact_sheet.png",
       "non_empty_frames": [
-        5,
-        6
+        6,
+        7
       ]
     }
   },
@@ -108,16 +127,19 @@
     5,
     6,
     7,
-    8
+    8,
+    9,
+    10,
+    11
   ],
   "effect_visible_frames": [
-    5,
-    6
+    6,
+    7
   ],
   "timing_windows": {
     "hit_frames": [
-      5,
-      6
+      6,
+      7
     ],
     "parry_frames": [],
     "invulnerable_frames": []

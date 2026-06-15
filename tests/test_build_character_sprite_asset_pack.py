@@ -22,6 +22,7 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     dodge_rough = tmp_path / "dodge_rough"
     parry_rough = tmp_path / "parry_rough"
     parry_body_rough = tmp_path / "parry_body_rough"
+    style_reference = tmp_path / "style_reference"
     output_dir = tmp_path / "character_sprite_asset_pack"
     _make_reference(reference)
     _make_walk_ready_package(walk_ready)
@@ -58,6 +59,8 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
             str(parry_rough),
             "--parry-sword-body-rough-frames-dir",
             str(parry_body_rough),
+            "--style-reference-dir",
+            str(style_reference),
             "--output-dir",
             str(output_dir),
         ],
@@ -73,8 +76,11 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert (output_dir / "notes.md").exists()
     assert (output_dir / "pack_review" / "all_actions_contact_sheet.png").exists()
     assert (output_dir / "pack_review" / "consistency_report.json").exists()
+    assert (output_dir / "pack_review" / "style_consistency_report.json").exists()
     assert (output_dir / "pack_review" / "godot_import_manifest.json").exists()
     assert (output_dir / "pack_review" / "aseprite_import_notes.md").exists()
+    assert (style_reference / "manifest.json").exists()
+    assert (style_reference / "contact_sheet.png").exists()
 
     walk_frames = sorted((output_dir / "actions" / "walk" / "frames").glob("walk_*.png"))
     idle_frames = sorted((output_dir / "actions" / "idle" / "frames").glob("idle_*.png"))
@@ -105,7 +111,7 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert (output_dir / "actions" / "attack_sword_light" / "contact_sheet.png").exists()
     assert (output_dir / "actions" / "attack_sword_light" / "production_ready_report.json").exists()
     assert (output_dir / "actions" / "attack_sword_light" / "game_previews" / "height_128" / "contact_sheet.png").exists()
-    _assert_layered_action_outputs(output_dir, "attack_sword_light", 12)
+    _assert_layered_action_outputs(output_dir, "attack_sword_light", 16)
     assert (output_dir / "actions" / "dodge_backstep" / "preview.gif").exists()
     assert (output_dir / "actions" / "dodge_backstep" / "spritesheet.png").exists()
     assert (output_dir / "actions" / "dodge_backstep" / "contact_sheet.png").exists()
@@ -143,7 +149,7 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     attack_frames = sorted(
         (output_dir / "actions" / "attack_sword_light" / "frames").glob("attack_sword_light_*.png")
     )
-    assert len(attack_frames) == 12
+    assert len(attack_frames) == 16
     assert {Image.open(path).size for path in attack_frames} == {(96, 96)}
     assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in attack_frames)
     attack_gif = Image.open(output_dir / "actions" / "attack_sword_light" / "preview.gif")
@@ -223,28 +229,33 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
         "recover_half",
         "recover",
     ]
-    assert manifest["actions"]["attack_sword_light"]["frame_count"] == 12
+    assert manifest["actions"]["attack_sword_light"]["frame_count"] == 16
     assert manifest["actions"]["attack_sword_light"]["production_ready"] is True
     assert manifest["actions"]["attack_sword_light"]["runtime"]["loop"] is False
-    assert manifest["actions"]["attack_sword_light"]["runtime"]["source_frame_count"] == 12
-    assert manifest["actions"]["attack_sword_light"]["runtime"]["playback_frame_count"] == 12
-    assert manifest["actions"]["attack_sword_light"]["runtime"]["playback_frame_indices"] == list(range(12))
-    assert manifest["actions"]["attack_sword_light"]["runtime"]["hit_frames"] == [5, 6]
+    assert manifest["actions"]["attack_sword_light"]["runtime"]["source_frame_count"] == 16
+    assert manifest["actions"]["attack_sword_light"]["runtime"]["playback_frame_count"] == 16
+    assert manifest["actions"]["attack_sword_light"]["runtime"]["playback_frame_indices"] == list(range(16))
+    assert manifest["actions"]["attack_sword_light"]["runtime"]["hit_frames"] == [6, 7]
+    assert manifest["actions"]["attack_sword_light"]["frame_density_review"]["decision"] == "within_recommended_range"
     assert manifest["actions"]["attack_sword_light"]["runtime"]["layered"]["layers"] == ["body", "weapon", "effect"]
     assert manifest["actions"]["attack_sword_light"]["runtime"]["layered"]["source"] == "native_separated_layers"
     assert manifest["actions"]["attack_sword_light"]["layered"]["layers"] == ["body", "weapon", "effect"]
     assert manifest["actions"]["attack_sword_light"]["layered"]["source"] == "native_separated_layers"
     assert manifest["actions"]["attack_sword_light"]["phase_names"] == [
         "ready",
-        "anticipation",
+        "anticipation_1",
+        "anticipation_2",
         "draw_back",
         "windup",
         "slash_start",
-        "active_slash",
+        "active_slash_1",
+        "active_slash_2",
         "active_follow_through",
         "overshoot",
-        "recoil",
-        "settle",
+        "recoil_1",
+        "recoil_2",
+        "settle_1",
+        "settle_2",
         "recover",
         "ready_return",
     ]
@@ -297,12 +308,15 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert manifest["pack_review"] == {
         "all_actions_contact_sheet": "pack_review/all_actions_contact_sheet.png",
         "consistency_report": "pack_review/consistency_report.json",
+        "style_consistency_report": "pack_review/style_consistency_report.json",
         "godot_import_manifest": "pack_review/godot_import_manifest.json",
         "aseprite_import_notes": "pack_review/aseprite_import_notes.md",
     }
+    assert manifest["style_reference_set"]["frame_count"] == 5
 
     runtime_manifest = json.loads((output_dir / "runtime_manifest.json").read_text(encoding="utf-8"))
     assert runtime_manifest["origin_policy"] == "bottom_center_canvas"
+    assert runtime_manifest["frame_density_policy"]["attack_sword_light"]["recommended_min"] == 12
     assert set(runtime_manifest["actions"]) == {
         "walk",
         "idle",
@@ -320,7 +334,8 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert runtime_manifest["actions"]["parry_sword"]["parry_frames"] == [3, 4]
     assert runtime_manifest["actions"]["parry_sword"]["layered"]["z_order"] == ["weapon", "body", "effect"]
     assert runtime_manifest["actions"]["attack_sword_light"]["loop"] is False
-    assert runtime_manifest["actions"]["attack_sword_light"]["hit_frames"] == [5, 6]
+    assert runtime_manifest["actions"]["attack_sword_light"]["hit_frames"] == [6, 7]
+    assert runtime_manifest["actions"]["attack_sword_light"]["frame_density_review"]["source_frame_count"] == 16
     assert runtime_manifest["actions"]["attack_sword_light"]["layered"]["z_order"] == ["weapon", "body", "effect"]
 
     consistency = json.loads((output_dir / "pack_review" / "consistency_report.json").read_text(encoding="utf-8"))
@@ -329,6 +344,24 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert consistency["checks"]["runtime_metadata_present"] is True
     assert consistency["checks"]["common_canvas_size"] is True
     assert consistency["checks"]["loop_flags_expected"] is True
+    assert consistency["checks"]["style_consistency_gate_pass"] is True
+    assert consistency["checks"]["frame_density_pass"] is True
+    assert consistency["style_consistency"]["passed"] is True
+
+    style_consistency = json.loads(
+        (output_dir / "pack_review" / "style_consistency_report.json").read_text(encoding="utf-8")
+    )
+    assert style_consistency["passed"] is True
+    assert set(style_consistency["actions"]) == {
+        "walk",
+        "idle",
+        "run",
+        "jump",
+        "hurt",
+        "dodge_backstep",
+        "parry_sword",
+        "attack_sword_light",
+    }
 
     godot_manifest = json.loads((output_dir / "pack_review" / "godot_import_manifest.json").read_text(encoding="utf-8"))
     assert godot_manifest["asset_kind"] == "AnimatedSprite2D_action_pack"
@@ -340,8 +373,9 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert godot_manifest["actions"]["parry_sword"]["parry_frames"] == [3, 4]
     assert godot_manifest["actions"]["parry_sword"]["layered"]["layers"] == ["body", "weapon", "effect"]
     assert godot_manifest["actions"]["attack_sword_light"]["loop"] is False
-    assert godot_manifest["actions"]["attack_sword_light"]["hit_frames"] == [5, 6]
+    assert godot_manifest["actions"]["attack_sword_light"]["hit_frames"] == [6, 7]
     assert godot_manifest["actions"]["attack_sword_light"]["layered"]["layers"] == ["body", "weapon", "effect"]
+    assert godot_manifest["actions"]["attack_sword_light"]["frame_density_review"]["source_frame_count"] == 16
 
     identity = json.loads((output_dir / "identity_report.json").read_text(encoding="utf-8"))
     assert identity["all_required_cues_pass"] is True
@@ -367,6 +401,8 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert gate["checks"]["runtime_metadata_present"] is True
     assert gate["checks"]["pack_review_generated"] is True
     assert gate["checks"]["consistency_gate_pass"] is True
+    assert gate["checks"]["style_consistency_gate_pass"] is True
+    assert gate["checks"]["frame_density_pass"] is True
     assert gate["blocking_issues"] == []
 
     run_report = json.loads(
@@ -394,7 +430,8 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
         )
     )
     assert attack_report["production_ready"] is True
-    assert attack_report["source"] == "native_layers_imagegen_attack_sword_light_body_12frame_tiles_20260615"
+    assert attack_report["source"] == "native_layers_route_a_attack_sword_light_body_16frame_retime_20260615"
+    assert attack_report["frame_density_review"]["source_frame_count"] == 16
 
     dodge_report = json.loads(
         (output_dir / "actions" / "dodge_backstep" / "production_ready_report.json").read_text(encoding="utf-8")
@@ -590,20 +627,24 @@ def _make_attack_sword_light_rough_frames(path: Path) -> None:
 
 def _make_attack_sword_light_body_rough_frames(path: Path) -> None:
     path.mkdir(parents=True)
-    x_offsets = [0, -1, -2, 1, -3, 3, 4, 3, 1, 0, 0, 0]
+    x_offsets = [0, -1, -2, -2, 1, -3, 2, 3, 4, 3, 1, 0, 0, 0, 0, 0]
     arm_poses = [
         (4, 48),
         (10, 43),
+        (8, 45),
         (-6, 43),
         (12, 30),
+        (18, 36),
         (-10, 54),
         (24, 44),
         (25, 48),
-        (18, 36),
+        (22, 46),
         (-8, 54),
+        (-2, 55),
         (3, 55),
         (5, 56),
         (12, 58),
+        (4, 48),
     ]
     for index, (x_offset, arm_y) in enumerate(zip(x_offsets, arm_poses)):
         image = Image.new("RGBA", (96, 96), (0, 255, 0, 255))

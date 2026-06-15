@@ -81,5 +81,14 @@
   "alpha_edge_touch_frames": [],
   "layered": null,
   "production_ready": true,
-  "review_note": "Dodge backstep uses dedicated 2x2 tiled rough sheets with 8 source frames for crouch, push-off, low backstep, landing, and recovery. Runtime invulnerable frames are 2, 3, and 4."
+  "review_note": "Dodge backstep uses dedicated 2x2 tiled rough sheets with 8 source frames for crouch, push-off, low backstep, landing, and recovery. Runtime invulnerable frames are 2, 3, and 4.",
+  "frame_density_review": {
+    "source_frame_count": 8,
+    "playback_frame_count": 8,
+    "recommended_min": 8,
+    "recommended_max": 12,
+    "decision": "within_recommended_range",
+    "policy": "review_guidance_not_universal_rule",
+    "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+  }
 }

@@ -88,10 +88,23 @@ Generated files:
 - `pack_review/all_actions_contact_sheet.png`: one side-by-side review sheet for `walk`, `idle`,
   `run`, `jump`, `hurt`, `dodge_backstep`, `parry_sword`, and `attack_sword_light`.
 - `pack_review/consistency_report.json`: deterministic checks for common canvas size, runtime
-  metadata presence, identity cue pass status, loop flag expectations, and backend usage.
+  metadata presence, identity cue pass status, loop flag expectations, style consistency, frame
+  density policy, and backend usage.
+- `pack_review/style_consistency_report.json`: per-action deterministic style labels:
+  `style_pass`, `style_review`, or `style_retake_needed`.
 - `pack_review/godot_import_manifest.json`: compact import hints for Godot `AnimatedSprite2D` or
   `SpriteFrames`.
 - `pack_review/aseprite_import_notes.md`: tag/import notes for Aseprite review.
+
+Style reference set:
+
+```text
+assets/style_reference_sets/character_sprite_pack_v1/
+```
+
+This set is generated from accepted pack frames and is the primary visual target for future roughs.
+The original illustration remains the identity reference, but new action roughs should be manual
+edits or image-to-image against the accepted pack style before cleanup.
 
 Layered weapon/effect extensions:
 
@@ -120,7 +133,7 @@ Runtime assumptions:
   not final damage-resolution logic.
 - `parry_sword` exposes runtime `parry_frames: [3, 4]`; these are review metadata, not final
   defensive collision boxes.
-- `attack_sword_light` exposes runtime `hit_frames: [5, 6]`; these are review metadata, not final
+- `attack_sword_light` exposes runtime `hit_frames: [6, 7]`; these are review metadata, not final
   combat collision boxes.
 - Weapon/effect actions expose `body`, `weapon`, and `effect` layers with z-order
   `weapon -> body -> effect`, so the character body can cover part of the grip while the effect stays
@@ -133,13 +146,28 @@ Runtime assumptions:
   - `dodge_backstep`: 8 source frames, 8 playback frames, invulnerable frames 2, 3, and 4.
   - `parry_sword`: 8 source body frames, native sword/effect layers, 8 playback frames, parry
     frames 3 and 4.
-  - `attack_sword_light`: 12 source body frames, native sword/effect layers, 12 playback frames,
-    active hit frames 5 and 6.
+  - `attack_sword_light`: 16 source body frames, native sword/effect layers, 16 playback frames,
+    active hit frames 6 and 7.
 - Playback timing expansion may still be used for runtime holds in future actions, but it must not be
   described as true inbetween art. When motion feels under-sampled, prefer an authored or I2I rough
   retake with more drawn frames.
 - Dense action roughs should use multiple 2x2 source sheets instead of one crowded grid, because
   crowded grids reduce per-frame source resolution before cleanup.
+
+Frame density review guidance:
+
+- `idle`: 4-6 source frames.
+- `walk`: 8-12 source frames.
+- `run`: 8-12 source frames.
+- `jump`: 12-16 source frames.
+- `hurt`: 8-12 source frames.
+- `dodge_backstep`: 8-12 source frames.
+- `parry_sword`: 8-12 source frames.
+- `attack_sword_light`: 12-18 source frames.
+
+These ranges are review guidance, not a universal rule. Do not satisfy them with cross-fade ghosts
+or blended interpolation; add or retake real source poses for anticipation, active, overshoot, and
+recovery.
 
 ## Godot Viewer
 
@@ -197,6 +225,8 @@ godot --headless --path godot --script res://tests/pack_e2e_runner.gd -- --manif
   parry_sword, and attack_sword_light assets;
 - runtime metadata and pack review artifacts exist;
 - consistency gate passes for current action coverage;
+- style consistency has no `style_retake_needed` action;
+- frame density is within the action-level review policy;
 - no model or video backend is used.
 
 It does not mean arbitrary future actions are complete.

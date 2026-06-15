@@ -1,0 +1,58 @@
+{
+  "name": "character_sprite_pack_v1",
+  "purpose": "accepted_pack_style_reference_for_future_action_roughs",
+  "source_pack": "outputs/adoptable/character_sprite_asset_pack",
+  "entries": [
+    {
+      "source_action": "idle",
+      "source_frame": 0,
+      "role": "neutral",
+      "path": "assets/style_reference_sets/character_sprite_pack_v1/frames/idle_000_neutral.png"
+    },
+    {
+      "source_action": "walk",
+      "source_frame": 2,
+      "role": "passing_pose",
+      "path": "assets/style_reference_sets/character_sprite_pack_v1/frames/walk_002_passing_pose.png"
+    },
+    {
+      "source_action": "run",
+      "source_frame": 2,
+      "role": "readable_stride",
+      "path": "assets/style_reference_sets/character_sprite_pack_v1/frames/run_002_readable_stride.png"
+    },
+    {
+      "source_action": "attack_sword_light",
+      "source_frame": 7,
+      "role": "active_slash",
+      "path": "assets/style_reference_sets/character_sprite_pack_v1/frames/attack_sword_light_007_active_slash.png"
+    },
+    {
+      "source_action": "parry_sword",
+      "source_frame": 3,
+      "role": "guard_contact",
+      "path": "assets/style_reference_sets/character_sprite_pack_v1/frames/parry_sword_003_guard_contact.png"
+    }
+  ],
+  "identity_cues": {
+    "pink_bob_hair": "pink hair silhouette",
+    "side_profile_anime_girl": "right-facing side-profile anime girl",
+    "sailor_white_top": "sailor-style white top",
+    "red_tie": "red tie",
+    "navy_skirt": "navy skirt",
+    "dark_socks": "dark socks",
+    "brown_shoes": "brown shoes"
+  },
+  "expected_palette_notes": {
+    "hair": "pink bob hair remains a high-signal identity cue",
+    "top": "sailor-style white top stays bright and readable",
+    "tie": "red tie should remain visible at game scale",
+    "uniform": "navy skirt and dark socks stay grouped as the dark uniform mass",
+    "shoes": "brown shoes should be visible near ground contact"
+  },
+  "expected_line_shape_notes": [
+    "Use the accepted pack style as the primary style target.",
+    "Use the original illustration as identity reference, not direct animation source.",
+    "Future roughs should be manual edits or image-to-image against this pack style before cleanup."
+  ]
+}

@@ -1,0 +1,261 @@
+{
+  "status": "pass",
+  "passed": true,
+  "retake_actions": [],
+  "actions": {
+    "walk": {
+      "label": "style_review",
+      "metrics": {
+        "frame_count": 8,
+        "canvas_consistent": true,
+        "transparent_corners": true,
+        "foreground_bbox_width_range": 114,
+        "foreground_bbox_height_range": 7,
+        "foreground_bbox_width_median": 238,
+        "foreground_bbox_height_median": 420,
+        "dominant_hair_color": {
+          "red": 239,
+          "green": 149,
+          "blue": 159
+        },
+        "cue_counts": {
+          "pink_bob_hair": 55310,
+          "side_profile_anime_girl": 264986,
+          "sailor_white_top": 38363,
+          "red_tie": 11660,
+          "navy_skirt": 73487,
+          "dark_socks": 73487,
+          "brown_shoes": 22452
+        },
+        "average_saturation": 0.3614,
+        "average_brightness": 0.6453
+      },
+      "notes": [
+        "Required cues are present, but scale/color variance needs Agent visual review."
+      ]
+    },
+    "idle": {
+      "label": "style_pass",
+      "metrics": {
+        "frame_count": 4,
+        "canvas_consistent": true,
+        "transparent_corners": true,
+        "foreground_bbox_width_range": 0,
+        "foreground_bbox_height_range": 2,
+        "foreground_bbox_width_median": 158,
+        "foreground_bbox_height_median": 419,
+        "dominant_hair_color": {
+          "red": 239,
+          "green": 148,
+          "blue": 159
+        },
+        "cue_counts": {
+          "pink_bob_hair": 25436,
+          "side_profile_anime_girl": 122031,
+          "sailor_white_top": 19072,
+          "red_tie": 5340,
+          "navy_skirt": 31823,
+          "dark_socks": 31823,
+          "brown_shoes": 9000
+        },
+        "average_saturation": 0.3494,
+        "average_brightness": 0.6589
+      },
+      "notes": [
+        "Required cues, transparency, and coarse scale metrics are within the current pack style gate."
+      ]
+    },
+    "run": {
+      "label": "style_review",
+      "metrics": {
+        "frame_count": 8,
+        "canvas_consistent": true,
+        "transparent_corners": true,
+        "foreground_bbox_width_range": 133,
+        "foreground_bbox_height_range": 53,
+        "foreground_bbox_width_median": 257,
+        "foreground_bbox_height_median": 333,
+        "dominant_hair_color": {
+          "red": 240,
+          "green": 138,
+          "blue": 145
+        },
+        "cue_counts": {
+          "pink_bob_hair": 34073,
+          "side_profile_anime_girl": 189695,
+          "sailor_white_top": 25171,
+          "red_tie": 10730,
+          "navy_skirt": 49770,
+          "dark_socks": 49770,
+          "brown_shoes": 20331
+        },
+        "average_saturation": 0.3905,
+        "average_brightness": 0.6338
+      },
+      "notes": [
+        "Required cues are present, but scale/color variance needs Agent visual review."
+      ]
+    },
+    "jump": {
+      "label": "style_review",
+      "metrics": {
+        "frame_count": 12,
+        "canvas_consistent": true,
+        "transparent_corners": true,
+        "foreground_bbox_width_range": 219,
+        "foreground_bbox_height_range": 195,
+        "foreground_bbox_width_median": 201,
+        "foreground_bbox_height_median": 295,
+        "dominant_hair_color": {
+          "red": 243,
+          "green": 141,
+          "blue": 160
+        },
+        "cue_counts": {
+          "pink_bob_hair": 54043,
+          "side_profile_anime_girl": 284385,
+          "sailor_white_top": 53416,
+          "red_tie": 12173,
+          "navy_skirt": 70803,
+          "dark_socks": 70803,
+          "brown_shoes": 19712
+        },
+        "average_saturation": 0.3512,
+        "average_brightness": 0.6822
+      },
+      "notes": [
+        "Required cues are present, but scale/color variance needs Agent visual review."
+      ]
+    },
+    "hurt": {
+      "label": "style_review",
+      "metrics": {
+        "frame_count": 8,
+        "canvas_consistent": true,
+        "transparent_corners": true,
+        "foreground_bbox_width_range": 168,
+        "foreground_bbox_height_range": 103,
+        "foreground_bbox_width_median": 223,
+        "foreground_bbox_height_median": 340,
+        "dominant_hair_color": {
+          "red": 238,
+          "green": 141,
+          "blue": 153
+        },
+        "cue_counts": {
+          "pink_bob_hair": 38322,
+          "side_profile_anime_girl": 183541,
+          "sailor_white_top": 20939,
+          "red_tie": 9472,
+          "navy_skirt": 55262,
+          "dark_socks": 55262,
+          "brown_shoes": 15749
+        },
+        "average_saturation": 0.3863,
+        "average_brightness": 0.6653
+      },
+      "notes": [
+        "Required cues are present, but scale/color variance needs Agent visual review."
+      ]
+    },
+    "dodge_backstep": {
+      "label": "style_review",
+      "metrics": {
+        "frame_count": 8,
+        "canvas_consistent": true,
+        "transparent_corners": true,
+        "foreground_bbox_width_range": 166,
+        "foreground_bbox_height_range": 126,
+        "foreground_bbox_width_median": 251,
+        "foreground_bbox_height_median": 269,
+        "dominant_hair_color": {
+          "red": 242,
+          "green": 141,
+          "blue": 153
+        },
+        "cue_counts": {
+          "pink_bob_hair": 43739,
+          "side_profile_anime_girl": 205753,
+          "sailor_white_top": 28231,
+          "red_tie": 10514,
+          "navy_skirt": 53484,
+          "dark_socks": 53484,
+          "brown_shoes": 18486
+        },
+        "average_saturation": 0.3666,
+        "average_brightness": 0.6726
+      },
+      "notes": [
+        "Required cues are present, but scale/color variance needs Agent visual review."
+      ]
+    },
+    "parry_sword": {
+      "label": "style_review",
+      "metrics": {
+        "frame_count": 8,
+        "canvas_consistent": true,
+        "transparent_corners": true,
+        "foreground_bbox_width_range": 163,
+        "foreground_bbox_height_range": 45,
+        "foreground_bbox_width_median": 238,
+        "foreground_bbox_height_median": 418,
+        "dominant_hair_color": {
+          "red": 242,
+          "green": 141,
+          "blue": 153
+        },
+        "cue_counts": {
+          "pink_bob_hair": 51885,
+          "side_profile_anime_girl": 284952,
+          "sailor_white_top": 39446,
+          "red_tie": 11822,
+          "navy_skirt": 81521,
+          "dark_socks": 81521,
+          "brown_shoes": 25543
+        },
+        "average_saturation": 0.3662,
+        "average_brightness": 0.6597
+      },
+      "notes": [
+        "Required cues are present, but scale/color variance needs Agent visual review."
+      ]
+    },
+    "attack_sword_light": {
+      "label": "style_review",
+      "metrics": {
+        "frame_count": 16,
+        "canvas_consistent": true,
+        "transparent_corners": true,
+        "foreground_bbox_width_range": 214,
+        "foreground_bbox_height_range": 94,
+        "foreground_bbox_width_median": 233,
+        "foreground_bbox_height_median": 359,
+        "dominant_hair_color": {
+          "red": 242,
+          "green": 141,
+          "blue": 153
+        },
+        "cue_counts": {
+          "pink_bob_hair": 83437,
+          "side_profile_anime_girl": 455499,
+          "sailor_white_top": 62787,
+          "red_tie": 18956,
+          "navy_skirt": 136317,
+          "dark_socks": 136317,
+          "brown_shoes": 40262
+        },
+        "average_saturation": 0.3654,
+        "average_brightness": 0.6578
+      },
+      "notes": [
+        "Required cues are present, but scale/color variance needs Agent visual review."
+      ]
+    }
+  },
+  "required_labels": [
+    "style_pass",
+    "style_review",
+    "style_retake_needed"
+  ],
+  "honesty_note": "This deterministic gate catches missing cues, bad transparency, and scale/canvas drift. Agent visual review still overrides it when an action visibly drifts."
+}

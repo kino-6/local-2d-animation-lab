@@ -1,20 +1,24 @@
 {
   "action": "attack_sword_light",
   "status": "production_ready",
-  "source": "native_layers_imagegen_attack_sword_light_body_12frame_tiles_20260615",
+  "source": "native_layers_route_a_attack_sword_light_body_16frame_retime_20260615",
   "method": "route_a_native_separated_layer_cleanup",
-  "frame_count": 12,
+  "frame_count": 16,
   "phase_names": [
     "ready",
-    "anticipation",
+    "anticipation_1",
+    "anticipation_2",
     "draw_back",
     "windup",
     "slash_start",
-    "active_slash",
+    "active_slash_1",
+    "active_slash_2",
     "active_follow_through",
     "overshoot",
-    "recoil",
-    "settle",
+    "recoil_1",
+    "recoil_2",
+    "settle_1",
+    "settle_2",
     "recover",
     "ready_return"
   ],
@@ -40,7 +44,11 @@
         "game_previews/height_128/frames/attack_sword_light_008.png",
         "game_previews/height_128/frames/attack_sword_light_009.png",
         "game_previews/height_128/frames/attack_sword_light_010.png",
-        "game_previews/height_128/frames/attack_sword_light_011.png"
+        "game_previews/height_128/frames/attack_sword_light_011.png",
+        "game_previews/height_128/frames/attack_sword_light_012.png",
+        "game_previews/height_128/frames/attack_sword_light_013.png",
+        "game_previews/height_128/frames/attack_sword_light_014.png",
+        "game_previews/height_128/frames/attack_sword_light_015.png"
       ],
       "spritesheet": "game_previews/height_128/spritesheet.png",
       "preview_gif": "game_previews/height_128/preview.gif",
@@ -63,7 +71,11 @@
         "game_previews/height_192/frames/attack_sword_light_008.png",
         "game_previews/height_192/frames/attack_sword_light_009.png",
         "game_previews/height_192/frames/attack_sword_light_010.png",
-        "game_previews/height_192/frames/attack_sword_light_011.png"
+        "game_previews/height_192/frames/attack_sword_light_011.png",
+        "game_previews/height_192/frames/attack_sword_light_012.png",
+        "game_previews/height_192/frames/attack_sword_light_013.png",
+        "game_previews/height_192/frames/attack_sword_light_014.png",
+        "game_previews/height_192/frames/attack_sword_light_015.png"
       ],
       "spritesheet": "game_previews/height_192/spritesheet.png",
       "preview_gif": "game_previews/height_192/preview.gif",
@@ -86,7 +98,11 @@
         "game_previews/height_256/frames/attack_sword_light_008.png",
         "game_previews/height_256/frames/attack_sword_light_009.png",
         "game_previews/height_256/frames/attack_sword_light_010.png",
-        "game_previews/height_256/frames/attack_sword_light_011.png"
+        "game_previews/height_256/frames/attack_sword_light_011.png",
+        "game_previews/height_256/frames/attack_sword_light_012.png",
+        "game_previews/height_256/frames/attack_sword_light_013.png",
+        "game_previews/height_256/frames/attack_sword_light_014.png",
+        "game_previews/height_256/frames/attack_sword_light_015.png"
       ],
       "spritesheet": "game_previews/height_256/spritesheet.png",
       "preview_gif": "game_previews/height_256/preview.gif",
@@ -116,16 +132,19 @@
       5,
       6,
       7,
-      8
+      8,
+      9,
+      10,
+      11
     ],
     "effect_visible_frames": [
-      5,
-      6
+      6,
+      7
     ],
     "timing_windows": {
       "hit_frames": [
-        5,
-        6
+        6,
+        7
       ],
       "parry_frames": [],
       "invulnerable_frames": []
@@ -134,5 +153,14 @@
     "composition_method": "native_body_weapon_effect_layers"
   },
   "production_ready": true,
-  "review_note": "Attack sword light uses native separated layers: body-only generated roughs plus independent sword and slash effect layers. Runtime hit frames are 5 and 6."
+  "review_note": "Attack sword light uses native separated layers: body-only generated roughs plus independent sword and slash effect layers. The 16-frame source sequence separates anticipation, active slashes, overshoot, recoil, settle, and recovery. Runtime hit frames are 6 and 7.",
+  "frame_density_review": {
+    "source_frame_count": 16,
+    "playback_frame_count": 16,
+    "recommended_min": 12,
+    "recommended_max": 18,
+    "decision": "within_recommended_range",
+    "policy": "review_guidance_not_universal_rule",
+    "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+  }
 }

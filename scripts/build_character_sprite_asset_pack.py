@@ -34,12 +34,13 @@ DEFAULT_PARRY_SWORD_ROUGH = Path(
     "assets/artist_authored_roughs/imagegen_parry_sword_8frame_tiles_20260615/rough_frames"
 )
 DEFAULT_ATTACK_SWORD_LIGHT_BODY_ROUGH = Path(
-    "assets/artist_authored_roughs/imagegen_attack_sword_light_body_12frame_tiles_20260615/rough_frames"
+    "assets/artist_authored_roughs/route_a_attack_sword_light_body_16frame_retime_20260615/rough_frames"
 )
 DEFAULT_PARRY_SWORD_BODY_ROUGH = Path(
     "assets/artist_authored_roughs/imagegen_parry_sword_body_8frame_tiles_20260615/rough_frames"
 )
 DEFAULT_OUTPUT = Path("outputs/adoptable/character_sprite_asset_pack")
+DEFAULT_STYLE_REFERENCE_SET = Path("assets/style_reference_sets/character_sprite_pack_v1")
 
 IDENTITY_CUES = {
     "pink_bob_hair": "pink hair silhouette",
@@ -49,6 +50,17 @@ IDENTITY_CUES = {
     "navy_skirt": "navy skirt",
     "dark_socks": "dark socks",
     "brown_shoes": "brown shoes",
+}
+
+FRAME_DENSITY_POLICY = {
+    "idle": {"recommended_min": 4, "recommended_max": 6},
+    "walk": {"recommended_min": 8, "recommended_max": 12},
+    "run": {"recommended_min": 8, "recommended_max": 12},
+    "jump": {"recommended_min": 12, "recommended_max": 16},
+    "hurt": {"recommended_min": 8, "recommended_max": 12},
+    "dodge_backstep": {"recommended_min": 8, "recommended_max": 12},
+    "parry_sword": {"recommended_min": 8, "recommended_max": 12},
+    "attack_sword_light": {"recommended_min": 12, "recommended_max": 18},
 }
 
 ACTION_RUNTIME_SPECS = {
@@ -162,19 +174,23 @@ ACTION_RUNTIME_SPECS = {
         "loop": False,
         "phase_names": [
             "ready",
-            "anticipation",
+            "anticipation_1",
+            "anticipation_2",
             "draw_back",
             "windup",
             "slash_start",
-            "active_slash",
+            "active_slash_1",
+            "active_slash_2",
             "active_follow_through",
             "overshoot",
-            "recoil",
-            "settle",
+            "recoil_1",
+            "recoil_2",
+            "settle_1",
+            "settle_2",
             "recover",
             "ready_return",
         ],
-        "hit_frames": [5, 6],
+        "hit_frames": [6, 7],
         "layer_contract": {
             "layers": ["body", "weapon", "effect"],
             "z_order": ["weapon", "body", "effect"],
@@ -199,6 +215,7 @@ def main() -> None:
     parser.add_argument("--parry-sword-rough-frames-dir", default=DEFAULT_PARRY_SWORD_ROUGH, type=Path)
     parser.add_argument("--attack-sword-light-body-rough-frames-dir", default=DEFAULT_ATTACK_SWORD_LIGHT_BODY_ROUGH, type=Path)
     parser.add_argument("--parry-sword-body-rough-frames-dir", default=DEFAULT_PARRY_SWORD_BODY_ROUGH, type=Path)
+    parser.add_argument("--style-reference-dir", default=DEFAULT_STYLE_REFERENCE_SET, type=Path)
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT, type=Path)
     parser.add_argument("--fps", default=8, type=int)
     parser.add_argument("--clean", action=argparse.BooleanOptionalAction, default=True)
@@ -215,6 +232,7 @@ def main() -> None:
         parry_sword_rough_frames_dir=args.parry_sword_rough_frames_dir,
         attack_sword_light_body_rough_frames_dir=args.attack_sword_light_body_rough_frames_dir,
         parry_sword_body_rough_frames_dir=args.parry_sword_body_rough_frames_dir,
+        style_reference_dir=args.style_reference_dir,
         output_dir=args.output_dir,
         fps=args.fps,
         clean=args.clean,
@@ -233,6 +251,7 @@ def build_character_sprite_asset_pack(
     parry_sword_rough_frames_dir: Path | None = DEFAULT_PARRY_SWORD_ROUGH,
     attack_sword_light_body_rough_frames_dir: Path | None = DEFAULT_ATTACK_SWORD_LIGHT_BODY_ROUGH,
     parry_sword_body_rough_frames_dir: Path | None = DEFAULT_PARRY_SWORD_BODY_ROUGH,
+    style_reference_dir: Path = DEFAULT_STYLE_REFERENCE_SET,
     output_dir: Path = DEFAULT_OUTPUT,
     fps: int = 8,
     clean: bool = True,
@@ -328,13 +347,14 @@ def build_character_sprite_asset_pack(
         fps=fps,
         target_size=target_size,
         scale_reference=scale_reference,
-        frame_count=12,
+        frame_count=16,
         body_source_prefix="attack_sword_light_body",
         phase_names=ACTION_RUNTIME_SPECS["attack_sword_light"]["phase_names"],
-        source_slug="native_layers_imagegen_attack_sword_light_body_12frame_tiles_20260615",
+        source_slug="native_layers_route_a_attack_sword_light_body_16frame_retime_20260615",
         review_note=(
             "Attack sword light uses native separated layers: body-only generated roughs plus independent sword and slash effect layers. "
-            "Runtime hit frames are 5 and 6."
+            "The 16-frame source sequence separates anticipation, active slashes, overshoot, recoil, settle, and recovery. "
+            "Runtime hit frames are 6 and 7."
         ),
     )
 
@@ -361,6 +381,7 @@ def build_character_sprite_asset_pack(
         "parry_sword": parry_action,
         "attack_sword_light": attack_action,
     }
+    _attach_frame_density_reviews(output_dir, actions)
     backend_usage = {
         "uses_comfyui": False,
         "uses_wan_video": False,
@@ -378,6 +399,7 @@ def build_character_sprite_asset_pack(
         backend_usage=backend_usage,
     )
     production_gate = _build_production_gate(actions, identity_report, pack_review["consistency_report"])
+    style_reference_set = _write_style_reference_set(actions_dir, actions, style_reference_dir)
 
     _write_text(output_dir / "identity_report.json", json.dumps(identity_report, indent=2, ensure_ascii=False) + "\n")
     _write_text(output_dir / "production_gate.json", json.dumps(production_gate, indent=2, ensure_ascii=False) + "\n")
@@ -395,9 +417,11 @@ def build_character_sprite_asset_pack(
         "pack_review": {
             "all_actions_contact_sheet": "pack_review/all_actions_contact_sheet.png",
             "consistency_report": "pack_review/consistency_report.json",
+            "style_consistency_report": "pack_review/style_consistency_report.json",
             "godot_import_manifest": "pack_review/godot_import_manifest.json",
             "aseprite_import_notes": "pack_review/aseprite_import_notes.md",
         },
+        "style_reference_set": style_reference_set,
         "production_gate": production_gate,
         "backend_usage": backend_usage,
         "production_ready": production_gate["production_ready"],
@@ -433,6 +457,7 @@ def _copy_walk_action(source_dir: Path, action_dir: Path) -> dict[str, Any]:
         "spritesheet": "actions/walk/spritesheet.png",
         "preview_gif": "actions/walk/preview.gif",
         "contact_sheet": "actions/walk/contact_sheet.png",
+        "production_ready_report": "actions/walk/production_ready_report.json",
         "runtime": _build_action_runtime("walk", frame_paths, fps=8, phase_names=phase_names),
     }
 
@@ -971,7 +996,7 @@ def _make_native_weapon_effect_layers(
 
 def _weapon_visible_for_native_action(action: str, frame_index: int) -> bool:
     if action == "attack_sword_light":
-        return 1 <= frame_index <= 8
+        return 1 <= frame_index <= 11
     if action == "parry_sword":
         return 1 <= frame_index <= 5
     return True
@@ -987,15 +1012,19 @@ def _weapon_canvas_points(
     attack_points = [
         ((0.32, 0.61), (0.22, 0.79)),
         ((0.25, 0.58), (0.12, 0.62)),
+        ((0.28, 0.56), (0.11, 0.58)),
         ((0.33, 0.47), (0.13, 0.44)),
         ((0.33, 0.18), (0.54, 0.06)),
-        ((0.26, 0.64), (0.07, 0.75)),
+        ((0.36, 0.28), (0.72, 0.14)),
         ((0.72, 0.49), (0.95, 0.49)),
+        ((0.73, 0.52), (0.96, 0.58)),
         ((0.28, 0.56), (0.78, 0.69)),
         ((0.79, 0.52), (0.94, 0.36)),
         ((0.30, 0.52), (0.13, 0.66)),
+        ((0.32, 0.60), (0.22, 0.76)),
         ((0.32, 0.63), (0.22, 0.80)),
         ((0.32, 0.63), (0.23, 0.80)),
+        ((0.48, 0.66), (0.63, 0.80)),
         ((0.71, 0.65), (0.86, 0.79)),
     ]
     parry_points = [
@@ -1144,7 +1173,7 @@ def _draw_effect_layer(
     hand = _clamp_point_to_canvas(hand, image.size, margin=24)
     tip = _clamp_point_to_canvas(tip, image.size, margin=24)
     left, top, right, bottom = box
-    if action == "attack_sword_light" and frame_index in {5, 6}:
+    if action == "attack_sword_light" and frame_index in {6, 7}:
         cx = round((hand[0] + tip[0]) / 2)
         cy = round((hand[1] + tip[1]) / 2)
         width = min(image.width - 40, max(36, round((right - left) * 0.72)))
@@ -1152,7 +1181,7 @@ def _draw_effect_layer(
         cx = min(image.width - 20 - width // 2, max(20 + width // 2, cx))
         cy = min(image.height - 20 - height // 2, max(20 + height // 2, cy))
         bounds = (cx - width // 2, cy - height // 2, cx + width // 2, cy + height // 2)
-        start, end = (-15, 45) if frame_index == 5 else (8, 75)
+        start, end = (-15, 45) if frame_index == 6 else (8, 75)
         draw.arc(bounds, start=start, end=end, fill=(90, 240, 230, 210), width=5)
         draw.arc(bounds, start=start + 5, end=end - 3, fill=(230, 255, 255, 180), width=2)
     if action == "parry_sword" and frame_index in {3, 4}:
@@ -1668,10 +1697,50 @@ def _build_action_runtime(
     return runtime
 
 
+def _attach_frame_density_reviews(output_dir: Path, actions: dict[str, dict[str, Any]]) -> None:
+    for action, action_info in actions.items():
+        review = _frame_density_review(action, action_info)
+        action_info["frame_density_review"] = review
+        action_info["runtime"]["frame_density_review"] = review
+        report_path = action_info.get("production_ready_report")
+        if not report_path:
+            continue
+        full_path = output_dir / report_path
+        if not full_path.exists():
+            continue
+        report = json.loads(full_path.read_text(encoding="utf-8"))
+        report["frame_density_review"] = review
+        _write_text(full_path, json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+
+
+def _frame_density_review(action: str, action_info: dict[str, Any]) -> dict[str, Any]:
+    policy = FRAME_DENSITY_POLICY[action]
+    source_count = int(action_info["runtime"]["source_frame_count"])
+    playback_count = int(action_info["runtime"]["playback_frame_count"])
+    recommended_min = int(policy["recommended_min"])
+    recommended_max = int(policy["recommended_max"])
+    if source_count < recommended_min:
+        decision = "below_recommended_retake_source_frames"
+    elif source_count > recommended_max:
+        decision = "above_recommended_review_timing"
+    else:
+        decision = "within_recommended_range"
+    return {
+        "source_frame_count": source_count,
+        "playback_frame_count": playback_count,
+        "recommended_min": recommended_min,
+        "recommended_max": recommended_max,
+        "decision": decision,
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames",
+    }
+
+
 def _build_runtime_manifest(actions: dict[str, dict[str, Any]]) -> dict[str, Any]:
     return {
         "origin_policy": "bottom_center_canvas",
         "frame_canvas_policy": "stable_canvas_per_pack",
+        "frame_density_policy": FRAME_DENSITY_POLICY,
         "actions": {
             action: action_info["runtime"]
             for action, action_info in actions.items()
@@ -1693,6 +1762,7 @@ def _build_pack_review(
     _write_all_actions_contact_sheet(actions_dir, actions, all_actions_contact_sheet)
 
     consistency_report = _build_consistency_report(
+        actions_dir=actions_dir,
         actions=actions,
         identity_report=identity_report,
         backend_usage=backend_usage,
@@ -1701,6 +1771,10 @@ def _build_pack_review(
     _write_text(
         review_dir / "consistency_report.json",
         json.dumps(consistency_report, indent=2, ensure_ascii=False) + "\n",
+    )
+    _write_text(
+        review_dir / "style_consistency_report.json",
+        json.dumps(consistency_report["style_consistency"], indent=2, ensure_ascii=False) + "\n",
     )
 
     godot_import_manifest = _build_godot_import_manifest(actions)
@@ -1713,6 +1787,7 @@ def _build_pack_review(
     return {
         "all_actions_contact_sheet": "pack_review/all_actions_contact_sheet.png",
         "consistency_report": consistency_report,
+        "style_consistency_report": "pack_review/style_consistency_report.json",
         "godot_import_manifest": "pack_review/godot_import_manifest.json",
         "aseprite_import_notes": "pack_review/aseprite_import_notes.md",
     }
@@ -1754,6 +1829,7 @@ def _write_all_actions_contact_sheet(
 
 
 def _build_consistency_report(
+    actions_dir: Path,
     actions: dict[str, dict[str, Any]],
     identity_report: dict[str, Any],
     backend_usage: dict[str, bool],
@@ -1768,6 +1844,15 @@ def _build_consistency_report(
     common_canvas_size = len(set(frame_sizes.values())) == 1
     unsupported_backends_unused = not any(backend_usage.values())
     review_artifacts_present = all_actions_contact_sheet.exists()
+    style_consistency = _build_style_consistency_report(actions_dir, actions)
+    frame_density = {
+        action: action_info["frame_density_review"]
+        for action, action_info in actions.items()
+    }
+    frame_density_pass = all(
+        review["decision"] in {"within_recommended_range", "above_recommended_review_timing"}
+        for review in frame_density.values()
+    )
     action_reports = {
         action: {
             "frame_count": action_info["frame_count"],
@@ -1778,6 +1863,9 @@ def _build_consistency_report(
             "visible_bbox": action_info["runtime"]["visible_bbox"],
             "collision_box": action_info["runtime"]["collision_box"],
             "origin": action_info["runtime"]["origin"],
+            "frame_density_review": action_info["frame_density_review"],
+            "style_consistency_label": style_consistency["actions"][action]["label"],
+            "style_metrics": style_consistency["actions"][action]["metrics"],
         }
         for action, action_info in actions.items()
     }
@@ -1787,6 +1875,9 @@ def _build_consistency_report(
         "identity_cues_pass": identity_report["all_required_cues_pass"] is True,
         "unsupported_backends_unused": unsupported_backends_unused,
         "review_artifacts_present": review_artifacts_present,
+        "style_consistency_gate_pass": style_consistency["passed"] is True,
+        "frame_density_policy_present": bool(FRAME_DENSITY_POLICY),
+        "frame_density_pass": frame_density_pass,
         "loop_flags_expected": loop_flags == {
             "walk": True,
             "idle": True,
@@ -1805,11 +1896,126 @@ def _build_consistency_report(
         "checks": checks,
         "blocking_issues": blocking,
         "action_reports": action_reports,
+        "style_consistency": style_consistency,
+        "frame_density_policy": FRAME_DENSITY_POLICY,
         "review_artifacts": {
             "all_actions_contact_sheet": "pack_review/all_actions_contact_sheet.png",
+            "style_consistency_report": "pack_review/style_consistency_report.json",
         },
         "runtime_import_decision": "ready_for_godot_aseprite_import_review" if not blocking else "needs_pack_review",
     }
+
+
+def _build_style_consistency_report(actions_dir: Path, actions: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    action_reports = {}
+    for action, action_info in actions.items():
+        frame_paths = [
+            actions_dir / action / "frames" / f"{action}_{index:03d}.png"
+            for index in range(action_info["frame_count"])
+        ]
+        metrics = _style_metrics_for_frames(frame_paths)
+        label = _style_label(metrics)
+        action_reports[action] = {
+            "label": label,
+            "metrics": metrics,
+            "notes": _style_notes_for_label(label),
+        }
+    retake_actions = [
+        action for action, report in action_reports.items()
+        if report["label"] == "style_retake_needed"
+    ]
+    return {
+        "status": "pass" if not retake_actions else "needs_retake",
+        "passed": not retake_actions,
+        "retake_actions": retake_actions,
+        "actions": action_reports,
+        "required_labels": ["style_pass", "style_review", "style_retake_needed"],
+        "honesty_note": (
+            "This deterministic gate catches missing cues, bad transparency, and scale/canvas drift. "
+            "Agent visual review still overrides it when an action visibly drifts."
+        ),
+    }
+
+
+def _style_metrics_for_frames(frame_paths: list[Path]) -> dict[str, Any]:
+    boxes: list[tuple[int, int, int, int]] = []
+    sizes: list[tuple[int, int]] = []
+    corner_alpha_ok = True
+    cue_counts = {cue: 0 for cue in IDENTITY_CUES}
+    foreground_count = 0
+    saturation_sum = 0.0
+    brightness_sum = 0.0
+    hair_pixels: list[tuple[int, int, int]] = []
+
+    for path in frame_paths:
+        image = Image.open(path).convert("RGBA")
+        sizes.append(image.size)
+        boxes.append(_alpha_bbox(image))
+        for corner in [(0, 0), (image.width - 1, 0), (0, image.height - 1), (image.width - 1, image.height - 1)]:
+            if image.getpixel(corner)[3] != 0:
+                corner_alpha_ok = False
+        cue = _cue_counts([image])
+        for name, count in cue.items():
+            cue_counts[name] += count
+        raw = image.tobytes()
+        for offset in range(0, len(raw), 4):
+            red, green, blue, alpha = raw[offset], raw[offset + 1], raw[offset + 2], raw[offset + 3]
+            if alpha < 64:
+                continue
+            foreground_count += 1
+            bright = max(red, green, blue)
+            dark = min(red, green, blue)
+            brightness_sum += bright / 255.0
+            saturation_sum += 0.0 if bright == 0 else (bright - dark) / bright
+            if red > 185 and 70 <= green <= 180 and 95 <= blue <= 205:
+                hair_pixels.append((red, green, blue))
+
+    widths = [box[2] - box[0] for box in boxes]
+    heights = [box[3] - box[1] for box in boxes]
+    dominant_hair_color = _average_rgb(hair_pixels)
+    return {
+        "frame_count": len(frame_paths),
+        "canvas_consistent": len(set(sizes)) == 1,
+        "transparent_corners": corner_alpha_ok,
+        "foreground_bbox_width_range": max(widths) - min(widths),
+        "foreground_bbox_height_range": max(heights) - min(heights),
+        "foreground_bbox_width_median": sorted(widths)[len(widths) // 2],
+        "foreground_bbox_height_median": sorted(heights)[len(heights) // 2],
+        "dominant_hair_color": dominant_hair_color,
+        "cue_counts": cue_counts,
+        "average_saturation": round(saturation_sum / max(1, foreground_count), 4),
+        "average_brightness": round(brightness_sum / max(1, foreground_count), 4),
+    }
+
+
+def _average_rgb(pixels: list[tuple[int, int, int]]) -> dict[str, int] | None:
+    if not pixels:
+        return None
+    return {
+        "red": round(sum(pixel[0] for pixel in pixels) / len(pixels)),
+        "green": round(sum(pixel[1] for pixel in pixels) / len(pixels)),
+        "blue": round(sum(pixel[2] for pixel in pixels) / len(pixels)),
+    }
+
+
+def _style_label(metrics: dict[str, Any]) -> str:
+    cue_counts = metrics["cue_counts"]
+    core_cues_present = all(cue_counts[cue] > 0 for cue in IDENTITY_CUES)
+    if not metrics["canvas_consistent"] or not metrics["transparent_corners"] or not core_cues_present:
+        return "style_retake_needed"
+    if metrics["foreground_bbox_height_range"] > 28 or metrics["foreground_bbox_width_range"] > 52:
+        return "style_review"
+    if metrics["average_brightness"] < 0.18 or metrics["average_saturation"] < 0.08:
+        return "style_review"
+    return "style_pass"
+
+
+def _style_notes_for_label(label: str) -> list[str]:
+    if label == "style_pass":
+        return ["Required cues, transparency, and coarse scale metrics are within the current pack style gate."]
+    if label == "style_review":
+        return ["Required cues are present, but scale/color variance needs Agent visual review."]
+    return ["A required cue, transparent corner, or canvas consistency check failed; retake before production."]
 
 
 def _build_godot_import_manifest(actions: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -1829,10 +2035,77 @@ def _build_godot_import_manifest(actions: dict[str, dict[str, Any]]) -> dict[str
                 "invulnerable_frames": action_info["runtime"].get("invulnerable_frames", []),
                 "parry_frames": action_info["runtime"].get("parry_frames", []),
                 "layered": action_info["runtime"].get("layered"),
+                "frame_density_review": action_info["frame_density_review"],
                 "transition_notes": action_info["runtime"]["transition_notes"],
             }
             for action, action_info in actions.items()
         },
+    }
+
+
+def _write_style_reference_set(
+    actions_dir: Path,
+    actions: dict[str, dict[str, Any]],
+    output_dir: Path,
+) -> dict[str, Any]:
+    selected = [
+        ("idle", 0, "neutral"),
+        ("walk", 2, "passing_pose"),
+        ("run", 2, "readable_stride"),
+        ("attack_sword_light", 7, "active_slash"),
+        ("parry_sword", 3, "guard_contact"),
+    ]
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
+    frames_dir = output_dir / "frames"
+    frames_dir.mkdir(parents=True, exist_ok=True)
+
+    copied_paths: list[Path] = []
+    entries = []
+    for action, frame_index, role in selected:
+        if action not in actions:
+            continue
+        clamped_index = min(frame_index, actions[action]["frame_count"] - 1)
+        source = actions_dir / action / "frames" / f"{action}_{clamped_index:03d}.png"
+        target = frames_dir / f"{action}_{clamped_index:03d}_{role}.png"
+        shutil.copy2(source, target)
+        copied_paths.append(target)
+        entries.append(
+            {
+                "source_action": action,
+                "source_frame": clamped_index,
+                "role": role,
+                "path": str(target).replace("\\", "/"),
+            }
+        )
+
+    if copied_paths:
+        make_contact_sheet(copied_paths, output_dir / "contact_sheet.png", columns=len(copied_paths))
+    manifest = {
+        "name": "character_sprite_pack_v1",
+        "purpose": "accepted_pack_style_reference_for_future_action_roughs",
+        "source_pack": "outputs/adoptable/character_sprite_asset_pack",
+        "entries": entries,
+        "identity_cues": IDENTITY_CUES,
+        "expected_palette_notes": {
+            "hair": "pink bob hair remains a high-signal identity cue",
+            "top": "sailor-style white top stays bright and readable",
+            "tie": "red tie should remain visible at game scale",
+            "uniform": "navy skirt and dark socks stay grouped as the dark uniform mass",
+            "shoes": "brown shoes should be visible near ground contact",
+        },
+        "expected_line_shape_notes": [
+            "Use the accepted pack style as the primary style target.",
+            "Use the original illustration as identity reference, not direct animation source.",
+            "Future roughs should be manual edits or image-to-image against this pack style before cleanup.",
+        ],
+    }
+    _write_text(output_dir / "manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
+    return {
+        "path": str(output_dir).replace("\\", "/"),
+        "manifest": str(output_dir / "manifest.json").replace("\\", "/"),
+        "contact_sheet": str(output_dir / "contact_sheet.png").replace("\\", "/"),
+        "frame_count": len(copied_paths),
     }
 
 
@@ -1936,6 +2209,9 @@ def _build_production_gate(
     checks["runtime_metadata_present"] = consistency_report["checks"]["runtime_metadata_present"] is True
     checks["pack_review_generated"] = consistency_report["checks"]["review_artifacts_present"] is True
     checks["consistency_gate_pass"] = consistency_report["passed"] is True
+    checks["style_consistency_gate_pass"] = consistency_report["checks"]["style_consistency_gate_pass"] is True
+    checks["frame_density_policy_present"] = consistency_report["checks"]["frame_density_policy_present"] is True
+    checks["frame_density_pass"] = consistency_report["checks"]["frame_density_pass"] is True
     blocking = [name for name, passed in checks.items() if not passed]
     return {
         "target": "character_sprite_asset_pack_mvp",

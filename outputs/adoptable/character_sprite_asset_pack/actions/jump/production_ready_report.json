@@ -97,5 +97,14 @@
   "alpha_edge_touch_frames": [],
   "layered": null,
   "production_ready": true,
-  "review_note": "Jump uses dedicated 2x2 tiled rough sheets with 12 source frames for anticipation, takeoff, rise, apex, fall, landing, and recovery phases."
+  "review_note": "Jump uses dedicated 2x2 tiled rough sheets with 12 source frames for anticipation, takeoff, rise, apex, fall, landing, and recovery phases.",
+  "frame_density_review": {
+    "source_frame_count": 12,
+    "playback_frame_count": 12,
+    "recommended_min": 12,
+    "recommended_max": 16,
+    "decision": "within_recommended_range",
+    "policy": "review_guidance_not_universal_rule",
+    "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+  }
 }

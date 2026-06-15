@@ -32,6 +32,15 @@
       "invulnerable_frames": [],
       "parry_frames": [],
       "layered": null,
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
       "transition_notes": [
         "idle",
         "run",
@@ -68,6 +77,15 @@
       "invulnerable_frames": [],
       "parry_frames": [],
       "layered": null,
+      "frame_density_review": {
+        "source_frame_count": 4,
+        "playback_frame_count": 4,
+        "recommended_min": 4,
+        "recommended_max": 6,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
       "transition_notes": [
         "walk",
         "run",
@@ -108,6 +126,15 @@
       "invulnerable_frames": [],
       "parry_frames": [],
       "layered": null,
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
       "transition_notes": [
         "idle",
         "walk",
@@ -152,6 +179,15 @@
       "invulnerable_frames": [],
       "parry_frames": [],
       "layered": null,
+      "frame_density_review": {
+        "source_frame_count": 12,
+        "playback_frame_count": 12,
+        "recommended_min": 12,
+        "recommended_max": 16,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
       "transition_notes": [
         "idle",
         "walk",
@@ -192,6 +228,15 @@
       "invulnerable_frames": [],
       "parry_frames": [],
       "layered": null,
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
       "transition_notes": [
         "idle",
         "walk",
@@ -234,6 +279,15 @@
       ],
       "parry_frames": [],
       "layered": null,
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
       "transition_notes": [
         "idle",
         "walk",
@@ -290,6 +344,15 @@
         ],
         "source": "native_separated_layers"
       },
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
       "transition_notes": [
         "idle",
         "walk",
@@ -314,7 +377,11 @@
         "actions/attack_sword_light/frames/attack_sword_light_008.png",
         "actions/attack_sword_light/frames/attack_sword_light_009.png",
         "actions/attack_sword_light/frames/attack_sword_light_010.png",
-        "actions/attack_sword_light/frames/attack_sword_light_011.png"
+        "actions/attack_sword_light/frames/attack_sword_light_011.png",
+        "actions/attack_sword_light/frames/attack_sword_light_012.png",
+        "actions/attack_sword_light/frames/attack_sword_light_013.png",
+        "actions/attack_sword_light/frames/attack_sword_light_014.png",
+        "actions/attack_sword_light/frames/attack_sword_light_015.png"
       ],
       "fps": 8,
       "loop": false,
@@ -325,14 +392,14 @@
         "y": 480
       },
       "collision_box": {
-        "x": 4,
+        "x": 7,
         "y": 23,
-        "width": 335,
+        "width": 333,
         "height": 428
       },
       "hit_frames": [
-        5,
-        6
+        6,
+        7
       ],
       "invulnerable_frames": [],
       "parry_frames": [],
@@ -349,6 +416,15 @@
           "effect"
         ],
         "source": "native_separated_layers"
+      },
+      "frame_density_review": {
+        "source_frame_count": 16,
+        "playback_frame_count": 16,
+        "recommended_min": 12,
+        "recommended_max": 18,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
       },
       "transition_notes": [
         "idle",

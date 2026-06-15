@@ -12,6 +12,7 @@ const AssetManifest = preload("res://scripts/asset_manifest.gd")
 @onready var info: Label = $Info
 @onready var controls: Label = $Controls
 @onready var action_buttons: HBoxContainer = $ActionButtons
+@onready var speed_buttons: HBoxContainer = $SpeedButtons
 @onready var action_meta: Label = $ActionMeta
 @onready var frame_meta: Label = $FrameMeta
 @onready var stage: Node2D = $Stage
@@ -21,6 +22,7 @@ var validation: Dictionary = {}
 var current_action := ""
 var action_order: PackedStringArray = []
 var layer_sprites: Dictionary = {}
+var playback_speed_multiplier := 1.0
 
 const PREFERRED_ACTION_ORDER := [
 	"idle",
@@ -54,7 +56,8 @@ func _ready() -> void:
 	_scale_sprite()
 	action_order = _ordered_action_names()
 	_build_action_buttons()
-	controls.text = "1-8: action  /  Left-Right: previous-next  /  Space: pause  /  R: restart"
+	_build_speed_buttons()
+	controls.text = "1-8: action  /  Left-Right: previous-next  /  Space: pause  /  R: restart  /  Z-X-C: speed"
 
 	var action := start_action
 	if not action_order.has(action):
@@ -73,6 +76,30 @@ func _build_action_buttons() -> void:
 		button.tooltip_text = _action_tooltip(action)
 		button.pressed.connect(func() -> void: _play_action(action))
 		action_buttons.add_child(button)
+
+
+func _build_speed_buttons() -> void:
+	for child in speed_buttons.get_children():
+		child.queue_free()
+
+	for speed in [0.5, 1.0, 2.0]:
+		var button := Button.new()
+		button.text = "%sx" % speed
+		button.tooltip_text = "Set preview playback speed to %sx" % speed
+		button.pressed.connect(func() -> void: _set_playback_speed(speed))
+		speed_buttons.add_child(button)
+
+
+func _set_playback_speed(speed: float) -> void:
+	playback_speed_multiplier = speed
+	_apply_playback_speed()
+	_update_frame_meta()
+
+
+func _apply_playback_speed() -> void:
+	sprite.speed_scale = playback_speed_multiplier
+	for layer_sprite in layer_sprites.values():
+		layer_sprite.speed_scale = playback_speed_multiplier
 
 
 func _play_action(action: String) -> void:
@@ -100,6 +127,7 @@ func _play_action(action: String) -> void:
 		sprite.animation = action
 		sprite.frame = 0
 		sprite.play(action)
+	_apply_playback_speed()
 
 	_center_stage_for_action(action_info)
 	var frame_size: Dictionary = action_info.get("frame_size", {})
@@ -142,6 +170,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				_play_active_sprites()
 		elif key.keycode == KEY_R:
 			_play_action(current_action)
+		elif key.keycode == KEY_Z:
+			_set_playback_speed(0.5)
+		elif key.keycode == KEY_X:
+			_set_playback_speed(1.0)
+		elif key.keycode == KEY_C:
+			_set_playback_speed(2.0)
 
 
 func _play_relative_action(offset: int) -> void:
@@ -159,10 +193,12 @@ func _update_frame_meta() -> void:
 	if active_sprite == null or active_sprite.sprite_frames == null or current_action == "":
 		return
 	var frame_count := active_sprite.sprite_frames.get_frame_count(current_action)
-	frame_meta.text = "%s frame %02d / %02d" % [
+	frame_meta.text = "%s frame %02d / %02d speed %.1fx %s" % [
 		"playing" if _active_sprite_is_playing() else "paused",
 		active_sprite.frame + 1,
 		frame_count,
+		playback_speed_multiplier,
+		"loop" if _active_action_loops() else "once",
 	]
 
 
@@ -241,6 +277,13 @@ func _active_sprite_is_playing() -> bool:
 	return active_sprite != null and active_sprite.is_playing()
 
 
+func _active_action_loops() -> bool:
+	var actions: Dictionary = manifest.get("actions", {})
+	var action_info: Dictionary = actions.get(current_action, {})
+	var runtime: Dictionary = action_info.get("runtime", {})
+	return bool(runtime.get("loop", true))
+
+
 func _pause_active_sprites() -> void:
 	if _has_layered_action(current_action):
 		for layer_sprite in layer_sprites.values():
@@ -255,6 +298,7 @@ func _play_active_sprites() -> void:
 			layer_sprite.play(current_action)
 	else:
 		sprite.play(current_action)
+	_apply_playback_speed()
 
 
 func _center_stage_for_action(action_info: Dictionary) -> void:

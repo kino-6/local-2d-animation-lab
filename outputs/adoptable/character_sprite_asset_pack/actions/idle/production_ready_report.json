@@ -57,5 +57,14 @@
   },
   "ground_y_range": 0,
   "alpha_edge_touch_frames": [],
-  "production_ready": true
+  "production_ready": true,
+  "frame_density_review": {
+    "source_frame_count": 4,
+    "playback_frame_count": 4,
+    "recommended_min": 4,
+    "recommended_max": 6,
+    "decision": "within_recommended_range",
+    "policy": "review_guidance_not_universal_rule",
+    "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+  }
 }

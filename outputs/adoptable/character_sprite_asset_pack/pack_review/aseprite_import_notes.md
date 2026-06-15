@@ -12,6 +12,6 @@ Use one Aseprite tag per action and keep the bottom-center canvas origin stable 
 | hurt | 8 | 8 | False | non-looping small damage reaction |
 | dodge_backstep | 8 | 8 | False | non-looping evasive backstep |
 | parry_sword | 8 | 8 | False | non-looping sword parry guard |
-| attack_sword_light | 12 | 8 | False | non-looping light one-handed sword attack |
+| attack_sword_light | 16 | 8 | False | non-looping light one-handed sword attack |
 
 This pack is ready for runtime import review, not a guarantee that every future action is solved.

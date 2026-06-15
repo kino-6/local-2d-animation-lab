@@ -81,5 +81,14 @@
   "airborne_lift_detected": true,
   "alpha_edge_touch_frames": [],
   "production_ready": true,
-  "review_note": "Run uses a dedicated 8-frame rough sheet rather than retiming walk frames. This improves run readability while preserving the same character identity contract."
+  "review_note": "Run uses a dedicated 8-frame rough sheet rather than retiming walk frames. This improves run readability while preserving the same character identity contract.",
+  "frame_density_review": {
+    "source_frame_count": 8,
+    "playback_frame_count": 8,
+    "recommended_min": 8,
+    "recommended_max": 12,
+    "decision": "within_recommended_range",
+    "policy": "review_guidance_not_universal_rule",
+    "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+  }
 }

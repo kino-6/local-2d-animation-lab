@@ -115,5 +115,14 @@
     "composition_method": "native_body_weapon_effect_layers"
   },
   "production_ready": true,
-  "review_note": "Parry sword uses native separated layers: body-only generated roughs plus independent sword and parry effect layers. Runtime parry frames are 3 and 4."
+  "review_note": "Parry sword uses native separated layers: body-only generated roughs plus independent sword and parry effect layers. Runtime parry frames are 3 and 4.",
+  "frame_density_review": {
+    "source_frame_count": 8,
+    "playback_frame_count": 8,
+    "recommended_min": 8,
+    "recommended_max": 12,
+    "decision": "within_recommended_range",
+    "policy": "review_guidance_not_universal_rule",
+    "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+  }
 }

@@ -41,6 +41,9 @@ Do not claim that a new action is locally generated unless the rough source was 
 - Accepted base pack or walk asset:
   - `outputs/adoptable/artist_authored_8frame_walk_cleanup/production_ready/`
   - `outputs/adoptable/character_sprite_asset_pack/`
+- Accepted pack style reference:
+  - `assets/style_reference_sets/character_sprite_pack_v1/contact_sheet.png`
+  - `assets/style_reference_sets/character_sprite_pack_v1/manifest.json`
 - Action rough frames:
   - `assets/artist_authored_roughs/<source_slug>/rough_frames/<action>_000.png`
   - each frame should contain exactly one character;
@@ -78,6 +81,9 @@ No extra people, no weapons unless requested, no text labels inside the cells.
 ```
 
 For I2I, provide the accepted sprite or reference as style/identity input and ask for a rough sprite sheet. I2I is preferred when identity drift is more damaging than rough pose quality.
+
+Use the accepted pack style reference set as the primary style target. The original illustration is
+only the identity reference; do not let new roughs silently become a separate redesign.
 
 Store the result as:
 
@@ -118,6 +124,7 @@ The builder should:
 - update `runtime_manifest.json` and every action's `runtime` metadata;
 - update `pack_review/all_actions_contact_sheet.png`;
 - update `pack_review/consistency_report.json`;
+- update `pack_review/style_consistency_report.json`;
 - update `pack_review/godot_import_manifest.json`;
 - update `pack_review/aseprite_import_notes.md`;
 - for weapon/effect actions, add `layered_manifest.json` and `layers/body`, `layers/weapon`, and
@@ -142,6 +149,8 @@ An action may be marked `production_ready` only when:
 - core identity cues are present;
 - action phases are readable in `contact_sheet.png` and `preview.gif`;
 - output is game-loadable as frames, spritesheet, and GIF;
+- style consistency has no `style_retake_needed` action in `pack_review/style_consistency_report.json`;
+- frame density is within the action-level review policy or explicitly justified as review-only;
 - no unsupported backend is invoked during packaging.
 
 The gate may accept a game-ready redesign. It does not require faithful pixel animation of the original illustration.
@@ -162,6 +171,8 @@ Every promoted action must preserve the runtime import contract:
 - hit-frame metadata for attacks or other gameplay-relevant active windows.
 - invulnerable-frame metadata for dodge/evasion actions.
 - parry-frame metadata for defensive timing actions.
+- frame-density review metadata with source frame count, playback frame count, recommended range,
+  and decision.
 
 Expected current loop flags:
 
@@ -182,6 +193,17 @@ repeat source frames, but it is not a substitute for true drawn inbetweens. When
 under-sampled, retake the rough sheet with more action-specific frames rather than cross-fading
 frames, because cross-fade interpolation creates ghosted game sprites.
 
+Recommended source frame ranges:
+
+- `idle`: 4-6.
+- `walk`: 8-12.
+- `run`: 8-12.
+- `jump`: 12-16.
+- `hurt`: 8-12.
+- `dodge_backstep`: 8-12.
+- `parry_sword`: 8-12.
+- `attack_sword_light`: 12-18.
+
 ## Tests
 
 Update `tests/test_build_character_sprite_asset_pack.py` for each promoted action.
@@ -197,10 +219,12 @@ Tests should verify:
 - `runtime_manifest.json` exists and includes the action;
 - `pack_review/all_actions_contact_sheet.png` exists;
 - `pack_review/consistency_report.json` passes;
+- `pack_review/style_consistency_report.json` exists and has no `style_retake_needed` action;
 - `pack_review/godot_import_manifest.json` exists;
 - `pack_review/aseprite_import_notes.md` exists;
 - production gate includes `<action>_production_ready: true`;
 - production gate includes `runtime_metadata_present`, `pack_review_generated`, and `consistency_gate_pass`;
+- production gate includes `style_consistency_gate_pass` and `frame_density_pass`;
 - backend usage remains false for ComfyUI, Wan/video, ControlNet, new model backend, and 120-frame generation.
 
 Run focused tests:
@@ -236,6 +260,9 @@ If the rough fails visually, do not tune cleanup parameters endlessly. Retake th
   plus native sword/effect layers from `route-a-layered-action-to-pack`.
 - `attack_sword_light`: `assets/artist_authored_roughs/imagegen_attack_sword_light_body_12frame_tiles_20260615/rough_frames/`
   plus native sword/effect layers from `route-a-layered-action-to-pack`.
+- `attack_sword_light` density upgrade:
+  `assets/artist_authored_roughs/route_a_attack_sword_light_body_16frame_retime_20260615/rough_frames/`
+  plus native sword/effect layers from `route-a-layered-action-to-pack`.
 
 These examples are reproducible from committed rough frames through local packaging. Their initial rough creation used AI-assisted image generation and should not be described as local-only generation.
 
@@ -248,7 +275,7 @@ Current density rule:
   and ready return;
 - `parry_sword` should keep at least 8 source frames for guard raise, contact, deflect, recoil, and
   ready return;
-- `attack_sword_light` should keep 12 source frames for anticipation, active slash, overshoot,
+- `attack_sword_light` should keep 12-18 source frames for anticipation, active slash, overshoot,
   recovery, and ready return;
 - attack actions should record active hit frames in runtime metadata;
 - dodge and parry actions should record their active utility windows in runtime metadata;

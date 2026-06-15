@@ -119,6 +119,12 @@ Reject if:
 - `attack_sword_light`: native body-only rough frames plus independently generated sword/effect layers.
 - `parry_sword`: native body-only rough frames plus independently generated sword/effect layers.
 
+Current timing examples:
+
+- `attack_sword_light`: 16 body source frames, hit frames 6 and 7, weapon visible during
+  anticipation through recovery, effect visible only on active slash frames.
+- `parry_sword`: 8 body source frames, parry frames 3 and 4, effect visible only on contact/deflect.
+
 Current limitation:
 
 - These actions are production-ready for the current Route A sprite pack, not proof that arbitrary
