@@ -103,14 +103,71 @@ design_source_candidate_ready_for_motion_pdca
 
 This is not ProductionOK art. It is the first candidate that is close enough to the source identity and saturation to justify using it as the input to the next walk-generation PDCA.
 
+## Loop 3: Nun + Gothic Hunter Correction
+
+User review of Loop 1:
+
+```text
+The art quality is good, but it reads too much like a biker. The target image is Nun + Bloodborne-like.
+```
+
+Correction:
+
+- reduce biker/leather-rider impression;
+- increase nun habit / veil / robe silhouette;
+- keep the pale sleepy face, white hair, black hood, red collar, and gold forehead ornament;
+- keep the side view readable enough for future walk-cycle work.
+
+Outputs:
+
+```text
+outputs/20260616_design_sheet_pdca/20260616_081036_nun_bloodborne_design_sheet/design_sheet_v2_nun_gothic.png
+outputs/20260616_design_sheet_pdca/20260616_081036_nun_bloodborne_design_sheet/design_sheet_v3_nun_hunter_walkable.png
+```
+
+Selected current design-source candidate:
+
+```text
+outputs/20260616_design_sheet_pdca/20260616_081036_nun_bloodborne_design_sheet/side_view_v3_nun_hunter_walkable/side_view_v3_nun_hunter_walkable.png
+```
+
+Review sheet:
+
+```text
+outputs/20260616_design_sheet_pdca/20260616_081036_nun_bloodborne_design_sheet/side_view_v3_nun_hunter_walkable/side_view_v3_nun_hunter_walkable_review.png
+```
+
+Human review:
+
+- substantially better target read: dark gothic nun + hunter instead of biker;
+- keeps sleepy pale face, long white hair, black hood, red collar, restrained gold head ornament;
+- long robe and lace trim are much closer to the intended mood;
+- side view still exposes legs/feet through front/side openings, so it can be used for walk experiments;
+- remaining risk: robe panels will be harder to animate than pants, so walk generation must preserve cloth panels and visible legs separately.
+
+Comparison to Loop 1 side source:
+
+| Candidate | Read | Strength | Weakness |
+| --- | --- | --- | --- |
+| `side_view_v1c_alpha.png` | glossy black rider / tactical nun | legs very readable, high contrast | too biker-like, boots/belts/bracers too modern |
+| `side_view_v3_nun_hunter_walkable.png` | nun + gothic hunter | much closer costume mood and identity | robe panels are harder for walk-cycle generation |
+
+Updated status:
+
+```text
+design_source_candidate_v3_nun_hunter_ready_for_motion_pdca
+```
+
 ## Next PDCA
 
-Use `side_view_v1c_alpha.png` as the identity-locked source.
+Use `side_view_v3_nun_hunter_walkable.png` as the identity-locked source.
 
 Required next steps:
 
 1. Generate or author a small walk pose set from this side-view design without changing outfit, hair, face, or palette.
 2. Reject any output whose value/saturation collapses toward the old dark walk candidate.
 3. Reject any output that changes the character into a generic knight, rogue, or different-haired character.
-4. Package only after identity and palette pass.
-5. Then run Godot playback validation.
+4. Preserve the robe as separate readable cloth panels; do not collapse it into pants or biker gear.
+5. Keep at least one leg/foot readable in each contact/passing pose.
+6. Package only after identity and palette pass.
+7. Then run Godot playback validation.

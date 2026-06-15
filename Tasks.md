@@ -135,8 +135,13 @@
 
 ## Next Motion PDCA From Design Source
 
-- [ ] Use `side_view_v1c_alpha.png` as the source for the next walk cycle attempt.
+- [x] Incorporated user review that `side_view_v1c_alpha.png` reads too much like a biker.
+- [x] Generated Nun + gothic hunter design variants.
+- [x] Selected `outputs/20260616_design_sheet_pdca/20260616_081036_nun_bloodborne_design_sheet/side_view_v3_nun_hunter_walkable/side_view_v3_nun_hunter_walkable.png` as the next design-source candidate.
+- [x] Recorded that v3 is closer to Nun + Bloodborne-like identity, while robe panels make walk animation harder than the biker-like pants version.
+- [ ] Use `side_view_v3_nun_hunter_walkable.png` as the source for the next walk cycle attempt.
 - [ ] Add an identity/palette gate before packaging: reject outputs that look like a different character or collapse into dull low-value black.
 - [ ] Preserve white hair, black glossy hood, red collar, gold forehead band, and sleepy pale face across frames.
-- [ ] Do not accept generic knight/rogue redesigns, heavy shoulder armor drift, or weapon/action expansion.
+- [ ] Preserve nun robe / gothic hunter panels; do not accept biker gear, generic knight/rogue redesigns, heavy shoulder armor drift, or weapon/action expansion.
+- [ ] Keep legs/feet readable through robe openings for contact and passing poses.
 - [ ] Package only after identity and palette pass, then run Godot playback validation.
