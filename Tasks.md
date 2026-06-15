@@ -69,6 +69,17 @@
 - [x] Updated `docs/local_skills/route-a-layered-action-to-pack/SKILL.md`.
 - [x] Recorded that production-ready means game-ready redesign consistency, not faithful animation of the original illustration.
 
+## Completed External Knowledge Intake
+
+- [x] Reviewed `NO6KIKO/gorest-2d-animation-spritesheet-generator` as a compatible external reference.
+- [x] Incorporated non-conflicting spritesheet-first guidance:
+  - complete sheet first, then split frames;
+  - global character scale/root anchor across the sheet;
+  - grid/cell detection before proportional splitting;
+  - no duplicate first frame as the final loop frame.
+- [x] Added `spritesheet_authoring_policy` to the pack manifest, runtime manifest, and Godot import manifest.
+- [x] Recorded the guidance in docs and Route A Skill without reintroducing 120-frame/video research.
+
 ## Completed Tests
 
 - [x] Updated `tests/test_build_character_sprite_asset_pack.py` for style consistency report, production gate style consistency, frame density metadata, and 16-frame attack.

@@ -85,6 +85,14 @@ For I2I, provide the accepted sprite or reference as style/identity input and as
 Use the accepted pack style reference set as the primary style target. The original illustration is
 only the identity reference; do not let new roughs silently become a separate redesign.
 
+When possible, follow the compatible spritesheet-first lessons from
+`NO6KIKO/gorest-2d-animation-spritesheet-generator`:
+
+- generate or author the complete action sheet first, then split frames;
+- keep one global character scale and root anchor across the sheet;
+- detect the source grid/cells before proportional splitting;
+- avoid exporting a final frame that is only a duplicate of the first loop frame.
+
 Store the result as:
 
 ```text
@@ -113,6 +121,7 @@ The builder should:
 - threshold low alpha;
 - keep the largest alpha component;
 - normalize foreground scale from the alpha bounding box instead of resizing the whole rough cell;
+- prefer one global sequence scale/root anchor when splitting from a coherent source sheet;
 - align grounded actions to the accepted walk ground line;
 - preserve vertical arc for airborne actions such as `jump`;
 - do not preserve accidental rough-sheet horizontal offsets for reaction actions such as `hurt`;

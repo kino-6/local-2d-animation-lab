@@ -313,10 +313,15 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
         "aseprite_import_notes": "pack_review/aseprite_import_notes.md",
     }
     assert manifest["style_reference_set"]["frame_count"] == 5
+    assert manifest["spritesheet_authoring_policy"]["generation_preference"] == "full_spritesheet_first_then_split_frames"
+    assert manifest["spritesheet_authoring_policy"]["anchor_policy"] == "stable_root_anchor_with_bottom_center_runtime_origin"
 
     runtime_manifest = json.loads((output_dir / "runtime_manifest.json").read_text(encoding="utf-8"))
     assert runtime_manifest["origin_policy"] == "bottom_center_canvas"
     assert runtime_manifest["frame_density_policy"]["attack_sword_light"]["recommended_min"] == 12
+    assert runtime_manifest["spritesheet_authoring_policy"]["grid_policy"] == (
+        "detect_source_cells_before_falling_back_to_proportional_grid"
+    )
     assert set(runtime_manifest["actions"]) == {
         "walk",
         "idle",
@@ -365,6 +370,9 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
 
     godot_manifest = json.loads((output_dir / "pack_review" / "godot_import_manifest.json").read_text(encoding="utf-8"))
     assert godot_manifest["asset_kind"] == "AnimatedSprite2D_action_pack"
+    assert godot_manifest["spritesheet_authoring_policy"]["tail_frame_policy"] == (
+        "do_not_export_a_duplicate_first_frame_as_the_final_loop_frame"
+    )
     assert godot_manifest["actions"]["walk"]["loop"] is True
     assert godot_manifest["actions"]["hurt"]["loop"] is False
     assert godot_manifest["actions"]["dodge_backstep"]["loop"] is False

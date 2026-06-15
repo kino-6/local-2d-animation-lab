@@ -63,6 +63,17 @@ FRAME_DENSITY_POLICY = {
     "attack_sword_light": {"recommended_min": 12, "recommended_max": 18},
 }
 
+SPRITESHEET_AUTHORING_POLICY = {
+    "source_inspiration": "NO6KIKO/gorest-2d-animation-spritesheet-generator",
+    "source_url": "https://github.com/NO6KIKO/gorest-2d-animation-spritesheet-generator",
+    "generation_preference": "full_spritesheet_first_then_split_frames",
+    "normalization": "global_uniform_scale_not_per_frame_resize",
+    "anchor_policy": "stable_root_anchor_with_bottom_center_runtime_origin",
+    "grid_policy": "detect_source_cells_before_falling_back_to_proportional_grid",
+    "tail_frame_policy": "do_not_export_a_duplicate_first_frame_as_the_final_loop_frame",
+    "route_fit": "non_conflicting_route_a_guidance_for_future_generated_rough_sheets",
+}
+
 ACTION_RUNTIME_SPECS = {
     "walk": {
         "loop": True,
@@ -422,6 +433,7 @@ def build_character_sprite_asset_pack(
             "aseprite_import_notes": "pack_review/aseprite_import_notes.md",
         },
         "style_reference_set": style_reference_set,
+        "spritesheet_authoring_policy": SPRITESHEET_AUTHORING_POLICY,
         "production_gate": production_gate,
         "backend_usage": backend_usage,
         "production_ready": production_gate["production_ready"],
@@ -1741,6 +1753,7 @@ def _build_runtime_manifest(actions: dict[str, dict[str, Any]]) -> dict[str, Any
         "origin_policy": "bottom_center_canvas",
         "frame_canvas_policy": "stable_canvas_per_pack",
         "frame_density_policy": FRAME_DENSITY_POLICY,
+        "spritesheet_authoring_policy": SPRITESHEET_AUTHORING_POLICY,
         "actions": {
             action: action_info["runtime"]
             for action, action_info in actions.items()
@@ -2022,6 +2035,7 @@ def _build_godot_import_manifest(actions: dict[str, dict[str, Any]]) -> dict[str
     return {
         "asset_kind": "AnimatedSprite2D_action_pack",
         "origin_policy": "bottom_center_canvas",
+        "spritesheet_authoring_policy": SPRITESHEET_AUTHORING_POLICY,
         "actions": {
             action: {
                 "spritesheet": action_info["spritesheet"],

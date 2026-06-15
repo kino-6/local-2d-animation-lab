@@ -169,6 +169,21 @@ These ranges are review guidance, not a universal rule. Do not satisfy them with
 or blended interpolation; add or retake real source poses for anticipation, active, overshoot, and
 recovery.
 
+Spritesheet-first authoring guidance:
+
+The repository also tracks compatible lessons from
+`NO6KIKO/gorest-2d-animation-spritesheet-generator`. These do not replace Route A, but they are
+useful constraints for future rough-sheet generation:
+
+- prefer generating or authoring a complete spritesheet first, then split it into frames;
+- preserve one global character scale across the sheet instead of resizing every frame independently;
+- keep a stable root anchor, then expose `bottom_center_canvas` as the runtime origin;
+- detect source cells/grid boundaries before falling back to proportional grid cuts;
+- do not export a duplicate first frame as the last frame of a loop.
+
+These rules fit the current pack because it is already a game-sprite redesign workflow rather than a
+video-generation workflow.
+
 ## Godot Viewer
 
 The Godot project includes a pack viewer at:

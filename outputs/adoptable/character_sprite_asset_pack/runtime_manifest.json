@@ -35,6 +35,16 @@
       "recommended_max": 18
     }
   },
+  "spritesheet_authoring_policy": {
+    "source_inspiration": "NO6KIKO/gorest-2d-animation-spritesheet-generator",
+    "source_url": "https://github.com/NO6KIKO/gorest-2d-animation-spritesheet-generator",
+    "generation_preference": "full_spritesheet_first_then_split_frames",
+    "normalization": "global_uniform_scale_not_per_frame_resize",
+    "anchor_policy": "stable_root_anchor_with_bottom_center_runtime_origin",
+    "grid_policy": "detect_source_cells_before_falling_back_to_proportional_grid",
+    "tail_frame_policy": "do_not_export_a_duplicate_first_frame_as_the_final_loop_frame",
+    "route_fit": "non_conflicting_route_a_guidance_for_future_generated_rough_sheets"
+  },
   "actions": {
     "walk": {
       "fps": 8,
