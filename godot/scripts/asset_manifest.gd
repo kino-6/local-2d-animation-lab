@@ -239,6 +239,97 @@ static func build_pack_sprite_frames(manifest: Dictionary) -> SpriteFrames:
 	return sprite_frames
 
 
+static func build_pack_layer_sprite_frames(manifest: Dictionary, layer: String) -> SpriteFrames:
+	var sprite_frames := SpriteFrames.new()
+	sprite_frames.remove_animation("default")
+	var actions: Dictionary = manifest.get("actions", {})
+	for action in actions.keys():
+		var action_name := str(action)
+		var action_info: Dictionary = actions[action]
+		var layered_value = action_info.get("layered", {})
+		if typeof(layered_value) != TYPE_DICTIONARY:
+			continue
+		var layered: Dictionary = layered_value
+		if layered.is_empty():
+			continue
+		var layers: Array = layered.get("layers", [])
+		if not layers.has(layer):
+			continue
+
+		var layer_manifest := load_pack_layer_manifest(manifest, action_name)
+		if layer_manifest.is_empty():
+			continue
+		var layer_artifacts: Dictionary = layer_manifest.get("layer_artifacts", {})
+		var artifact: Dictionary = layer_artifacts.get(layer, {})
+		var local_paths: Array = artifact.get("frames", [])
+		if local_paths.is_empty():
+			continue
+
+		var runtime: Dictionary = action_info.get("runtime", {})
+		sprite_frames.add_animation(action_name)
+		sprite_frames.set_animation_speed(action_name, float(runtime.get("fps", 8.0)))
+		sprite_frames.set_animation_loop(action_name, bool(runtime.get("loop", true)))
+
+		var resolved_paths := PackedStringArray()
+		var layer_base := _layer_manifest_base_path(manifest, action_name, layered)
+		for local_path in local_paths:
+			resolved_paths.append(layer_base.path_join(str(local_path)))
+
+		var playback_indices: Array = runtime.get("playback_frame_indices", [])
+		if playback_indices.is_empty():
+			for index in range(resolved_paths.size()):
+				playback_indices.append(index)
+
+		for index_value in playback_indices:
+			var frame_index := int(index_value)
+			if frame_index < 0 or frame_index >= resolved_paths.size():
+				push_error("Invalid layer playback frame index %d for action %s layer %s" % [frame_index, action_name, layer])
+				continue
+			var path := resolved_paths[frame_index]
+			var image := Image.new()
+			var error := image.load(path)
+			if error != OK:
+				push_error("Failed to load pack layer frame: %s" % path)
+				continue
+			sprite_frames.add_frame(action_name, ImageTexture.create_from_image(image))
+
+	return sprite_frames
+
+
+static func load_pack_layer_manifest(manifest: Dictionary, action: String) -> Dictionary:
+	var actions: Dictionary = manifest.get("actions", {})
+	var action_info: Dictionary = actions.get(action, {})
+	var layered_value = action_info.get("layered", {})
+	if typeof(layered_value) != TYPE_DICTIONARY:
+		return {}
+	var layered: Dictionary = layered_value
+	if layered.is_empty():
+		return {}
+	var manifest_path := str(layered.get("manifest", ""))
+	if manifest_path == "":
+		return {}
+	var resolved_path := resolve_asset_path(manifest_path, manifest)
+	if not FileAccess.file_exists(resolved_path):
+		return {}
+	var file := FileAccess.open(resolved_path, FileAccess.READ)
+	if file == null:
+		return {}
+	var parsed = JSON.parse_string(file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return {}
+	return parsed
+
+
+static func _layer_manifest_base_path(manifest: Dictionary, action: String, layered: Dictionary) -> String:
+	var manifest_path := str(layered.get("manifest", ""))
+	if manifest_path != "":
+		var resolved_path := resolve_asset_path(manifest_path, manifest)
+		if resolved_path != "":
+			return resolved_path.get_base_dir()
+	var repo_root := str(manifest.get("_repo_root", ""))
+	return repo_root.path_join("outputs/adoptable/character_sprite_asset_pack/actions").path_join(action)
+
+
 static func resolve_asset_path(path_text: String, manifest: Dictionary) -> String:
 	if path_text.is_absolute_path():
 		return path_text

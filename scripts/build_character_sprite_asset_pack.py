@@ -963,9 +963,18 @@ def _make_native_weapon_effect_layers(
     hand, tip = _weapon_canvas_points(action, frame_index, target_size)
     weapon = Image.new("RGBA", target_size, (0, 0, 0, 0))
     effect = Image.new("RGBA", target_size, (0, 0, 0, 0))
-    _draw_sword_layer(weapon, hand, tip)
+    if _weapon_visible_for_native_action(action, frame_index):
+        _draw_sword_layer(weapon, hand, tip)
     _draw_effect_layer(effect, action, frame_index, hand, tip, box)
     return weapon, effect
+
+
+def _weapon_visible_for_native_action(action: str, frame_index: int) -> bool:
+    if action == "attack_sword_light":
+        return 1 <= frame_index <= 8
+    if action == "parry_sword":
+        return 1 <= frame_index <= 5
+    return True
 
 
 def _weapon_canvas_points(

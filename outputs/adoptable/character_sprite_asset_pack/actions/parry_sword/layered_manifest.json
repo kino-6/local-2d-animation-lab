@@ -54,14 +54,11 @@
       "preview_gif": "layers/weapon/preview.gif",
       "contact_sheet": "layers/weapon/contact_sheet.png",
       "non_empty_frames": [
-        0,
         1,
         2,
         3,
         4,
-        5,
-        6,
-        7
+        5
       ]
     },
     "effect": {
@@ -85,14 +82,11 @@
     }
   },
   "weapon_visible_frames": [
-    0,
     1,
     2,
     3,
     4,
-    5,
-    6,
-    7
+    5
   ],
   "effect_visible_frames": [
     3,

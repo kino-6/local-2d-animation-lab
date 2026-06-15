@@ -17,6 +17,20 @@ position = Vector2(640, 390)
 [node name="Sprite" type="AnimatedSprite2D" parent="Stage"]
 centered = true
 
+[node name="BodySprite" type="AnimatedSprite2D" parent="Stage"]
+visible = false
+centered = true
+
+[node name="WeaponSprite" type="AnimatedSprite2D" parent="Stage"]
+visible = false
+centered = true
+z_index = -1
+
+[node name="EffectSprite" type="AnimatedSprite2D" parent="Stage"]
+visible = false
+centered = true
+z_index = 1
+
 [node name="Info" type="Label" parent="."]
 layout_mode = 1
 anchors_preset = 10

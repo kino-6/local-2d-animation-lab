@@ -6,6 +6,9 @@ const AssetManifest = preload("res://scripts/asset_manifest.gd")
 @export var start_action := "walk"
 
 @onready var sprite: AnimatedSprite2D = $Stage/Sprite
+@onready var body_sprite: AnimatedSprite2D = $Stage/BodySprite
+@onready var weapon_sprite: AnimatedSprite2D = $Stage/WeaponSprite
+@onready var effect_sprite: AnimatedSprite2D = $Stage/EffectSprite
 @onready var info: Label = $Info
 @onready var controls: Label = $Controls
 @onready var action_buttons: HBoxContainer = $ActionButtons
@@ -17,6 +20,7 @@ var manifest: Dictionary = {}
 var validation: Dictionary = {}
 var current_action := ""
 var action_order: PackedStringArray = []
+var layer_sprites: Dictionary = {}
 
 const PREFERRED_ACTION_ORDER := [
 	"idle",
@@ -39,6 +43,14 @@ func _ready() -> void:
 		return
 
 	sprite.sprite_frames = AssetManifest.build_pack_sprite_frames(manifest)
+	body_sprite.sprite_frames = AssetManifest.build_pack_layer_sprite_frames(manifest, "body")
+	weapon_sprite.sprite_frames = AssetManifest.build_pack_layer_sprite_frames(manifest, "weapon")
+	effect_sprite.sprite_frames = AssetManifest.build_pack_layer_sprite_frames(manifest, "effect")
+	layer_sprites = {
+		"body": body_sprite,
+		"weapon": weapon_sprite,
+		"effect": effect_sprite,
+	}
 	_scale_sprite()
 	action_order = _ordered_action_names()
 	_build_action_buttons()
@@ -67,24 +79,37 @@ func _play_action(action: String) -> void:
 	if sprite.sprite_frames == null or not sprite.sprite_frames.has_animation(action):
 		return
 	current_action = action
-	sprite.animation = action
-	sprite.frame = 0
-	sprite.play(action)
 
 	var actions: Dictionary = manifest.get("actions", {})
 	var action_info: Dictionary = actions.get(action, {})
 	var runtime: Dictionary = action_info.get("runtime", {})
 	var origin: Dictionary = runtime.get("origin", {})
-	sprite.centered = false
-	sprite.offset = Vector2(-float(origin.get("x", 0.0)), -float(origin.get("y", 0.0)))
+	var action_is_layered := _has_layered_action(action)
+	_configure_sprite_origin(sprite, origin)
+	for layer_sprite in layer_sprites.values():
+		_configure_sprite_origin(layer_sprite, origin)
+	_set_layer_visibility(action_is_layered)
+	if action_is_layered:
+		for layer_name in ["body", "weapon", "effect"]:
+			var layer_sprite: AnimatedSprite2D = layer_sprites[layer_name]
+			if layer_sprite.sprite_frames != null and layer_sprite.sprite_frames.has_animation(action):
+				layer_sprite.animation = action
+				layer_sprite.frame = 0
+				layer_sprite.play(action)
+	else:
+		sprite.animation = action
+		sprite.frame = 0
+		sprite.play(action)
+
 	_center_stage_for_action(action_info)
 	var frame_size: Dictionary = action_info.get("frame_size", {})
-	info.text = "%s / %d frames / %dx%d / %s" % [
+	info.text = "%s / %d frames / %dx%d / %s / %s" % [
 		action,
 		int(action_info.get("frame_count", 0)),
 		int(frame_size.get("width", 0)),
 		int(frame_size.get("height", 0)),
 		"loop" if bool(runtime.get("loop", true)) else "once",
+		"layered body+weapon+effect" if action_is_layered else "composited",
 	]
 	action_meta.text = "fps=%s origin=%s collision=%s" % [
 		str(runtime.get("fps", "")),
@@ -111,10 +136,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif key.keycode == KEY_LEFT:
 			_play_relative_action(-1)
 		elif key.keycode == KEY_SPACE:
-			if sprite.is_playing():
-				sprite.pause()
+			if _active_sprite_is_playing():
+				_pause_active_sprites()
 			else:
-				sprite.play(current_action)
+				_play_active_sprites()
 		elif key.keycode == KEY_R:
 			_play_action(current_action)
 
@@ -130,12 +155,13 @@ func _play_relative_action(offset: int) -> void:
 
 
 func _update_frame_meta() -> void:
-	if sprite.sprite_frames == null or current_action == "":
+	var active_sprite := _active_frame_sprite()
+	if active_sprite == null or active_sprite.sprite_frames == null or current_action == "":
 		return
-	var frame_count := sprite.sprite_frames.get_frame_count(current_action)
+	var frame_count := active_sprite.sprite_frames.get_frame_count(current_action)
 	frame_meta.text = "%s frame %02d / %02d" % [
-		"playing" if sprite.is_playing() else "paused",
-		sprite.frame + 1,
+		"playing" if _active_sprite_is_playing() else "paused",
+		active_sprite.frame + 1,
 		frame_count,
 	]
 
@@ -171,9 +197,64 @@ func _scale_sprite() -> void:
 	var frame_size: Dictionary = validation.get("frame_size", {})
 	var width := float(frame_size.get("width", 1))
 	var height := float(frame_size.get("height", 1))
-	var max_extent = max(width, height)
+	var max_extent: float = max(width, height)
 	if max_extent > 0:
-		sprite.scale = Vector2.ONE * min(1.0, 520.0 / max_extent)
+		var scale_factor: float = min(1.0, 520.0 / max_extent)
+		var display_scale: Vector2 = Vector2.ONE * scale_factor
+		sprite.scale = display_scale
+		body_sprite.scale = display_scale
+		weapon_sprite.scale = display_scale
+		effect_sprite.scale = display_scale
+
+
+func _configure_sprite_origin(target: AnimatedSprite2D, origin: Dictionary) -> void:
+	target.centered = false
+	target.offset = Vector2(-float(origin.get("x", 0.0)), -float(origin.get("y", 0.0)))
+
+
+func _set_layer_visibility(action_is_layered: bool) -> void:
+	sprite.visible = not action_is_layered
+	body_sprite.visible = action_is_layered
+	weapon_sprite.visible = action_is_layered
+	effect_sprite.visible = action_is_layered
+	if not action_is_layered:
+		for layer_sprite in layer_sprites.values():
+			layer_sprite.stop()
+	else:
+		sprite.stop()
+
+
+func _has_layered_action(action: String) -> bool:
+	if body_sprite.sprite_frames == null:
+		return false
+	return body_sprite.sprite_frames.has_animation(action)
+
+
+func _active_frame_sprite() -> AnimatedSprite2D:
+	if _has_layered_action(current_action):
+		return body_sprite
+	return sprite
+
+
+func _active_sprite_is_playing() -> bool:
+	var active_sprite := _active_frame_sprite()
+	return active_sprite != null and active_sprite.is_playing()
+
+
+func _pause_active_sprites() -> void:
+	if _has_layered_action(current_action):
+		for layer_sprite in layer_sprites.values():
+			layer_sprite.pause()
+	else:
+		sprite.pause()
+
+
+func _play_active_sprites() -> void:
+	if _has_layered_action(current_action):
+		for layer_sprite in layer_sprites.values():
+			layer_sprite.play(current_action)
+	else:
+		sprite.play(current_action)
 
 
 func _center_stage_for_action(action_info: Dictionary) -> void:

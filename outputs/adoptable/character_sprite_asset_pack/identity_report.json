@@ -27,8 +27,8 @@
         "jump": 284385,
         "hurt": 183541,
         "dodge_backstep": 205753,
-        "parry_sword": 286452,
-        "attack_sword_light": 343050
+        "parry_sword": 284952,
+        "attack_sword_light": 340184
       },
       "passed": true
     },
@@ -42,7 +42,7 @@
         "jump": 53416,
         "hurt": 20939,
         "dodge_backstep": 28231,
-        "parry_sword": 39445,
+        "parry_sword": 39446,
         "attack_sword_light": 46766
       },
       "passed": true
@@ -72,7 +72,7 @@
         "jump": 70803,
         "hurt": 55262,
         "dodge_backstep": 53484,
-        "parry_sword": 81528,
+        "parry_sword": 81521,
         "attack_sword_light": 101530
       },
       "passed": true
@@ -87,7 +87,7 @@
         "jump": 70803,
         "hurt": 55262,
         "dodge_backstep": 53484,
-        "parry_sword": 81528,
+        "parry_sword": 81521,
         "attack_sword_light": 101530
       },
       "passed": true
@@ -102,8 +102,8 @@
         "jump": 19712,
         "hurt": 15749,
         "dodge_backstep": 18486,
-        "parry_sword": 25717,
-        "attack_sword_light": 30419
+        "parry_sword": 25543,
+        "attack_sword_light": 30168
       },
       "passed": true
     }
