@@ -58,7 +58,7 @@ def test_character_sprite_asset_pack_loads_in_godot() -> None:
     assert payload["actions"]["hurt"]["frame_count"] == 8
     assert payload["actions"]["dodge_backstep"]["frame_count"] == 8
     assert payload["actions"]["parry_sword"]["frame_count"] == 8
-    assert payload["actions"]["attack_sword_light"]["frame_count"] == 12
+    assert payload["actions"]["attack_sword_light"]["frame_count"] == 16
     assert payload["actions"]["walk"]["loop"] is True
     assert payload["actions"]["run"]["loop"] is True
     assert payload["actions"]["jump"]["loop"] is False
