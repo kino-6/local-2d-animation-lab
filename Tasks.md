@@ -139,9 +139,12 @@
 - [x] Generated Nun + gothic hunter design variants.
 - [x] Selected `outputs/20260616_design_sheet_pdca/20260616_081036_nun_bloodborne_design_sheet/side_view_v3_nun_hunter_walkable/side_view_v3_nun_hunter_walkable.png` as the next design-source candidate.
 - [x] Recorded that v3 is closer to Nun + Bloodborne-like identity, while robe panels make walk animation harder than the biker-like pants version.
-- [ ] Use `side_view_v3_nun_hunter_walkable.png` as the source for the next walk cycle attempt.
+- [x] Incorporated user review that long robes raise walk animation difficulty.
+- [x] Generated a skirt + boots nun variant that keeps the mood while making legs/feet readable.
+- [x] Selected `outputs/20260616_design_sheet_pdca/20260616_0820_nun_skirt_boots_design_sheet/side_view_v4_nun_skirt_boots/side_view_v4_nun_skirt_boots.png` as the next walk-cycle source.
+- [ ] Use `side_view_v4_nun_skirt_boots.png` as the source for the next walk cycle attempt.
 - [ ] Add an identity/palette gate before packaging: reject outputs that look like a different character or collapse into dull low-value black.
 - [ ] Preserve white hair, black glossy hood, red collar, gold forehead band, and sleepy pale face across frames.
-- [ ] Preserve nun robe / gothic hunter panels; do not accept biker gear, generic knight/rogue redesigns, heavy shoulder armor drift, or weapon/action expansion.
-- [ ] Keep legs/feet readable through robe openings for contact and passing poses.
+- [ ] Preserve skirt hem, black stockings, and boots; do not accept pants conversion, robe-only silhouette, biker gear, generic knight/rogue redesigns, heavy shoulder armor drift, or weapon/action expansion.
+- [ ] Keep legs/feet readable for contact and passing poses.
 - [ ] Package only after identity and palette pass, then run Godot playback validation.

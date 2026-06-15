@@ -158,16 +158,69 @@ Updated status:
 design_source_candidate_v3_nun_hunter_ready_for_motion_pdca
 ```
 
+## Loop 4: Skirt + Boots Animation-Friendly Correction
+
+User review of Loop 3:
+
+```text
+The robe gives mood, but it probably raises animation difficulty. Skirt + boots may be better.
+```
+
+Correction:
+
+- keep the Nun + Bloodborne-like mood;
+- replace the long robe with a gothic nun skirt and boots;
+- preserve black hood, white hair, red collar, gold forehead band, and sleepy pale face;
+- keep legs and boots visible for side-view walk contact/passing poses.
+
+Output:
+
+```text
+outputs/20260616_design_sheet_pdca/20260616_0820_nun_skirt_boots_design_sheet/design_sheet_v4_nun_skirt_boots.png
+```
+
+Selected side-view candidate:
+
+```text
+outputs/20260616_design_sheet_pdca/20260616_0820_nun_skirt_boots_design_sheet/side_view_v4_nun_skirt_boots/side_view_v4_nun_skirt_boots.png
+```
+
+Review sheet:
+
+```text
+outputs/20260616_design_sheet_pdca/20260616_0820_nun_skirt_boots_design_sheet/side_view_v4_nun_skirt_boots/side_view_v4_nun_skirt_boots_review.png
+```
+
+Human review:
+
+- currently the best design-source compromise;
+- preserves the intended nun/gothic hunter identity better than the biker-like v1;
+- easier to animate than the long-robe v3 because knees, lower legs, and boots are readable;
+- still has enough cloth/lace/veil to avoid losing the target mood.
+
+Comparison to Loop 3 robe source:
+
+| Candidate | Read | Strength | Weakness |
+| --- | --- | --- | --- |
+| `side_view_v3_nun_hunter_walkable.png` | stronger long-robed nun | high mood fidelity | robe panels are high-risk for walk motion |
+| `side_view_v4_nun_skirt_boots.png` | nun + skirt + boots | best animation practicality while keeping mood | slightly less austere / less robe drama |
+
+Updated status:
+
+```text
+design_source_candidate_v4_nun_skirt_boots_ready_for_walk_pdca
+```
+
 ## Next PDCA
 
-Use `side_view_v3_nun_hunter_walkable.png` as the identity-locked source.
+Use `side_view_v4_nun_skirt_boots.png` as the identity-locked source.
 
 Required next steps:
 
 1. Generate or author a small walk pose set from this side-view design without changing outfit, hair, face, or palette.
 2. Reject any output whose value/saturation collapses toward the old dark walk candidate.
 3. Reject any output that changes the character into a generic knight, rogue, or different-haired character.
-4. Preserve the robe as separate readable cloth panels; do not collapse it into pants or biker gear.
-5. Keep at least one leg/foot readable in each contact/passing pose.
+4. Preserve skirt hem, black stockings, and boots across frames; do not collapse the design into pants, robe-only silhouette, or biker gear.
+5. Keep legs/feet readable in each contact/passing pose.
 6. Package only after identity and palette pass.
 7. Then run Godot playback validation.
