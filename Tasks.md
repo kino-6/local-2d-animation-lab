@@ -121,3 +121,22 @@
 - [x] The pack is ProductionOK for this MVP asset pack route, not proof that arbitrary future actions can be generated automatically.
 - [x] The ComfyUI2025 walk candidate still inherits generated costume silhouette choices and over-darkened color; exact identity requires a curated design sheet or manual edit before animation.
 - [x] LocalVL identity scoring is a semantic signal only; human visual identity and palette review overrides it for adoption decisions.
+
+## Completed Reference-Faithful Design Source Pivot
+
+- [x] Stopped treating the over-dark walk package as a visual ProductionOK candidate.
+- [x] Generated a new reference-faithful design sheet before motion work.
+- [x] Saved the design sheet at `outputs/20260616_design_sheet_pdca/20260616_0100_reference_faithful_design_sheet/design_sheet_v1.png`.
+- [x] Added `scripts/extract_design_sheet_side_view.py` to crop and alpha-extract the right-facing full-body view.
+- [x] Added tests for the side-view extraction route.
+- [x] Created the current side-view design source at `outputs/20260616_design_sheet_pdca/20260616_0100_reference_faithful_design_sheet/side_view_v1c_alpha/side_view_v1c_alpha.png`.
+- [x] Verified the side-view source has transparent corners, no neighboring-view leakage, and preserved high-contrast saturation/value better than the old walk package.
+- [x] Documented the result in `docs/comfyui2025_reference_faithful_design_sheet_pdca.md`.
+
+## Next Motion PDCA From Design Source
+
+- [ ] Use `side_view_v1c_alpha.png` as the source for the next walk cycle attempt.
+- [ ] Add an identity/palette gate before packaging: reject outputs that look like a different character or collapse into dull low-value black.
+- [ ] Preserve white hair, black glossy hood, red collar, gold forehead band, and sleepy pale face across frames.
+- [ ] Do not accept generic knight/rogue redesigns, heavy shoulder armor drift, or weapon/action expansion.
+- [ ] Package only after identity and palette pass, then run Godot playback validation.
