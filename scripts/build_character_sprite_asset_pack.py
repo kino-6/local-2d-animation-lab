@@ -27,6 +27,18 @@ DEFAULT_HURT_ROUGH = Path("assets/artist_authored_roughs/imagegen_hurt_8frame_ti
 DEFAULT_ATTACK_SWORD_LIGHT_ROUGH = Path(
     "assets/artist_authored_roughs/imagegen_attack_sword_light_12frame_tiles_20260615/rough_frames"
 )
+DEFAULT_DODGE_BACKSTEP_ROUGH = Path(
+    "assets/artist_authored_roughs/imagegen_dodge_backstep_8frame_tiles_20260615/rough_frames"
+)
+DEFAULT_PARRY_SWORD_ROUGH = Path(
+    "assets/artist_authored_roughs/imagegen_parry_sword_8frame_tiles_20260615/rough_frames"
+)
+DEFAULT_ATTACK_SWORD_LIGHT_BODY_ROUGH = Path(
+    "assets/artist_authored_roughs/imagegen_attack_sword_light_body_12frame_tiles_20260615/rough_frames"
+)
+DEFAULT_PARRY_SWORD_BODY_ROUGH = Path(
+    "assets/artist_authored_roughs/imagegen_parry_sword_body_8frame_tiles_20260615/rough_frames"
+)
 DEFAULT_OUTPUT = Path("outputs/adoptable/character_sprite_asset_pack")
 
 IDENTITY_CUES = {
@@ -52,13 +64,13 @@ ACTION_RUNTIME_SPECS = {
             "left_passing",
             "left_up",
         ],
-        "transition_notes": ["idle", "run", "jump", "hurt", "attack_sword_light"],
+        "transition_notes": ["idle", "run", "jump", "hurt", "dodge_backstep", "parry_sword", "attack_sword_light"],
         "review_role": "baseline locomotion loop",
     },
     "idle": {
         "loop": True,
         "phase_names": ["neutral", "breathe_up", "breathe_peak", "breathe_down"],
-        "transition_notes": ["walk", "run", "jump", "hurt", "attack_sword_light"],
+        "transition_notes": ["walk", "run", "jump", "hurt", "dodge_backstep", "parry_sword", "attack_sword_light"],
         "review_role": "subtle standing loop",
     },
     "run": {
@@ -73,7 +85,7 @@ ACTION_RUNTIME_SPECS = {
             "flight_backward",
             "right_reach",
         ],
-        "transition_notes": ["idle", "walk", "jump", "hurt", "attack_sword_light"],
+        "transition_notes": ["idle", "walk", "jump", "hurt", "dodge_backstep", "parry_sword", "attack_sword_light"],
         "review_role": "faster locomotion loop",
     },
     "jump": {
@@ -92,7 +104,7 @@ ACTION_RUNTIME_SPECS = {
             "landing_settle",
             "landing_recovery",
         ],
-        "transition_notes": ["idle", "walk", "run", "hurt", "attack_sword_light"],
+        "transition_notes": ["idle", "walk", "run", "hurt", "dodge_backstep", "parry_sword", "attack_sword_light"],
         "review_role": "non-looping jump arc",
     },
     "hurt": {
@@ -107,8 +119,44 @@ ACTION_RUNTIME_SPECS = {
             "recover_half",
             "recover",
         ],
-        "transition_notes": ["idle", "walk", "attack_sword_light"],
+        "transition_notes": ["idle", "walk", "dodge_backstep", "parry_sword", "attack_sword_light"],
         "review_role": "non-looping small damage reaction",
+    },
+    "dodge_backstep": {
+        "loop": False,
+        "phase_names": [
+            "ready",
+            "anticipation_crouch",
+            "push_off",
+            "low_backstep",
+            "slide_peak",
+            "landing",
+            "recover_low",
+            "ready_return",
+        ],
+        "invulnerable_frames": [2, 3, 4],
+        "transition_notes": ["idle", "walk", "run", "jump", "hurt", "parry_sword", "attack_sword_light"],
+        "review_role": "non-looping evasive backstep",
+    },
+    "parry_sword": {
+        "loop": False,
+        "phase_names": [
+            "ready",
+            "raise_guard",
+            "brace",
+            "parry_contact",
+            "deflect",
+            "recoil_hold",
+            "recover",
+            "ready_return",
+        ],
+        "parry_frames": [3, 4],
+        "layer_contract": {
+            "layers": ["body", "weapon", "effect"],
+            "z_order": ["weapon", "body", "effect"],
+        },
+        "transition_notes": ["idle", "walk", "run", "jump", "hurt", "dodge_backstep", "attack_sword_light"],
+        "review_role": "non-looping sword parry guard",
     },
     "attack_sword_light": {
         "loop": False,
@@ -127,7 +175,11 @@ ACTION_RUNTIME_SPECS = {
             "ready_return",
         ],
         "hit_frames": [5, 6],
-        "transition_notes": ["idle", "walk", "run", "jump", "hurt"],
+        "layer_contract": {
+            "layers": ["body", "weapon", "effect"],
+            "z_order": ["weapon", "body", "effect"],
+        },
+        "transition_notes": ["idle", "walk", "run", "jump", "hurt", "dodge_backstep", "parry_sword"],
         "review_role": "non-looping light one-handed sword attack",
     },
 }
@@ -143,6 +195,10 @@ def main() -> None:
     parser.add_argument("--jump-rough-frames-dir", default=DEFAULT_JUMP_ROUGH, type=Path)
     parser.add_argument("--hurt-rough-frames-dir", default=DEFAULT_HURT_ROUGH, type=Path)
     parser.add_argument("--attack-sword-light-rough-frames-dir", default=DEFAULT_ATTACK_SWORD_LIGHT_ROUGH, type=Path)
+    parser.add_argument("--dodge-backstep-rough-frames-dir", default=DEFAULT_DODGE_BACKSTEP_ROUGH, type=Path)
+    parser.add_argument("--parry-sword-rough-frames-dir", default=DEFAULT_PARRY_SWORD_ROUGH, type=Path)
+    parser.add_argument("--attack-sword-light-body-rough-frames-dir", default=DEFAULT_ATTACK_SWORD_LIGHT_BODY_ROUGH, type=Path)
+    parser.add_argument("--parry-sword-body-rough-frames-dir", default=DEFAULT_PARRY_SWORD_BODY_ROUGH, type=Path)
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT, type=Path)
     parser.add_argument("--fps", default=8, type=int)
     parser.add_argument("--clean", action=argparse.BooleanOptionalAction, default=True)
@@ -155,6 +211,10 @@ def main() -> None:
         jump_rough_frames_dir=args.jump_rough_frames_dir,
         hurt_rough_frames_dir=args.hurt_rough_frames_dir,
         attack_sword_light_rough_frames_dir=args.attack_sword_light_rough_frames_dir,
+        dodge_backstep_rough_frames_dir=args.dodge_backstep_rough_frames_dir,
+        parry_sword_rough_frames_dir=args.parry_sword_rough_frames_dir,
+        attack_sword_light_body_rough_frames_dir=args.attack_sword_light_body_rough_frames_dir,
+        parry_sword_body_rough_frames_dir=args.parry_sword_body_rough_frames_dir,
         output_dir=args.output_dir,
         fps=args.fps,
         clean=args.clean,
@@ -169,6 +229,10 @@ def build_character_sprite_asset_pack(
     jump_rough_frames_dir: Path | None = DEFAULT_JUMP_ROUGH,
     hurt_rough_frames_dir: Path | None = DEFAULT_HURT_ROUGH,
     attack_sword_light_rough_frames_dir: Path | None = DEFAULT_ATTACK_SWORD_LIGHT_ROUGH,
+    dodge_backstep_rough_frames_dir: Path | None = DEFAULT_DODGE_BACKSTEP_ROUGH,
+    parry_sword_rough_frames_dir: Path | None = DEFAULT_PARRY_SWORD_ROUGH,
+    attack_sword_light_body_rough_frames_dir: Path | None = DEFAULT_ATTACK_SWORD_LIGHT_BODY_ROUGH,
+    parry_sword_body_rough_frames_dir: Path | None = DEFAULT_PARRY_SWORD_BODY_ROUGH,
     output_dir: Path = DEFAULT_OUTPUT,
     fps: int = 8,
     clean: bool = True,
@@ -226,19 +290,51 @@ def build_character_sprite_asset_pack(
             "Hurt uses dedicated 2x2 tiled rough sheets with 8 source frames for brace, recoil, stagger, settle, and recovery phases."
         ),
     )
-    attack_action = _build_named_rough_action(
+    dodge_action = _build_named_rough_action(
+        action="dodge_backstep",
+        rough_frames_dir=dodge_backstep_rough_frames_dir,
+        action_dir=actions_dir / "dodge_backstep",
+        fps=fps,
+        target_size=target_size,
+        scale_reference=scale_reference,
+        frame_count=8,
+        phase_names=ACTION_RUNTIME_SPECS["dodge_backstep"]["phase_names"],
+        source_slug="imagegen_dodge_backstep_8frame_tiles_20260615_rough",
+        review_note=(
+            "Dodge backstep uses dedicated 2x2 tiled rough sheets with 8 source frames for crouch, "
+            "push-off, low backstep, landing, and recovery. Runtime invulnerable frames are 2, 3, and 4."
+        ),
+    )
+    parry_action = _build_native_layered_weapon_action(
+        action="parry_sword",
+        body_rough_frames_dir=parry_sword_body_rough_frames_dir,
+        action_dir=actions_dir / "parry_sword",
+        fps=fps,
+        target_size=target_size,
+        scale_reference=scale_reference,
+        frame_count=8,
+        body_source_prefix="parry_sword_body",
+        phase_names=ACTION_RUNTIME_SPECS["parry_sword"]["phase_names"],
+        source_slug="native_layers_imagegen_parry_sword_body_8frame_tiles_20260615",
+        review_note=(
+            "Parry sword uses native separated layers: body-only generated roughs plus independent sword and parry effect layers. "
+            "Runtime parry frames are 3 and 4."
+        ),
+    )
+    attack_action = _build_native_layered_weapon_action(
         action="attack_sword_light",
-        rough_frames_dir=attack_sword_light_rough_frames_dir,
+        body_rough_frames_dir=attack_sword_light_body_rough_frames_dir,
         action_dir=actions_dir / "attack_sword_light",
         fps=fps,
         target_size=target_size,
         scale_reference=scale_reference,
         frame_count=12,
+        body_source_prefix="attack_sword_light_body",
         phase_names=ACTION_RUNTIME_SPECS["attack_sword_light"]["phase_names"],
-        source_slug="imagegen_attack_sword_light_12frame_tiles_20260615_rough",
+        source_slug="native_layers_imagegen_attack_sword_light_body_12frame_tiles_20260615",
         review_note=(
-            "Attack sword light uses dedicated 2x2 tiled rough sheets with 12 source frames for anticipation, "
-            "active slash frames, overshoot, recovery, and ready return. Runtime hit frames are 5 and 6."
+            "Attack sword light uses native separated layers: body-only generated roughs plus independent sword and slash effect layers. "
+            "Runtime hit frames are 5 and 6."
         ),
     )
 
@@ -250,6 +346,8 @@ def build_character_sprite_asset_pack(
             "run": actions_dir / "run",
             "jump": actions_dir / "jump",
             "hurt": actions_dir / "hurt",
+            "dodge_backstep": actions_dir / "dodge_backstep",
+            "parry_sword": actions_dir / "parry_sword",
             "attack_sword_light": actions_dir / "attack_sword_light",
         },
     )
@@ -259,6 +357,8 @@ def build_character_sprite_asset_pack(
         "run": run_action,
         "jump": jump_action,
         "hurt": hurt_action,
+        "dodge_backstep": dodge_action,
+        "parry_sword": parry_action,
         "attack_sword_light": attack_action,
     }
     backend_usage = {
@@ -303,8 +403,9 @@ def build_character_sprite_asset_pack(
         "production_ready": production_gate["production_ready"],
         "known_limits": [
             "The accepted sprite is a game-ready redesign, not a faithful frame-by-frame animation of the original illustration.",
-            "Walk, idle, run, jump, hurt, and attack_sword_light are production-ready for this MVP pack.",
-            "Weapon actions are reviewed as simple one-handed light attacks; complex weapon arcs still need authored rough frames.",
+            "Walk, idle, run, jump, hurt, dodge_backstep, parry_sword, and attack_sword_light are production-ready for this MVP pack.",
+            "Dodge/parry are reviewable modern action-game utility actions, not a complete combat state machine.",
+            "Weapon actions are reviewed as simple one-handed sword actions; complex weapon arcs still need authored rough frames.",
         ],
     }
     _write_text(output_dir / "manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
@@ -709,6 +810,7 @@ def _build_named_rough_action(
     make_preview_gif(frame_paths, action_dir / "preview.gif", duration_ms=round(1000 / fps), loop=True)
     make_contact_sheet(frame_paths, action_dir / "contact_sheet.png", columns=min(4, frame_count))
     game_previews = _write_action_game_previews(frame_paths, action_dir, [128, 192, 256], fps=fps)
+    layered_manifest = _write_layered_action_outputs(action, frame_paths, action_dir, fps)
 
     metrics = _action_metrics(frame_paths)
     production_ready = len(frame_paths) == frame_count and not metrics["alpha_edge_touch_frames"]
@@ -723,6 +825,7 @@ def _build_named_rough_action(
         "game_previews": game_previews,
         "ground_y_range": metrics["ground_y_range"],
         "alpha_edge_touch_frames": metrics["alpha_edge_touch_frames"],
+        "layered": layered_manifest,
         "production_ready": production_ready,
         "review_note": review_note,
     }
@@ -741,9 +844,334 @@ def _build_named_rough_action(
         "preview_gif": f"actions/{action}/preview.gif",
         "contact_sheet": f"actions/{action}/contact_sheet.png",
         "game_previews": _prefix_preview_paths(game_previews, f"actions/{action}"),
+        "layered": layered_manifest,
         "production_ready_report": f"actions/{action}/production_ready_report.json",
         "runtime": _build_action_runtime(action, frame_paths, fps=fps, phase_names=phase_names),
     }
+
+
+def _build_native_layered_weapon_action(
+    action: str,
+    body_rough_frames_dir: Path | None,
+    action_dir: Path,
+    fps: int,
+    target_size: tuple[int, int],
+    scale_reference: dict[str, int],
+    frame_count: int,
+    body_source_prefix: str,
+    phase_names: list[str],
+    source_slug: str,
+    review_note: str,
+) -> dict[str, Any]:
+    if body_rough_frames_dir is None or not body_rough_frames_dir.exists():
+        raise FileNotFoundError(f"{action} body rough frames not found: {body_rough_frames_dir}")
+    rough_paths = sorted(body_rough_frames_dir.glob(f"{body_source_prefix}_*.png"))
+    if len(rough_paths) != frame_count:
+        raise ValueError(f"Expected {frame_count} {action} body rough frames, found {len(rough_paths)}.")
+    if action_dir.exists():
+        shutil.rmtree(action_dir)
+
+    body_frames: list[Image.Image] = []
+    for source in rough_paths:
+        image = Image.open(source).convert("RGBA")
+        cleaned = _clean_green_background(image)
+        cleaned = _threshold_alpha(cleaned, minimum_alpha=24)
+        cleaned = _keep_largest_alpha_component(cleaned)
+        body_frames.append(cleaned)
+    body_frames = _normalize_rough_sequence(
+        body_frames,
+        action=action,
+        target_size=target_size,
+        scale_reference=scale_reference,
+    )
+
+    layers = {"body": [], "weapon": [], "effect": []}
+    composed_frames: list[Image.Image] = []
+    for index, body in enumerate(body_frames):
+        weapon, effect = _make_native_weapon_effect_layers(action, index, target_size, body)
+        composed = Image.new("RGBA", target_size, (0, 0, 0, 0))
+        composed.alpha_composite(weapon)
+        composed.alpha_composite(body)
+        composed.alpha_composite(effect)
+        layers["body"].append(body)
+        layers["weapon"].append(weapon)
+        layers["effect"].append(effect)
+        composed_frames.append(composed)
+
+    frame_paths = _write_image_sequence(composed_frames, action_dir / "frames", action)
+    make_sprite_sheet(frame_paths, action_dir / "spritesheet.png", columns=frame_count)
+    make_preview_gif(frame_paths, action_dir / "preview.gif", duration_ms=round(1000 / fps), loop=True)
+    make_contact_sheet(frame_paths, action_dir / "contact_sheet.png", columns=min(4, frame_count))
+    game_previews = _write_action_game_previews(frame_paths, action_dir, [128, 192, 256], fps=fps)
+    layered_manifest = _write_native_layered_outputs(action, layers, action_dir, fps)
+
+    metrics = _action_metrics(frame_paths)
+    production_ready = len(frame_paths) == frame_count and not metrics["alpha_edge_touch_frames"]
+    report = {
+        "action": action,
+        "status": "production_ready" if production_ready else f"{action}_candidate_needs_review",
+        "source": source_slug,
+        "method": "route_a_native_separated_layer_cleanup",
+        "frame_count": frame_count,
+        "phase_names": phase_names,
+        "frame_size": metrics["frame_size"],
+        "game_previews": game_previews,
+        "ground_y_range": metrics["ground_y_range"],
+        "alpha_edge_touch_frames": metrics["alpha_edge_touch_frames"],
+        "layered": layered_manifest,
+        "production_ready": production_ready,
+        "review_note": review_note,
+    }
+    _write_text(action_dir / "production_ready_report.json", json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    _write_text(action_dir / "notes.md", _rough_action_notes(report))
+    return {
+        "action": action,
+        "frame_count": frame_count,
+        "frame_size": metrics["frame_size"],
+        "production_ready": production_ready,
+        "status": report["status"],
+        "source": source_slug,
+        "phase_names": phase_names,
+        "frames": [f"actions/{action}/frames/{action}_{index:03d}.png" for index in range(frame_count)],
+        "spritesheet": f"actions/{action}/spritesheet.png",
+        "preview_gif": f"actions/{action}/preview.gif",
+        "contact_sheet": f"actions/{action}/contact_sheet.png",
+        "game_previews": _prefix_preview_paths(game_previews, f"actions/{action}"),
+        "layered": layered_manifest,
+        "production_ready_report": f"actions/{action}/production_ready_report.json",
+        "runtime": _build_action_runtime(action, frame_paths, fps=fps, phase_names=phase_names),
+    }
+
+
+def _write_image_sequence(images: list[Image.Image], frames_dir: Path, action: str) -> list[Path]:
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    paths: list[Path] = []
+    for index, image in enumerate(images):
+        output = frames_dir / f"{action}_{index:03d}.png"
+        image.save(output)
+        paths.append(output)
+    return paths
+
+
+def _make_native_weapon_effect_layers(
+    action: str,
+    frame_index: int,
+    target_size: tuple[int, int],
+    body: Image.Image,
+) -> tuple[Image.Image, Image.Image]:
+    box = _alpha_bbox(body)
+    hand, tip = _weapon_canvas_points(action, frame_index, target_size)
+    weapon = Image.new("RGBA", target_size, (0, 0, 0, 0))
+    effect = Image.new("RGBA", target_size, (0, 0, 0, 0))
+    _draw_sword_layer(weapon, hand, tip)
+    _draw_effect_layer(effect, action, frame_index, hand, tip, box)
+    return weapon, effect
+
+
+def _weapon_canvas_points(
+    action: str,
+    frame_index: int,
+    target_size: tuple[int, int],
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    # These are native weapon anchors for the accepted body-only generated sheets.
+    # They intentionally avoid reading a weapon back out of composed art.
+    attack_points = [
+        ((0.32, 0.61), (0.22, 0.79)),
+        ((0.25, 0.58), (0.12, 0.62)),
+        ((0.33, 0.47), (0.13, 0.44)),
+        ((0.33, 0.18), (0.54, 0.06)),
+        ((0.26, 0.64), (0.07, 0.75)),
+        ((0.72, 0.49), (0.95, 0.49)),
+        ((0.28, 0.56), (0.78, 0.69)),
+        ((0.79, 0.52), (0.94, 0.36)),
+        ((0.30, 0.52), (0.13, 0.66)),
+        ((0.32, 0.63), (0.22, 0.80)),
+        ((0.32, 0.63), (0.23, 0.80)),
+        ((0.71, 0.65), (0.86, 0.79)),
+    ]
+    parry_points = [
+        ((0.32, 0.61), (0.22, 0.79)),
+        ((0.60, 0.44), (0.70, 0.18)),
+        ((0.59, 0.43), (0.66, 0.15)),
+        ((0.58, 0.46), (0.70, 0.08)),
+        ((0.76, 0.43), (0.88, 0.36)),
+        ((0.57, 0.38), (0.74, 0.18)),
+        ((0.38, 0.66), (0.28, 0.79)),
+        ((0.47, 0.66), (0.35, 0.82)),
+    ]
+    points = attack_points if action == "attack_sword_light" else parry_points
+    hand_ratio, tip_ratio = points[min(frame_index, len(points) - 1)]
+    return _point_in_canvas(target_size, hand_ratio), _point_in_canvas(target_size, tip_ratio)
+
+
+def _point_in_canvas(size: tuple[int, int], ratio: tuple[float, float]) -> tuple[int, int]:
+    width, height = size
+    return (round(width * ratio[0]), round(height * ratio[1]))
+
+
+def _weapon_pose_points(
+    action: str,
+    frame_index: int,
+    box: tuple[int, int, int, int],
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    attack_points = [
+        ((0.28, 0.66), (0.05, 0.84)),
+        ((0.40, 0.56), (0.10, 0.62)),
+        ((0.34, 0.50), (0.00, 0.48)),
+        ((0.67, 0.24), (0.78, -0.06)),
+        ((0.32, 0.64), (-0.03, 0.76)),
+        ((0.74, 0.47), (1.32, 0.47)),
+        ((0.74, 0.49), (1.30, 0.63)),
+        ((0.70, 0.36), (1.04, 0.12)),
+        ((0.28, 0.66), (0.02, 0.78)),
+        ((0.28, 0.70), (0.06, 0.84)),
+        ((0.30, 0.72), (0.10, 0.86)),
+        ((0.62, 0.72), (0.90, 0.78)),
+    ]
+    parry_points = [
+        ((0.26, 0.68), (0.05, 0.84)),
+        ((0.62, 0.42), (0.72, 0.16)),
+        ((0.66, 0.34), (0.76, 0.05)),
+        ((0.74, 0.35), (0.86, 0.04)),
+        ((0.78, 0.47), (1.18, 0.32)),
+        ((0.55, 0.32), (0.86, 0.13)),
+        ((0.28, 0.66), (0.06, 0.80)),
+        ((0.26, 0.70), (0.07, 0.84)),
+    ]
+    points = attack_points if action == "attack_sword_light" else parry_points
+    hand_ratio, tip_ratio = points[min(frame_index, len(points) - 1)]
+    return _point_in_box(box, hand_ratio), _point_in_box(box, tip_ratio)
+
+
+def _point_in_box(box: tuple[int, int, int, int], ratio: tuple[float, float]) -> tuple[int, int]:
+    left, top, right, bottom = box
+    width = right - left
+    height = bottom - top
+    return (round(left + width * ratio[0]), round(top + height * ratio[1]))
+
+
+def _draw_sword_layer(image: Image.Image, hand: tuple[int, int], tip: tuple[int, int]) -> None:
+    draw = ImageDraw.Draw(image)
+    hand = _clamp_point_to_canvas(hand, image.size, margin=18)
+    tip = _clamp_point_to_canvas(tip, image.size, margin=18)
+    hx, hy = hand
+    tx, ty = tip
+    dx = tx - hx
+    dy = ty - hy
+    length = max(1.0, (dx * dx + dy * dy) ** 0.5)
+    nx = -dy / length
+    ny = dx / length
+    blade_start = (round(hx + dx * 0.12), round(hy + dy * 0.12))
+    blade_tip = (tx, ty)
+    draw.line((blade_start, blade_tip), fill=(95, 100, 110, 230), width=7)
+    draw.line((blade_start, blade_tip), fill=(215, 220, 230, 255), width=4)
+    draw.line(
+        ((round(hx - nx * 12), round(hy - ny * 12)), (round(hx + nx * 12), round(hy + ny * 12))),
+        fill=(130, 86, 38, 255),
+        width=5,
+    )
+    draw.ellipse((hx - 5, hy - 5, hx + 5, hy + 5), fill=(170, 126, 54, 255))
+
+
+def _find_skin_anchor_near(body: Image.Image, expected: tuple[int, int]) -> tuple[int, int]:
+    pixels = body.load()
+    width, height = body.size
+    skin_pixels: list[tuple[int, int]] = []
+    ex, ey = expected
+    for y in range(height):
+        for x in range(width):
+            red, green, blue, alpha = pixels[x, y]
+            if alpha < 64:
+                continue
+            if _is_skin_pixel(red, green, blue):
+                distance_sq = (x - ex) * (x - ex) + (y - ey) * (y - ey)
+                if distance_sq <= 90 * 90:
+                    skin_pixels.append((x, y))
+    if not skin_pixels:
+        return expected
+    closest = min(skin_pixels, key=lambda p: (p[0] - ex) * (p[0] - ex) + (p[1] - ey) * (p[1] - ey))
+    component = _skin_component(body, closest)
+    if not component:
+        return closest
+    return (
+        round(sum(point[0] for point in component) / len(component)),
+        round(sum(point[1] for point in component) / len(component)),
+    )
+
+
+def _is_skin_pixel(red: int, green: int, blue: int) -> bool:
+    return red > 185 and 105 <= green <= 215 and 75 <= blue <= 190 and red > green >= blue
+
+
+def _skin_component(body: Image.Image, start: tuple[int, int]) -> list[tuple[int, int]]:
+    pixels = body.load()
+    width, height = body.size
+    visited = {start}
+    stack = [start]
+    component: list[tuple[int, int]] = []
+    while stack:
+        x, y = stack.pop()
+        red, green, blue, alpha = pixels[x, y]
+        if alpha < 64 or not _is_skin_pixel(red, green, blue):
+            continue
+        component.append((x, y))
+        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+            if nx < 0 or nx >= width or ny < 0 or ny >= height or (nx, ny) in visited:
+                continue
+            visited.add((nx, ny))
+            stack.append((nx, ny))
+    return component
+
+
+def _draw_effect_layer(
+    image: Image.Image,
+    action: str,
+    frame_index: int,
+    hand: tuple[int, int],
+    tip: tuple[int, int],
+    box: tuple[int, int, int, int],
+) -> None:
+    draw = ImageDraw.Draw(image)
+    hand = _clamp_point_to_canvas(hand, image.size, margin=24)
+    tip = _clamp_point_to_canvas(tip, image.size, margin=24)
+    left, top, right, bottom = box
+    if action == "attack_sword_light" and frame_index in {5, 6}:
+        cx = round((hand[0] + tip[0]) / 2)
+        cy = round((hand[1] + tip[1]) / 2)
+        width = min(image.width - 40, max(36, round((right - left) * 0.72)))
+        height = min(image.height - 40, max(24, round((bottom - top) * 0.22)))
+        cx = min(image.width - 20 - width // 2, max(20 + width // 2, cx))
+        cy = min(image.height - 20 - height // 2, max(20 + height // 2, cy))
+        bounds = (cx - width // 2, cy - height // 2, cx + width // 2, cy + height // 2)
+        start, end = (-15, 45) if frame_index == 5 else (8, 75)
+        draw.arc(bounds, start=start, end=end, fill=(90, 240, 230, 210), width=5)
+        draw.arc(bounds, start=start + 5, end=end - 3, fill=(230, 255, 255, 180), width=2)
+    if action == "parry_sword" and frame_index in {3, 4}:
+        sx, sy = tip
+        rays = [
+            (0, -42),
+            (28, -28),
+            (45, -4),
+            (28, 20),
+            (-10, 28),
+        ]
+        for rx, ry in rays:
+            ex, ey = _clamp_point_to_canvas((sx + rx, sy + ry), image.size, margin=12)
+            mx, my = _clamp_point_to_canvas((sx + round(rx * 0.65), sy + round(ry * 0.65)), image.size, margin=12)
+            draw.line((sx, sy, ex, ey), fill=(255, 232, 50, 235), width=4)
+            draw.line((sx, sy, mx, my), fill=(255, 255, 210, 235), width=2)
+
+
+def _clamp_point_to_canvas(
+    point: tuple[int, int],
+    size: tuple[int, int],
+    margin: int,
+) -> tuple[int, int]:
+    width, height = size
+    return (
+        min(width - margin, max(margin, point[0])),
+        min(height - margin, max(margin, point[1])),
+    )
 
 
 def _clean_green_background(image: Image.Image) -> Image.Image:
@@ -912,6 +1340,248 @@ def _write_action_game_previews(
     return previews
 
 
+def _write_native_layered_outputs(
+    action: str,
+    layers: dict[str, list[Image.Image]],
+    action_dir: Path,
+    fps: int,
+) -> dict[str, Any]:
+    spec = ACTION_RUNTIME_SPECS[action]
+    layer_root = action_dir / "layers"
+    if layer_root.exists():
+        shutil.rmtree(layer_root)
+    layer_names = spec["layer_contract"]["layers"]
+    z_order = spec["layer_contract"]["z_order"]
+    layer_artifacts: dict[str, Any] = {}
+    non_empty_frames: dict[str, list[int]] = {layer: [] for layer in layer_names}
+    for layer in layer_names:
+        paths = _write_image_sequence(layers[layer], layer_root / layer / "frames", action)
+        for index, image in enumerate(layers[layer]):
+            if _has_visible_foreground(image):
+                non_empty_frames[layer].append(index)
+        layer_dir = layer_root / layer
+        make_sprite_sheet(paths, layer_dir / "spritesheet.png", columns=len(paths))
+        make_preview_gif(paths, layer_dir / "preview.gif", duration_ms=round(1000 / fps), loop=True)
+        make_contact_sheet(paths, layer_dir / "contact_sheet.png", columns=min(4, len(paths)))
+        layer_artifacts[layer] = {
+            "frames": [f"layers/{layer}/frames/{path.name}" for path in paths],
+            "spritesheet": f"layers/{layer}/spritesheet.png",
+            "preview_gif": f"layers/{layer}/preview.gif",
+            "contact_sheet": f"layers/{layer}/contact_sheet.png",
+            "non_empty_frames": non_empty_frames[layer],
+        }
+
+    timing_windows = {
+        "hit_frames": spec.get("hit_frames", []),
+        "parry_frames": spec.get("parry_frames", []),
+        "invulnerable_frames": spec.get("invulnerable_frames", []),
+    }
+    manifest = {
+        "action": action,
+        "status": "native_layered_production_ready",
+        "source": "native_separated_layers",
+        "composite_source": "weapon + body + effect",
+        "layers": layer_names,
+        "z_order": z_order,
+        "layer_artifacts": layer_artifacts,
+        "weapon_visible_frames": non_empty_frames.get("weapon", []),
+        "effect_visible_frames": non_empty_frames.get("effect", []),
+        "timing_windows": timing_windows,
+        "notes": [
+            "Body, weapon, and effect layers are generated as separate native sources before composition.",
+            "The composed frames remain the compatibility output for Godot and Aseprite imports.",
+            "Weapon anchor positions use explicit frame anchors for the accepted body-only sheets and may need artist adjustment for final combat polish.",
+        ],
+    }
+    _write_text(action_dir / "layered_manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
+    return {
+        "manifest": f"actions/{action}/layered_manifest.json",
+        "source": "native_separated_layers",
+        "layers": layer_names,
+        "z_order": z_order,
+        "weapon_visible_frames": manifest["weapon_visible_frames"],
+        "effect_visible_frames": manifest["effect_visible_frames"],
+        "timing_windows": timing_windows,
+        "extraction_method": None,
+        "composition_method": "native_body_weapon_effect_layers",
+    }
+
+
+def _write_layered_action_outputs(
+    action: str,
+    frame_paths: list[Path],
+    action_dir: Path,
+    fps: int,
+) -> dict[str, Any] | None:
+    spec = ACTION_RUNTIME_SPECS[action]
+    layer_contract = spec.get("layer_contract")
+    if not layer_contract:
+        return None
+
+    layers = layer_contract["layers"]
+    z_order = layer_contract["z_order"]
+    layer_root = action_dir / "layers"
+    if layer_root.exists():
+        shutil.rmtree(layer_root)
+
+    written_paths: dict[str, list[Path]] = {layer: [] for layer in layers}
+    non_empty_frames: dict[str, list[int]] = {layer: [] for layer in layers}
+    for frame_index, frame_path in enumerate(frame_paths):
+        frame = Image.open(frame_path).convert("RGBA")
+        split = _split_weapon_action_layers(frame)
+        for layer in layers:
+            frames_dir = layer_root / layer / "frames"
+            frames_dir.mkdir(parents=True, exist_ok=True)
+            output = frames_dir / frame_path.name
+            split[layer].save(output)
+            written_paths[layer].append(output)
+            if _has_visible_foreground(split[layer]):
+                non_empty_frames[layer].append(frame_index)
+
+    layer_artifacts: dict[str, Any] = {}
+    for layer in layers:
+        layer_dir = layer_root / layer
+        paths = written_paths[layer]
+        make_sprite_sheet(paths, layer_dir / "spritesheet.png", columns=len(paths))
+        make_preview_gif(paths, layer_dir / "preview.gif", duration_ms=round(1000 / fps), loop=True)
+        make_contact_sheet(paths, layer_dir / "contact_sheet.png", columns=min(4, len(paths)))
+        layer_artifacts[layer] = {
+            "frames": [f"layers/{layer}/frames/{path.name}" for path in paths],
+            "spritesheet": f"layers/{layer}/spritesheet.png",
+            "preview_gif": f"layers/{layer}/preview.gif",
+            "contact_sheet": f"layers/{layer}/contact_sheet.png",
+            "non_empty_frames": non_empty_frames[layer],
+        }
+
+    timing_windows = {
+        "hit_frames": spec.get("hit_frames", []),
+        "parry_frames": spec.get("parry_frames", []),
+        "invulnerable_frames": spec.get("invulnerable_frames", []),
+    }
+    manifest = {
+        "action": action,
+        "status": "layered_review_ready",
+        "source": "heuristic_split_from_composed_frames",
+        "composite_source": "frames/*.png",
+        "layers": layers,
+        "z_order": z_order,
+        "layer_artifacts": layer_artifacts,
+        "weapon_visible_frames": non_empty_frames.get("weapon", []),
+        "effect_visible_frames": non_empty_frames.get("effect", []),
+        "timing_windows": timing_windows,
+        "notes": [
+            "Layer extraction is heuristic because the current source roughs are composed images.",
+            "Future weapon/effect actions should prefer native separated source layers when possible.",
+            "The composed frames remain the compatibility output for game import.",
+        ],
+    }
+    _write_text(action_dir / "layered_manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
+    return {
+        "manifest": f"actions/{action}/layered_manifest.json",
+        "layers": layers,
+        "z_order": z_order,
+        "weapon_visible_frames": manifest["weapon_visible_frames"],
+        "effect_visible_frames": manifest["effect_visible_frames"],
+        "timing_windows": timing_windows,
+        "extraction_method": "heuristic_split_from_composed_frames",
+    }
+
+
+def _split_weapon_action_layers(frame: Image.Image) -> dict[str, Image.Image]:
+    width, height = frame.size
+    body = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+    weapon = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+    effect = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+    source = frame.load()
+    effect_pixels: set[tuple[int, int]] = set()
+    weapon_candidates: set[tuple[int, int]] = set()
+
+    for y in range(height):
+        for x in range(width):
+            red, green, blue, alpha = source[x, y]
+            if alpha == 0:
+                continue
+            if _is_effect_pixel(red, green, blue):
+                effect_pixels.add((x, y))
+            elif _is_weapon_candidate_pixel(red, green, blue):
+                weapon_candidates.add((x, y))
+
+    weapon_pixels = _select_weapon_components(weapon_candidates, width, height)
+    for y in range(height):
+        for x in range(width):
+            pixel = source[x, y]
+            if pixel[3] == 0:
+                continue
+            if (x, y) in effect_pixels:
+                effect.putpixel((x, y), pixel)
+            elif (x, y) in weapon_pixels:
+                weapon.putpixel((x, y), pixel)
+            else:
+                body.putpixel((x, y), pixel)
+    return {"body": body, "weapon": weapon, "effect": effect}
+
+
+def _has_visible_foreground(image: Image.Image) -> bool:
+    return image.getchannel("A").getbbox() is not None
+
+
+def _is_effect_pixel(red: int, green: int, blue: int) -> bool:
+    is_yellow_spark = red > 185 and green > 150 and blue < 95
+    is_cyan_arc = red < 135 and green > 145 and blue > 125
+    is_bright_green_spark = red < 170 and green > 185 and blue < 120
+    return is_yellow_spark or is_cyan_arc or is_bright_green_spark
+
+
+def _is_weapon_candidate_pixel(red: int, green: int, blue: int) -> bool:
+    brightness = max(red, green, blue)
+    darkness = min(red, green, blue)
+    saturation = brightness - darkness
+    is_blade_gray = 85 <= brightness <= 235 and saturation <= 80
+    return is_blade_gray
+
+
+def _select_weapon_components(
+    candidates: set[tuple[int, int]],
+    width: int,
+    height: int,
+) -> set[tuple[int, int]]:
+    visited: set[tuple[int, int]] = set()
+    selected: set[tuple[int, int]] = set()
+    for start in candidates:
+        if start in visited:
+            continue
+        stack = [start]
+        visited.add(start)
+        component: list[tuple[int, int]] = []
+        while stack:
+            x, y = stack.pop()
+            component.append((x, y))
+            for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+                if nx < 0 or nx >= width or ny < 0 or ny >= height:
+                    continue
+                if (nx, ny) not in candidates or (nx, ny) in visited:
+                    continue
+                visited.add((nx, ny))
+                stack.append((nx, ny))
+        if _looks_like_weapon_component(component):
+            selected.update(component)
+    return selected
+
+
+def _looks_like_weapon_component(component: list[tuple[int, int]]) -> bool:
+    if len(component) < 16:
+        return False
+    xs = [point[0] for point in component]
+    ys = [point[1] for point in component]
+    width = max(xs) - min(xs) + 1
+    height = max(ys) - min(ys) + 1
+    long_axis = max(width, height)
+    short_axis = max(1, min(width, height))
+    aspect = long_axis / short_axis
+    area = len(component)
+    return long_axis >= 35 and aspect >= 3.2 and area <= 3500
+
+
 def _prefix_preview_paths(previews: dict[str, Any], prefix: str) -> dict[str, Any]:
     prefixed: dict[str, Any] = {}
     for label, preview in previews.items():
@@ -943,7 +1613,9 @@ def _build_action_runtime(
     }
     playback_indices = spec.get("playback_frame_indices", list(range(len(frame_paths))))
     hit_frames = spec.get("hit_frames", [])
-    return {
+    invulnerable_frames = spec.get("invulnerable_frames", [])
+    parry_frames = spec.get("parry_frames", [])
+    runtime = {
         "fps": fps,
         "frame_duration_ms": round(1000 / fps),
         "loop": spec["loop"],
@@ -951,6 +1623,8 @@ def _build_action_runtime(
         "playback_frame_indices": playback_indices,
         "playback_frame_count": len(playback_indices),
         "hit_frames": hit_frames,
+        "invulnerable_frames": invulnerable_frames,
+        "parry_frames": parry_frames,
         "frame_density_note": (
             "Playback indices may add limited-animation holds for runtime feel. "
             "True inbetween art should come from an authored or I2I rough retake."
@@ -975,6 +1649,14 @@ def _build_action_runtime(
             "aseprite": "Import frames as one tag per action; keep transparent canvas size unchanged.",
         },
     }
+    if "layer_contract" in spec:
+        runtime["layered"] = {
+            "manifest": f"actions/{action}/layered_manifest.json",
+            "layers": spec["layer_contract"]["layers"],
+            "z_order": spec["layer_contract"]["z_order"],
+            "source": "native_separated_layers",
+        }
+    return runtime
 
 
 def _build_runtime_manifest(actions: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -1102,6 +1784,8 @@ def _build_consistency_report(
             "run": True,
             "jump": False,
             "hurt": False,
+            "dodge_backstep": False,
+            "parry_sword": False,
             "attack_sword_light": False,
         },
     }
@@ -1133,6 +1817,9 @@ def _build_godot_import_manifest(actions: dict[str, dict[str, Any]]) -> dict[str
                 "origin": action_info["runtime"]["origin"],
                 "collision_box": action_info["runtime"]["collision_box"],
                 "hit_frames": action_info["runtime"].get("hit_frames", []),
+                "invulnerable_frames": action_info["runtime"].get("invulnerable_frames", []),
+                "parry_frames": action_info["runtime"].get("parry_frames", []),
+                "layered": action_info["runtime"].get("layered"),
                 "transition_notes": action_info["runtime"]["transition_notes"],
             }
             for action, action_info in actions.items()
@@ -1248,7 +1935,8 @@ def _build_production_gate(
         "checks": checks,
         "blocking_issues": blocking,
         "scope_statement": (
-            "walk, idle, run, jump, hurt, and attack_sword_light are production-ready and ready for runtime import review."
+            "walk, idle, run, jump, hurt, dodge_backstep, parry_sword, and attack_sword_light are production-ready "
+            "and ready for runtime import review."
         ),
     }
 

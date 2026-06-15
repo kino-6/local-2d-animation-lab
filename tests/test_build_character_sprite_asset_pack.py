@@ -18,6 +18,10 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     jump_rough = tmp_path / "jump_rough"
     hurt_rough = tmp_path / "hurt_rough"
     attack_rough = tmp_path / "attack_rough"
+    attack_body_rough = tmp_path / "attack_body_rough"
+    dodge_rough = tmp_path / "dodge_rough"
+    parry_rough = tmp_path / "parry_rough"
+    parry_body_rough = tmp_path / "parry_body_rough"
     output_dir = tmp_path / "character_sprite_asset_pack"
     _make_reference(reference)
     _make_walk_ready_package(walk_ready)
@@ -25,6 +29,10 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     _make_jump_rough_frames(jump_rough)
     _make_hurt_rough_frames(hurt_rough)
     _make_attack_sword_light_rough_frames(attack_rough)
+    _make_attack_sword_light_body_rough_frames(attack_body_rough)
+    _make_dodge_backstep_rough_frames(dodge_rough)
+    _make_parry_sword_rough_frames(parry_rough)
+    _make_parry_sword_body_rough_frames(parry_body_rough)
 
     subprocess.run(
         [
@@ -42,6 +50,14 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
             str(hurt_rough),
             "--attack-sword-light-rough-frames-dir",
             str(attack_rough),
+            "--attack-sword-light-body-rough-frames-dir",
+            str(attack_body_rough),
+            "--dodge-backstep-rough-frames-dir",
+            str(dodge_rough),
+            "--parry-sword-rough-frames-dir",
+            str(parry_rough),
+            "--parry-sword-body-rough-frames-dir",
+            str(parry_body_rough),
             "--output-dir",
             str(output_dir),
         ],
@@ -89,6 +105,18 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert (output_dir / "actions" / "attack_sword_light" / "contact_sheet.png").exists()
     assert (output_dir / "actions" / "attack_sword_light" / "production_ready_report.json").exists()
     assert (output_dir / "actions" / "attack_sword_light" / "game_previews" / "height_128" / "contact_sheet.png").exists()
+    _assert_layered_action_outputs(output_dir, "attack_sword_light", 12)
+    assert (output_dir / "actions" / "dodge_backstep" / "preview.gif").exists()
+    assert (output_dir / "actions" / "dodge_backstep" / "spritesheet.png").exists()
+    assert (output_dir / "actions" / "dodge_backstep" / "contact_sheet.png").exists()
+    assert (output_dir / "actions" / "dodge_backstep" / "production_ready_report.json").exists()
+    assert (output_dir / "actions" / "dodge_backstep" / "game_previews" / "height_128" / "contact_sheet.png").exists()
+    assert (output_dir / "actions" / "parry_sword" / "preview.gif").exists()
+    assert (output_dir / "actions" / "parry_sword" / "spritesheet.png").exists()
+    assert (output_dir / "actions" / "parry_sword" / "contact_sheet.png").exists()
+    assert (output_dir / "actions" / "parry_sword" / "production_ready_report.json").exists()
+    assert (output_dir / "actions" / "parry_sword" / "game_previews" / "height_128" / "contact_sheet.png").exists()
+    _assert_layered_action_outputs(output_dir, "parry_sword", 8)
 
     assert {Image.open(path).size for path in idle_frames} == {(96, 96)}
     assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in idle_frames)
@@ -120,6 +148,18 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in attack_frames)
     attack_gif = Image.open(output_dir / "actions" / "attack_sword_light" / "preview.gif")
     assert getattr(attack_gif, "n_frames", 1) >= 4
+    dodge_frames = sorted((output_dir / "actions" / "dodge_backstep" / "frames").glob("dodge_backstep_*.png"))
+    assert len(dodge_frames) == 8
+    assert {Image.open(path).size for path in dodge_frames} == {(96, 96)}
+    assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in dodge_frames)
+    dodge_gif = Image.open(output_dir / "actions" / "dodge_backstep" / "preview.gif")
+    assert getattr(dodge_gif, "n_frames", 1) == 8
+    parry_frames = sorted((output_dir / "actions" / "parry_sword" / "frames").glob("parry_sword_*.png"))
+    assert len(parry_frames) == 8
+    assert {Image.open(path).size for path in parry_frames} == {(96, 96)}
+    assert all(Image.open(path).getpixel((0, 0))[3] == 0 for path in parry_frames)
+    parry_gif = Image.open(output_dir / "actions" / "parry_sword" / "preview.gif")
+    assert getattr(parry_gif, "n_frames", 1) == 8
 
     manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["route"] == "character_sprite_asset_pack"
@@ -190,6 +230,10 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert manifest["actions"]["attack_sword_light"]["runtime"]["playback_frame_count"] == 12
     assert manifest["actions"]["attack_sword_light"]["runtime"]["playback_frame_indices"] == list(range(12))
     assert manifest["actions"]["attack_sword_light"]["runtime"]["hit_frames"] == [5, 6]
+    assert manifest["actions"]["attack_sword_light"]["runtime"]["layered"]["layers"] == ["body", "weapon", "effect"]
+    assert manifest["actions"]["attack_sword_light"]["runtime"]["layered"]["source"] == "native_separated_layers"
+    assert manifest["actions"]["attack_sword_light"]["layered"]["layers"] == ["body", "weapon", "effect"]
+    assert manifest["actions"]["attack_sword_light"]["layered"]["source"] == "native_separated_layers"
     assert manifest["actions"]["attack_sword_light"]["phase_names"] == [
         "ready",
         "anticipation",
@@ -201,6 +245,44 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
         "overshoot",
         "recoil",
         "settle",
+        "recover",
+        "ready_return",
+    ]
+    assert manifest["actions"]["dodge_backstep"]["frame_count"] == 8
+    assert manifest["actions"]["dodge_backstep"]["production_ready"] is True
+    assert manifest["actions"]["dodge_backstep"]["runtime"]["loop"] is False
+    assert manifest["actions"]["dodge_backstep"]["runtime"]["source_frame_count"] == 8
+    assert manifest["actions"]["dodge_backstep"]["runtime"]["playback_frame_count"] == 8
+    assert manifest["actions"]["dodge_backstep"]["runtime"]["playback_frame_indices"] == list(range(8))
+    assert manifest["actions"]["dodge_backstep"]["runtime"]["invulnerable_frames"] == [2, 3, 4]
+    assert manifest["actions"]["dodge_backstep"]["phase_names"] == [
+        "ready",
+        "anticipation_crouch",
+        "push_off",
+        "low_backstep",
+        "slide_peak",
+        "landing",
+        "recover_low",
+        "ready_return",
+    ]
+    assert manifest["actions"]["parry_sword"]["frame_count"] == 8
+    assert manifest["actions"]["parry_sword"]["production_ready"] is True
+    assert manifest["actions"]["parry_sword"]["runtime"]["loop"] is False
+    assert manifest["actions"]["parry_sword"]["runtime"]["source_frame_count"] == 8
+    assert manifest["actions"]["parry_sword"]["runtime"]["playback_frame_count"] == 8
+    assert manifest["actions"]["parry_sword"]["runtime"]["playback_frame_indices"] == list(range(8))
+    assert manifest["actions"]["parry_sword"]["runtime"]["parry_frames"] == [3, 4]
+    assert manifest["actions"]["parry_sword"]["runtime"]["layered"]["layers"] == ["body", "weapon", "effect"]
+    assert manifest["actions"]["parry_sword"]["runtime"]["layered"]["source"] == "native_separated_layers"
+    assert manifest["actions"]["parry_sword"]["layered"]["layers"] == ["body", "weapon", "effect"]
+    assert manifest["actions"]["parry_sword"]["layered"]["source"] == "native_separated_layers"
+    assert manifest["actions"]["parry_sword"]["phase_names"] == [
+        "ready",
+        "raise_guard",
+        "brace",
+        "parry_contact",
+        "deflect",
+        "recoil_hold",
         "recover",
         "ready_return",
     ]
@@ -221,10 +303,25 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
 
     runtime_manifest = json.loads((output_dir / "runtime_manifest.json").read_text(encoding="utf-8"))
     assert runtime_manifest["origin_policy"] == "bottom_center_canvas"
-    assert set(runtime_manifest["actions"]) == {"walk", "idle", "run", "jump", "hurt", "attack_sword_light"}
+    assert set(runtime_manifest["actions"]) == {
+        "walk",
+        "idle",
+        "run",
+        "jump",
+        "hurt",
+        "dodge_backstep",
+        "parry_sword",
+        "attack_sword_light",
+    }
     assert runtime_manifest["actions"]["jump"]["loop"] is False
+    assert runtime_manifest["actions"]["dodge_backstep"]["loop"] is False
+    assert runtime_manifest["actions"]["dodge_backstep"]["invulnerable_frames"] == [2, 3, 4]
+    assert runtime_manifest["actions"]["parry_sword"]["loop"] is False
+    assert runtime_manifest["actions"]["parry_sword"]["parry_frames"] == [3, 4]
+    assert runtime_manifest["actions"]["parry_sword"]["layered"]["z_order"] == ["weapon", "body", "effect"]
     assert runtime_manifest["actions"]["attack_sword_light"]["loop"] is False
     assert runtime_manifest["actions"]["attack_sword_light"]["hit_frames"] == [5, 6]
+    assert runtime_manifest["actions"]["attack_sword_light"]["layered"]["z_order"] == ["weapon", "body", "effect"]
 
     consistency = json.loads((output_dir / "pack_review" / "consistency_report.json").read_text(encoding="utf-8"))
     assert consistency["passed"] is True
@@ -237,8 +334,14 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert godot_manifest["asset_kind"] == "AnimatedSprite2D_action_pack"
     assert godot_manifest["actions"]["walk"]["loop"] is True
     assert godot_manifest["actions"]["hurt"]["loop"] is False
+    assert godot_manifest["actions"]["dodge_backstep"]["loop"] is False
+    assert godot_manifest["actions"]["dodge_backstep"]["invulnerable_frames"] == [2, 3, 4]
+    assert godot_manifest["actions"]["parry_sword"]["loop"] is False
+    assert godot_manifest["actions"]["parry_sword"]["parry_frames"] == [3, 4]
+    assert godot_manifest["actions"]["parry_sword"]["layered"]["layers"] == ["body", "weapon", "effect"]
     assert godot_manifest["actions"]["attack_sword_light"]["loop"] is False
     assert godot_manifest["actions"]["attack_sword_light"]["hit_frames"] == [5, 6]
+    assert godot_manifest["actions"]["attack_sword_light"]["layered"]["layers"] == ["body", "weapon", "effect"]
 
     identity = json.loads((output_dir / "identity_report.json").read_text(encoding="utf-8"))
     assert identity["all_required_cues_pass"] is True
@@ -258,6 +361,8 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
     assert gate["checks"]["run_production_ready"] is True
     assert gate["checks"]["jump_production_ready"] is True
     assert gate["checks"]["hurt_production_ready"] is True
+    assert gate["checks"]["dodge_backstep_production_ready"] is True
+    assert gate["checks"]["parry_sword_production_ready"] is True
     assert gate["checks"]["attack_sword_light_production_ready"] is True
     assert gate["checks"]["runtime_metadata_present"] is True
     assert gate["checks"]["pack_review_generated"] is True
@@ -289,7 +394,19 @@ def test_build_character_sprite_asset_pack(tmp_path: Path) -> None:
         )
     )
     assert attack_report["production_ready"] is True
-    assert attack_report["source"] == "imagegen_attack_sword_light_12frame_tiles_20260615_rough"
+    assert attack_report["source"] == "native_layers_imagegen_attack_sword_light_body_12frame_tiles_20260615"
+
+    dodge_report = json.loads(
+        (output_dir / "actions" / "dodge_backstep" / "production_ready_report.json").read_text(encoding="utf-8")
+    )
+    assert dodge_report["production_ready"] is True
+    assert dodge_report["source"] == "imagegen_dodge_backstep_8frame_tiles_20260615_rough"
+
+    parry_report = json.loads(
+        (output_dir / "actions" / "parry_sword" / "production_ready_report.json").read_text(encoding="utf-8")
+    )
+    assert parry_report["production_ready"] is True
+    assert parry_report["source"] == "native_layers_imagegen_parry_sword_body_8frame_tiles_20260615"
 
 
 def _make_reference(path: Path) -> None:
@@ -304,6 +421,23 @@ def _make_reference(path: Path) -> None:
     draw.rectangle((33, 84, 47, 90), fill=(120, 65, 35, 255))
     draw.rectangle((49, 84, 64, 90), fill=(120, 65, 35, 255))
     image.save(path)
+
+
+def _assert_layered_action_outputs(output_dir: Path, action: str, frame_count: int) -> None:
+    action_dir = output_dir / "actions" / action
+    layered_manifest = action_dir / "layered_manifest.json"
+    assert layered_manifest.exists()
+    payload = json.loads(layered_manifest.read_text(encoding="utf-8"))
+    assert payload["layers"] == ["body", "weapon", "effect"]
+    assert payload["z_order"] == ["weapon", "body", "effect"]
+    assert payload["source"] == "native_separated_layers"
+    assert payload["composite_source"] == "weapon + body + effect"
+    for layer in ["body", "weapon", "effect"]:
+        layer_dir = action_dir / "layers" / layer
+        assert len(list((layer_dir / "frames").glob(f"{action}_*.png"))) == frame_count
+        assert (layer_dir / "spritesheet.png").exists()
+        assert (layer_dir / "preview.gif").exists()
+        assert (layer_dir / "contact_sheet.png").exists()
 
 
 def _make_walk_ready_package(path: Path) -> None:
@@ -452,6 +586,88 @@ def _make_attack_sword_light_rough_frames(path: Path) -> None:
         draw.rectangle((x - 13, 87, x + 3, 92), fill=(120, 65, 35, 255))
         draw.rectangle((x + 9, 87, x + 25, 92), fill=(120, 65, 35, 255))
         image.save(path / f"attack_sword_light_{index:03d}.png")
+
+
+def _make_attack_sword_light_body_rough_frames(path: Path) -> None:
+    path.mkdir(parents=True)
+    x_offsets = [0, -1, -2, 1, -3, 3, 4, 3, 1, 0, 0, 0]
+    arm_poses = [
+        (4, 48),
+        (10, 43),
+        (-6, 43),
+        (12, 30),
+        (-10, 54),
+        (24, 44),
+        (25, 48),
+        (18, 36),
+        (-8, 54),
+        (3, 55),
+        (5, 56),
+        (12, 58),
+    ]
+    for index, (x_offset, arm_y) in enumerate(zip(x_offsets, arm_poses)):
+        image = Image.new("RGBA", (96, 96), (0, 255, 0, 255))
+        draw = ImageDraw.Draw(image)
+        x = 42 + x_offset
+        _draw_connected_character(draw, x=x, y_offset=0)
+        hand_x = x + arm_y[0]
+        hand_y = arm_y[1]
+        draw.line((x + 3, 42, hand_x, hand_y), fill=(245, 220, 190, 255), width=5)
+        draw.ellipse((hand_x - 3, hand_y - 3, hand_x + 3, hand_y + 3), fill=(245, 220, 190, 255))
+        image.save(path / f"attack_sword_light_body_{index:03d}.png")
+
+
+def _make_dodge_backstep_rough_frames(path: Path) -> None:
+    path.mkdir(parents=True)
+    x_offsets = [0, -2, -6, -13, -20, -15, -7, 0]
+    y_offsets = [0, 2, 4, 6, 4, 2, 1, 0]
+    leans = [0, -1, -2, -4, -3, -2, -1, 0]
+    for index, (x_offset, y_offset, lean) in enumerate(zip(x_offsets, y_offsets, leans)):
+        image = Image.new("RGBA", (96, 96), (0, 255, 0, 255))
+        draw = ImageDraw.Draw(image)
+        x = 43 + x_offset
+        _draw_connected_character(draw, x=x, y_offset=y_offset)
+        draw.line((x + 4, 42 + y_offset, x + 10 + lean, 57 + y_offset), fill=(245, 245, 245, 255), width=5)
+        draw.line((x - 4, 69 + y_offset, x - 13, 90), fill=(15, 25, 65, 255), width=6)
+        draw.line((x + 10, 69 + y_offset, x + 18, 88), fill=(15, 25, 65, 255), width=6)
+        draw.rectangle((x - 20, 87, x - 4, 92), fill=(120, 65, 35, 255))
+        draw.rectangle((x + 11, 85, x + 27, 90), fill=(120, 65, 35, 255))
+        image.save(path / f"dodge_backstep_{index:03d}.png")
+
+
+def _make_parry_sword_rough_frames(path: Path) -> None:
+    path.mkdir(parents=True)
+    guard_tips = [(60, 70), (67, 54), (72, 42), (75, 31), (79, 35), (72, 44), (65, 57), (60, 70)]
+    for index, tip in enumerate(guard_tips):
+        image = Image.new("RGBA", (96, 96), (0, 255, 0, 255))
+        draw = ImageDraw.Draw(image)
+        x = 43
+        _draw_connected_character(draw, x=x, y_offset=0)
+        hand = (x + 15, 45)
+        draw.line((x + 3, 42, hand[0], hand[1]), fill=(245, 220, 190, 255), width=5)
+        draw.line((hand, tip), fill=(185, 190, 200, 255), width=4)
+        draw.line((hand[0] - 3, hand[1], hand[0] + 4, hand[1]), fill=(95, 55, 35, 255), width=4)
+        if index in {3, 4}:
+            draw.arc((x + 18, 20, x + 48, 60), start=-65, end=55, fill=(220, 230, 255, 255), width=3)
+        draw.line((x - 4, 69, x - 8, 90), fill=(15, 25, 65, 255), width=6)
+        draw.line((x + 10, 69, x + 15, 90), fill=(15, 25, 65, 255), width=6)
+        draw.rectangle((x - 13, 87, x + 3, 92), fill=(120, 65, 35, 255))
+        draw.rectangle((x + 9, 87, x + 25, 92), fill=(120, 65, 35, 255))
+        image.save(path / f"parry_sword_{index:03d}.png")
+
+
+def _make_parry_sword_body_rough_frames(path: Path) -> None:
+    path.mkdir(parents=True)
+    hand_poses = [(4, 58), (16, 43), (18, 34), (22, 34), (24, 45), (15, 35), (4, 55), (4, 58)]
+    for index, (hand_dx, hand_y) in enumerate(hand_poses):
+        image = Image.new("RGBA", (96, 96), (0, 255, 0, 255))
+        draw = ImageDraw.Draw(image)
+        x = 43
+        _draw_connected_character(draw, x=x, y_offset=0)
+        hand_x = x + hand_dx
+        draw.line((x + 3, 42, hand_x, hand_y), fill=(245, 220, 190, 255), width=5)
+        draw.ellipse((hand_x - 3, hand_y - 3, hand_x + 3, hand_y + 3), fill=(245, 220, 190, 255))
+        image.save(path / f"parry_sword_body_{index:03d}.png")
 
 
 def _draw_connected_character(draw: ImageDraw.ImageDraw, x: int, y_offset: int) -> None:

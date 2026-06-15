@@ -33,11 +33,33 @@ layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 24.0
-offset_top = 56.0
+offset_top = 80.0
 offset_right = -24.0
-offset_bottom = 92.0
+offset_bottom = 116.0
 theme_override_font_sizes/font_size = 13
 text = "runtime metadata"
+
+[node name="Controls" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 52.0
+offset_right = -24.0
+offset_bottom = 78.0
+theme_override_font_sizes/font_size = 13
+text = "1-8: action  /  Left-Right: previous-next  /  Space: pause  /  R: restart"
+
+[node name="FrameMeta" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 116.0
+offset_right = -24.0
+offset_bottom = 146.0
+theme_override_font_sizes/font_size = 13
+text = "frame"
 
 [node name="ActionButtons" type="HBoxContainer" parent="."]
 layout_mode = 1

@@ -29,11 +29,16 @@
         "height": 431
       },
       "hit_frames": [],
+      "invulnerable_frames": [],
+      "parry_frames": [],
+      "layered": null,
       "transition_notes": [
         "idle",
         "run",
         "jump",
         "hurt",
+        "dodge_backstep",
+        "parry_sword",
         "attack_sword_light"
       ]
     },
@@ -60,11 +65,16 @@
         "height": 428
       },
       "hit_frames": [],
+      "invulnerable_frames": [],
+      "parry_frames": [],
+      "layered": null,
       "transition_notes": [
         "walk",
         "run",
         "jump",
         "hurt",
+        "dodge_backstep",
+        "parry_sword",
         "attack_sword_light"
       ]
     },
@@ -95,11 +105,16 @@
         "height": 368
       },
       "hit_frames": [],
+      "invulnerable_frames": [],
+      "parry_frames": [],
+      "layered": null,
       "transition_notes": [
         "idle",
         "walk",
         "jump",
         "hurt",
+        "dodge_backstep",
+        "parry_sword",
         "attack_sword_light"
       ]
     },
@@ -134,11 +149,16 @@
         "height": 442
       },
       "hit_frames": [],
+      "invulnerable_frames": [],
+      "parry_frames": [],
+      "layered": null,
       "transition_notes": [
         "idle",
         "walk",
         "run",
         "hurt",
+        "dodge_backstep",
+        "parry_sword",
         "attack_sword_light"
       ]
     },
@@ -169,9 +189,114 @@
         "height": 380
       },
       "hit_frames": [],
+      "invulnerable_frames": [],
+      "parry_frames": [],
+      "layered": null,
       "transition_notes": [
         "idle",
         "walk",
+        "dodge_backstep",
+        "parry_sword",
+        "attack_sword_light"
+      ]
+    },
+    "dodge_backstep": {
+      "spritesheet": "actions/dodge_backstep/spritesheet.png",
+      "frames": [
+        "actions/dodge_backstep/frames/dodge_backstep_000.png",
+        "actions/dodge_backstep/frames/dodge_backstep_001.png",
+        "actions/dodge_backstep/frames/dodge_backstep_002.png",
+        "actions/dodge_backstep/frames/dodge_backstep_003.png",
+        "actions/dodge_backstep/frames/dodge_backstep_004.png",
+        "actions/dodge_backstep/frames/dodge_backstep_005.png",
+        "actions/dodge_backstep/frames/dodge_backstep_006.png",
+        "actions/dodge_backstep/frames/dodge_backstep_007.png"
+      ],
+      "fps": 8,
+      "loop": false,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 0,
+        "y": 87,
+        "width": 339,
+        "height": 364
+      },
+      "hit_frames": [],
+      "invulnerable_frames": [
+        2,
+        3,
+        4
+      ],
+      "parry_frames": [],
+      "layered": null,
+      "transition_notes": [
+        "idle",
+        "walk",
+        "run",
+        "jump",
+        "hurt",
+        "parry_sword",
+        "attack_sword_light"
+      ]
+    },
+    "parry_sword": {
+      "spritesheet": "actions/parry_sword/spritesheet.png",
+      "frames": [
+        "actions/parry_sword/frames/parry_sword_000.png",
+        "actions/parry_sword/frames/parry_sword_001.png",
+        "actions/parry_sword/frames/parry_sword_002.png",
+        "actions/parry_sword/frames/parry_sword_003.png",
+        "actions/parry_sword/frames/parry_sword_004.png",
+        "actions/parry_sword/frames/parry_sword_005.png",
+        "actions/parry_sword/frames/parry_sword_006.png",
+        "actions/parry_sword/frames/parry_sword_007.png"
+      ],
+      "fps": 8,
+      "loop": false,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 0,
+        "y": 7,
+        "width": 345,
+        "height": 444
+      },
+      "hit_frames": [],
+      "invulnerable_frames": [],
+      "parry_frames": [
+        3,
+        4
+      ],
+      "layered": {
+        "manifest": "actions/parry_sword/layered_manifest.json",
+        "layers": [
+          "body",
+          "weapon",
+          "effect"
+        ],
+        "z_order": [
+          "weapon",
+          "body",
+          "effect"
+        ],
+        "source": "native_separated_layers"
+      },
+      "transition_notes": [
+        "idle",
+        "walk",
+        "run",
+        "jump",
+        "hurt",
+        "dodge_backstep",
         "attack_sword_light"
       ]
     },
@@ -200,21 +325,39 @@
         "y": 480
       },
       "collision_box": {
-        "x": 8,
-        "y": 124,
-        "width": 344,
-        "height": 327
+        "x": 4,
+        "y": 23,
+        "width": 335,
+        "height": 428
       },
       "hit_frames": [
         5,
         6
       ],
+      "invulnerable_frames": [],
+      "parry_frames": [],
+      "layered": {
+        "manifest": "actions/attack_sword_light/layered_manifest.json",
+        "layers": [
+          "body",
+          "weapon",
+          "effect"
+        ],
+        "z_order": [
+          "weapon",
+          "body",
+          "effect"
+        ],
+        "source": "native_separated_layers"
+      },
       "transition_notes": [
         "idle",
         "walk",
         "run",
         "jump",
-        "hurt"
+        "hurt",
+        "dodge_backstep",
+        "parry_sword"
       ]
     }
   }

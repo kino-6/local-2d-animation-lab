@@ -1,0 +1,138 @@
+{
+  "action": "attack_sword_light",
+  "status": "native_layered_production_ready",
+  "source": "native_separated_layers",
+  "composite_source": "weapon + body + effect",
+  "layers": [
+    "body",
+    "weapon",
+    "effect"
+  ],
+  "z_order": [
+    "weapon",
+    "body",
+    "effect"
+  ],
+  "layer_artifacts": {
+    "body": {
+      "frames": [
+        "layers/body/frames/attack_sword_light_000.png",
+        "layers/body/frames/attack_sword_light_001.png",
+        "layers/body/frames/attack_sword_light_002.png",
+        "layers/body/frames/attack_sword_light_003.png",
+        "layers/body/frames/attack_sword_light_004.png",
+        "layers/body/frames/attack_sword_light_005.png",
+        "layers/body/frames/attack_sword_light_006.png",
+        "layers/body/frames/attack_sword_light_007.png",
+        "layers/body/frames/attack_sword_light_008.png",
+        "layers/body/frames/attack_sword_light_009.png",
+        "layers/body/frames/attack_sword_light_010.png",
+        "layers/body/frames/attack_sword_light_011.png"
+      ],
+      "spritesheet": "layers/body/spritesheet.png",
+      "preview_gif": "layers/body/preview.gif",
+      "contact_sheet": "layers/body/contact_sheet.png",
+      "non_empty_frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "weapon": {
+      "frames": [
+        "layers/weapon/frames/attack_sword_light_000.png",
+        "layers/weapon/frames/attack_sword_light_001.png",
+        "layers/weapon/frames/attack_sword_light_002.png",
+        "layers/weapon/frames/attack_sword_light_003.png",
+        "layers/weapon/frames/attack_sword_light_004.png",
+        "layers/weapon/frames/attack_sword_light_005.png",
+        "layers/weapon/frames/attack_sword_light_006.png",
+        "layers/weapon/frames/attack_sword_light_007.png",
+        "layers/weapon/frames/attack_sword_light_008.png",
+        "layers/weapon/frames/attack_sword_light_009.png",
+        "layers/weapon/frames/attack_sword_light_010.png",
+        "layers/weapon/frames/attack_sword_light_011.png"
+      ],
+      "spritesheet": "layers/weapon/spritesheet.png",
+      "preview_gif": "layers/weapon/preview.gif",
+      "contact_sheet": "layers/weapon/contact_sheet.png",
+      "non_empty_frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "effect": {
+      "frames": [
+        "layers/effect/frames/attack_sword_light_000.png",
+        "layers/effect/frames/attack_sword_light_001.png",
+        "layers/effect/frames/attack_sword_light_002.png",
+        "layers/effect/frames/attack_sword_light_003.png",
+        "layers/effect/frames/attack_sword_light_004.png",
+        "layers/effect/frames/attack_sword_light_005.png",
+        "layers/effect/frames/attack_sword_light_006.png",
+        "layers/effect/frames/attack_sword_light_007.png",
+        "layers/effect/frames/attack_sword_light_008.png",
+        "layers/effect/frames/attack_sword_light_009.png",
+        "layers/effect/frames/attack_sword_light_010.png",
+        "layers/effect/frames/attack_sword_light_011.png"
+      ],
+      "spritesheet": "layers/effect/spritesheet.png",
+      "preview_gif": "layers/effect/preview.gif",
+      "contact_sheet": "layers/effect/contact_sheet.png",
+      "non_empty_frames": [
+        5,
+        6
+      ]
+    }
+  },
+  "weapon_visible_frames": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "effect_visible_frames": [
+    5,
+    6
+  ],
+  "timing_windows": {
+    "hit_frames": [
+      5,
+      6
+    ],
+    "parry_frames": [],
+    "invulnerable_frames": []
+  },
+  "notes": [
+    "Body, weapon, and effect layers are generated as separate native sources before composition.",
+    "The composed frames remain the compatibility output for Godot and Aseprite imports.",
+    "Weapon anchor positions use explicit frame anchors for the accepted body-only sheets and may need artist adjustment for final combat polish."
+  ]
+}

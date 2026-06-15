@@ -1,129 +1,102 @@
-# Tasks: Attack Sword Light 12-Frame MVP
-
-Archived checkpoints:
-
-```text
-docs/archive/Tasks_20260615_higher_density_jump_hurt_completed.md
-docs/output_cleanup_20260615_high_density_actions.md
-```
+# Tasks: Native Layered Weapon And Effect Regeneration
 
 ## Upper Rule
 
-- [x] Keep the project focused on one adoptable 2D game sprite pack.
-- [x] Do not return to 120-frame generation, Wan/video generation, ComfyUI exploration, ControlNet research, or broad model integration work.
-- [x] Do not attempt a generic attack system yet.
-- [x] Implement one constrained action first:
+- [x] Stop using color-based extraction from composed frames as a production path.
+- [x] Regenerate or create native separated sources for `body`, `weapon`, and `effect`.
+- [x] Preserve composed-frame compatibility for Godot/Aseprite.
+- [x] Scope this pass to:
+  - `attack_sword_light`;
+  - `parry_sword`.
+- [x] Do not add new model backends, 120-frame generation, Wan/video, ComfyUI, or ControlNet work.
+
+## Native Layer Contract
+
+- [x] Use `body` as generated body-only rough art.
+- [x] Use `weapon` as a separate sword layer generated independently from the body layer.
+- [x] Use `effect` as a separate slash/parry effect layer generated independently from the body layer.
+- [x] Compose production frames from:
 
 ```text
-attack_sword_light
+body -> weapon -> effect
 ```
 
-- [x] Keep the adopted output path:
+- [x] Mark extraction source as:
 
 ```text
-outputs/adoptable/character_sprite_asset_pack/
+native_separated_layers
 ```
 
-## Current Findings
+- [x] Remove/avoid `heuristic_split_from_composed_frames` as the accepted production route.
 
-- [x] Record that dense action roughs should use multiple 2x2 source sheets.
-- [x] Record that attack is harder than locomotion because hand, arm, weapon, and active timing must stay connected.
-- [x] Record that weapon consistency is a new gate, separate from character identity.
-- [x] Keep previous fixes:
-  - source frame count must be real source art, not playback holds;
-  - action visible bounds must stay away from canvas edges;
-  - one-shot actions must not loop in Godot.
+## Regenerated Sources
 
-## Action Spec
-
-- [x] Define `attack_sword_light`:
-  - direction: `right`;
-  - view: `side`;
-  - frame_count: `12`;
-  - loop: `false`;
-  - weapon: simple one-handed short sword;
-  - background: transparent after cleanup;
-  - active hit frames: `[5, 6]`.
-- [x] Use phase names:
-  - `ready`;
-  - `anticipation`;
-  - `draw_back`;
-  - `windup`;
-  - `slash_start`;
-  - `active_slash`;
-  - `active_follow_through`;
-  - `overshoot`;
-  - `recoil`;
-  - `settle`;
-  - `recover`;
-  - `ready_return`.
-
-## New Rough Source
-
-- [x] Create a high-resolution tiled rough source:
+- [x] Add body-only rough source folders:
 
 ```text
-assets/artist_authored_roughs/imagegen_attack_sword_light_12frame_tiles_20260615/
+assets/artist_authored_roughs/imagegen_attack_sword_light_body_12frame_tiles_20260615/
+assets/artist_authored_roughs/imagegen_parry_sword_body_8frame_tiles_20260615/
 ```
 
-- [x] Use three 2x2 sheets:
-  - sheet 0: ready, anticipation, draw back, windup;
-  - sheet 1: slash start, active slash, active follow-through, overshoot;
-  - sheet 2: recoil, settle, recover, ready return.
-- [x] Store every source sheet, prompt metadata, and split `rough_frames/`.
-- [x] Record that built-in image generation is non-local rough creation; the local reproducible pipeline begins from committed rough frames.
-
-## Builder Updates
-
-- [x] Add `DEFAULT_ATTACK_SWORD_LIGHT_ROUGH`.
-- [x] Add `--attack-sword-light-rough-frames-dir`.
-- [x] Add `attack_sword_light` to `ACTION_RUNTIME_SPECS`.
-- [x] Add `hit_frames: [5, 6]` and expose it in runtime metadata.
-- [x] Build and package `actions/attack_sword_light/`.
-- [x] Include the action in:
-  - manifest;
-  - runtime manifest;
-  - identity report;
-  - production gate;
-  - pack review contact sheet;
-  - Godot import manifest;
-  - Aseprite notes.
-
-## Review
-
-- [x] Agent-review `actions/attack_sword_light/contact_sheet.png` for:
+- [x] Store:
+  - source sheets;
+  - split body rough frames;
+  - rough contact sheets;
+  - prompt metadata.
+- [x] Ensure prompts explicitly say:
+  - no weapon;
+  - no effects;
   - one character only;
-  - sword is visible and connected to hand;
-  - clear anticipation, active, follow-through, recover sequence;
-  - active frames are readable;
-  - no edge clipping;
-  - no obvious green-key residue.
-- [x] Agent-review `pack_review/all_actions_contact_sheet.png`.
-- [x] Mark known limits honestly if weapon consistency or pose drift remains.
+  - side-view right-facing;
+  - same character identity cues.
 
-## Documentation
+## Builder Changes
 
+- [x] Add default body rough paths for native layered attack/parry.
+- [x] Build `attack_sword_light` from native body rough + separate weapon/effect layers.
+- [x] Build `parry_sword` from native body rough + separate weapon/effect layers.
+- [x] Generate per-layer:
+  - frames;
+  - spritesheet;
+  - preview.gif;
+  - contact_sheet.
+- [x] Compose final action frames from the generated layers.
+- [x] Write `layered_manifest.json` with:
+  - `source: native_separated_layers`;
+  - `layers`;
+  - `z_order`;
+  - `weapon_visible_frames`;
+  - `effect_visible_frames`;
+  - timing windows.
+- [x] Update runtime and Godot import manifests to point to native layered metadata.
+
+## Production Review
+
+- [x] Review composed attack contact sheet.
+- [x] Review attack body/weapon/effect layer sheets.
+- [x] Review composed parry contact sheet.
+- [x] Review parry body/weapon/effect layer sheets.
+- [x] Verify weapon/effect layers are not extracted from body art.
+- [x] Mark remaining limits honestly if body-only generation drifts or weapon anchors are approximate.
+
+## Skill And Docs
+
+- [x] Update `docs/local_skills/route-a-layered-action-to-pack/SKILL.md`.
 - [x] Update `docs/character_identity_sprite_asset_pack.md`.
-- [x] Update `docs/local_skills/route-a-action-rough-to-pack/SKILL.md`.
-- [x] Record the attack route as `review_ready_attack_mvp` if visual quality is not as strong as locomotion.
+- [x] State that native separated layers are the production route.
+- [x] State that heuristic extraction is review-only and rejected for production.
 
 ## Tests
 
 - [x] Update `tests/test_build_character_sprite_asset_pack.py`.
-- [x] Update `tests/test_godot_character_sprite_pack.py`.
-- [x] Verify:
-  - action count is 6;
-  - `attack_sword_light` frame count is 12;
-  - `attack_sword_light.loop == false`;
-  - source frame count equals playback frame count;
-  - hit frames are `[5, 6]`;
-  - visible bbox stays inside the canvas with margin;
-  - production gate remains passing for the pack;
-  - unsupported backend flags remain false.
+- [x] Verify `attack_sword_light.layered.source == native_separated_layers`.
+- [x] Verify `parry_sword.layered.source == native_separated_layers`.
+- [x] Verify all layer outputs exist.
+- [x] Verify composed frames still exist.
+- [x] Verify action count stays 8.
 
 ## Completion
 
 - [x] Run focused Python tests.
 - [x] Run Godot headless E2E validation.
 - [x] Run `git diff --check`.
-- [x] Commit and push the completed attack MVP if validation passes.

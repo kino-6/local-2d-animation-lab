@@ -146,6 +146,60 @@
         "y": 480
       }
     },
+    "dodge_backstep": {
+      "frame_count": 8,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "loop": false,
+      "fps": 8,
+      "ground_y_range": 0,
+      "visible_bbox": {
+        "x": 2,
+        "y": 91,
+        "width": 333,
+        "height": 356
+      },
+      "collision_box": {
+        "x": 0,
+        "y": 87,
+        "width": 339,
+        "height": 364
+      },
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      }
+    },
+    "parry_sword": {
+      "frame_count": 8,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "loop": false,
+      "fps": 8,
+      "ground_y_range": 0,
+      "visible_bbox": {
+        "x": 2,
+        "y": 11,
+        "width": 339,
+        "height": 436
+      },
+      "collision_box": {
+        "x": 0,
+        "y": 7,
+        "width": 345,
+        "height": 444
+      },
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      }
+    },
     "attack_sword_light": {
       "frame_count": 12,
       "frame_size": {
@@ -156,16 +210,16 @@
       "fps": 8,
       "ground_y_range": 0,
       "visible_bbox": {
-        "x": 12,
-        "y": 128,
-        "width": 338,
-        "height": 319
+        "x": 8,
+        "y": 27,
+        "width": 327,
+        "height": 420
       },
       "collision_box": {
-        "x": 8,
-        "y": 124,
-        "width": 344,
-        "height": 327
+        "x": 4,
+        "y": 23,
+        "width": 335,
+        "height": 428
       },
       "origin": {
         "policy": "bottom_center_canvas",

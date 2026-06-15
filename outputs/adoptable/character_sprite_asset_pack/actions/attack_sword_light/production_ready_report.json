@@ -1,8 +1,8 @@
 {
   "action": "attack_sword_light",
   "status": "production_ready",
-  "source": "imagegen_attack_sword_light_12frame_tiles_20260615_rough",
-  "method": "route_a_generated_rough_cleanup",
+  "source": "native_layers_imagegen_attack_sword_light_body_12frame_tiles_20260615",
+  "method": "route_a_native_separated_layer_cleanup",
   "frame_count": 12,
   "phase_names": [
     "ready",
@@ -95,6 +95,48 @@
   },
   "ground_y_range": 0,
   "alpha_edge_touch_frames": [],
+  "layered": {
+    "manifest": "actions/attack_sword_light/layered_manifest.json",
+    "source": "native_separated_layers",
+    "layers": [
+      "body",
+      "weapon",
+      "effect"
+    ],
+    "z_order": [
+      "weapon",
+      "body",
+      "effect"
+    ],
+    "weapon_visible_frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "effect_visible_frames": [
+      5,
+      6
+    ],
+    "timing_windows": {
+      "hit_frames": [
+        5,
+        6
+      ],
+      "parry_frames": [],
+      "invulnerable_frames": []
+    },
+    "extraction_method": null,
+    "composition_method": "native_body_weapon_effect_layers"
+  },
   "production_ready": true,
-  "review_note": "Attack sword light uses dedicated 2x2 tiled rough sheets with 12 source frames for anticipation, active slash frames, overshoot, recovery, and ready return. Runtime hit frames are 5 and 6."
+  "review_note": "Attack sword light uses native separated layers: body-only generated roughs plus independent sword and slash effect layers. Runtime hit frames are 5 and 6."
 }

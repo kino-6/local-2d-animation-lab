@@ -18,6 +18,10 @@ Use Route A:
 
 Do not use this skill for 120-frame generation, Wan/video generation, ControlNet pose research, rigged puppet renderers, or prompt-only animation experiments.
 
+For weapon or visible effect actions, also use
+`docs/local_skills/route-a-layered-action-to-pack/SKILL.md` so composed frames remain compatible
+while `body`, `weapon`, and `effect` layers are exposed for review/runtime use.
+
 ## Scope Boundary
 
 The rough art source may be:
@@ -56,6 +60,8 @@ Before generating or accepting roughs, write a compact fixed spec:
 - `identity_cues`: pink bob hair, side-profile anime girl, sailor white top, red tie, navy skirt, dark socks, brown shoes
 
 Avoid vague actions. Use `hurt_light`, `hurt_heavy`, or `knockback` instead of generic `hit` when the distinction matters. Use `attack_sword`, `attack_axe`, or `attack_bow` instead of generic `attack`.
+For modern action-game utility actions, prefer explicit names such as `dodge_backstep`,
+`dodge_roll`, `parry_sword`, or `guard_break` instead of generic `avoid` or `defense`.
 
 ## Built-In Image Generation / I2I Guidance
 
@@ -114,6 +120,8 @@ The builder should:
 - update `pack_review/consistency_report.json`;
 - update `pack_review/godot_import_manifest.json`;
 - update `pack_review/aseprite_import_notes.md`;
+- for weapon/effect actions, add `layered_manifest.json` and `layers/body`, `layers/weapon`, and
+  `layers/effect` outputs without replacing composed frames;
 - write text artifacts with LF newlines for clean diffs.
 
 Run:
@@ -152,16 +160,22 @@ Every promoted action must preserve the runtime import contract:
 - approximate collision box;
 - transition notes.
 - hit-frame metadata for attacks or other gameplay-relevant active windows.
+- invulnerable-frame metadata for dodge/evasion actions.
+- parry-frame metadata for defensive timing actions.
 
 Expected current loop flags:
 
 - loop: `walk`, `idle`, `run`;
-- one-shot: `jump`, `hurt`, `attack_sword_light`.
+- one-shot: `jump`, `hurt`, `dodge_backstep`, `parry_sword`, `attack_sword_light`.
 
 If adding a new action, explicitly choose loop or one-shot in `ACTION_RUNTIME_SPECS` before packaging it.
 Do not leave the action as loose image files without runtime metadata.
 For attacks, define `hit_frames` in `ACTION_RUNTIME_SPECS`; this is review/runtime metadata and not a
 final combat collision box.
+For dodge/evasion, define `invulnerable_frames` in `ACTION_RUNTIME_SPECS`; this is review/runtime
+metadata and not final invulnerability logic.
+For parry/guard timing, define `parry_frames` in `ACTION_RUNTIME_SPECS`; this is review/runtime
+metadata and not final defensive collision logic.
 
 For runtime feel, use `playback_frame_indices` only for limited-animation timing expansion. This may
 repeat source frames, but it is not a substitute for true drawn inbetweens. When motion still feels
@@ -217,7 +231,11 @@ If the rough fails visually, do not tune cleanup parameters endlessly. Retake th
 - `run`: `assets/artist_authored_roughs/imagegen_run_8frame_20260614/rough_frames/`
 - `jump`: `assets/artist_authored_roughs/imagegen_jump_12frame_tiles_20260615/rough_frames/`
 - `hurt`: `assets/artist_authored_roughs/imagegen_hurt_8frame_tiles_20260615/rough_frames/`
-- `attack_sword_light`: `assets/artist_authored_roughs/imagegen_attack_sword_light_12frame_tiles_20260615/rough_frames/`
+- `dodge_backstep`: `assets/artist_authored_roughs/imagegen_dodge_backstep_8frame_tiles_20260615/rough_frames/`
+- `parry_sword`: `assets/artist_authored_roughs/imagegen_parry_sword_body_8frame_tiles_20260615/rough_frames/`
+  plus native sword/effect layers from `route-a-layered-action-to-pack`.
+- `attack_sword_light`: `assets/artist_authored_roughs/imagegen_attack_sword_light_body_12frame_tiles_20260615/rough_frames/`
+  plus native sword/effect layers from `route-a-layered-action-to-pack`.
 
 These examples are reproducible from committed rough frames through local packaging. Their initial rough creation used AI-assisted image generation and should not be described as local-only generation.
 
@@ -226,9 +244,16 @@ Current density rule:
 - use real source frames for action readability before adding runtime holds;
 - `jump` should keep at least 12 source frames for anticipation, takeoff, airborne, landing, and recovery;
 - `hurt` should keep at least 8 source frames for brace, recoil, stagger, settle, and recovery;
+- `dodge_backstep` should keep at least 8 source frames for anticipation, push-off, evade, landing,
+  and ready return;
+- `parry_sword` should keep at least 8 source frames for guard raise, contact, deflect, recoil, and
+  ready return;
 - `attack_sword_light` should keep 12 source frames for anticipation, active slash, overshoot,
   recovery, and ready return;
 - attack actions should record active hit frames in runtime metadata;
+- dodge and parry actions should record their active utility windows in runtime metadata;
+- weapon/effect actions should use native separated layers for production; color-based extraction
+  from composed frames is review-only;
 - dense action roughs should use multiple 2x2 source sheets instead of one crowded grid to protect
   per-cell resolution;
 - playback holds are acceptable timing support, not production art or true interpolation.

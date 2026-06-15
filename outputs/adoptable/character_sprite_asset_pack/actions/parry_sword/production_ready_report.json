@@ -1,0 +1,122 @@
+{
+  "action": "parry_sword",
+  "status": "production_ready",
+  "source": "native_layers_imagegen_parry_sword_body_8frame_tiles_20260615",
+  "method": "route_a_native_separated_layer_cleanup",
+  "frame_count": 8,
+  "phase_names": [
+    "ready",
+    "raise_guard",
+    "brace",
+    "parry_contact",
+    "deflect",
+    "recoil_hold",
+    "recover",
+    "ready_return"
+  ],
+  "frame_size": {
+    "width": 352,
+    "height": 480
+  },
+  "game_previews": {
+    "height_128": {
+      "frame_size": {
+        "width": 94,
+        "height": 128
+      },
+      "frames": [
+        "game_previews/height_128/frames/parry_sword_000.png",
+        "game_previews/height_128/frames/parry_sword_001.png",
+        "game_previews/height_128/frames/parry_sword_002.png",
+        "game_previews/height_128/frames/parry_sword_003.png",
+        "game_previews/height_128/frames/parry_sword_004.png",
+        "game_previews/height_128/frames/parry_sword_005.png",
+        "game_previews/height_128/frames/parry_sword_006.png",
+        "game_previews/height_128/frames/parry_sword_007.png"
+      ],
+      "spritesheet": "game_previews/height_128/spritesheet.png",
+      "preview_gif": "game_previews/height_128/preview.gif",
+      "contact_sheet": "game_previews/height_128/contact_sheet.png"
+    },
+    "height_192": {
+      "frame_size": {
+        "width": 141,
+        "height": 192
+      },
+      "frames": [
+        "game_previews/height_192/frames/parry_sword_000.png",
+        "game_previews/height_192/frames/parry_sword_001.png",
+        "game_previews/height_192/frames/parry_sword_002.png",
+        "game_previews/height_192/frames/parry_sword_003.png",
+        "game_previews/height_192/frames/parry_sword_004.png",
+        "game_previews/height_192/frames/parry_sword_005.png",
+        "game_previews/height_192/frames/parry_sword_006.png",
+        "game_previews/height_192/frames/parry_sword_007.png"
+      ],
+      "spritesheet": "game_previews/height_192/spritesheet.png",
+      "preview_gif": "game_previews/height_192/preview.gif",
+      "contact_sheet": "game_previews/height_192/contact_sheet.png"
+    },
+    "height_256": {
+      "frame_size": {
+        "width": 188,
+        "height": 256
+      },
+      "frames": [
+        "game_previews/height_256/frames/parry_sword_000.png",
+        "game_previews/height_256/frames/parry_sword_001.png",
+        "game_previews/height_256/frames/parry_sword_002.png",
+        "game_previews/height_256/frames/parry_sword_003.png",
+        "game_previews/height_256/frames/parry_sword_004.png",
+        "game_previews/height_256/frames/parry_sword_005.png",
+        "game_previews/height_256/frames/parry_sword_006.png",
+        "game_previews/height_256/frames/parry_sword_007.png"
+      ],
+      "spritesheet": "game_previews/height_256/spritesheet.png",
+      "preview_gif": "game_previews/height_256/preview.gif",
+      "contact_sheet": "game_previews/height_256/contact_sheet.png"
+    }
+  },
+  "ground_y_range": 0,
+  "alpha_edge_touch_frames": [],
+  "layered": {
+    "manifest": "actions/parry_sword/layered_manifest.json",
+    "source": "native_separated_layers",
+    "layers": [
+      "body",
+      "weapon",
+      "effect"
+    ],
+    "z_order": [
+      "weapon",
+      "body",
+      "effect"
+    ],
+    "weapon_visible_frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "effect_visible_frames": [
+      3,
+      4
+    ],
+    "timing_windows": {
+      "hit_frames": [],
+      "parry_frames": [
+        3,
+        4
+      ],
+      "invulnerable_frames": []
+    },
+    "extraction_method": null,
+    "composition_method": "native_body_weapon_effect_layers"
+  },
+  "production_ready": true,
+  "review_note": "Parry sword uses native separated layers: body-only generated roughs plus independent sword and parry effect layers. Runtime parry frames are 3 and 4."
+}

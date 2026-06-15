@@ -79,6 +79,7 @@
   },
   "ground_y_range": 0,
   "alpha_edge_touch_frames": [],
+  "layered": null,
   "production_ready": true,
   "review_note": "Hurt uses dedicated 2x2 tiled rough sheets with 8 source frames for brace, recoil, stagger, settle, and recovery phases."
 }
