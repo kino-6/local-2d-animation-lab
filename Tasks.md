@@ -102,21 +102,22 @@
 - [x] `attack_sword_light` is upgraded to a 16-frame reviewable production action.
 - [x] No unsupported broad-generation route is reintroduced.
 
-## Completed ComfyUI2025 Walk ProductionOK Candidate
+## Completed ComfyUI2025 Walk Engine-Loadable Candidate
 
 - [x] Promoted the best ComfyUI2025 walk probe through a focused non-armor identity cleanup pass.
 - [x] Added `scripts/recolor_gold_armor_to_dark_cloth.py` for dark cloth/leather recolor cleanup.
 - [x] Added regression tests for the recolor route so skin-like pixels are not recolored as armor.
 - [x] Added Godot single-sprite manifest validation for `asset_kind: 2d_game_sprite`.
 - [x] Added `godot/tests/single_sprite_asset_runner.gd` for headless AnimatedSprite2D playback checks.
-- [x] Created the current walk ProductionOK candidate at `outputs/20260616_production_pdca/20260616_010059/game_sprite_asset/comfyui2025_74298_walk_16frame_production_ok_candidate_v5/`.
+- [x] Created the current walk engine-loadable candidate at `outputs/20260616_production_pdca/20260616_010059/game_sprite_asset/comfyui2025_74298_walk_16frame_production_ok_candidate_v5/`.
 - [x] Verified the candidate as 16 transparent frames, `256x384`, `preview.gif`, `spritesheet.png`, `contact_sheet.png`, and `manifest.json`.
 - [x] Verified Godot playback starts from the single-sprite manifest.
 - [x] Verified LocalVL scores: still quality 5/5, sprite fit 5/5, walk readability 5/5, identity consistency 5/5, background cleanliness 5/5.
-- [x] Recorded the remaining caveat: this is a game-sprite redesign ProductionOK candidate, not exact reference-faithful animation.
+- [x] Corrected the human review status to `game_loadable_but_identity_and_saturation_retake`; it is not ProductionOK because it reads like a different character and the saturation/value cleanup went too dull.
 
 ## Honest Remaining Notes
 
 - [x] `style_review` labels remain for actions with large pose/scale variance; these are not retake blockers, but they should be checked visually before shipping in a real game.
 - [x] The pack is ProductionOK for this MVP asset pack route, not proof that arbitrary future actions can be generated automatically.
-- [x] The ComfyUI2025 walk candidate still inherits some generated costume silhouette choices; exact identity requires a curated design sheet or manual edit before animation.
+- [x] The ComfyUI2025 walk candidate still inherits generated costume silhouette choices and over-darkened color; exact identity requires a curated design sheet or manual edit before animation.
+- [x] LocalVL identity scoring is a semantic signal only; human visual identity and palette review overrides it for adoption decisions.

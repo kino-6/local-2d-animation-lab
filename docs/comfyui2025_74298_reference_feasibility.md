@@ -292,7 +292,7 @@ Result:
 - shoulder/arm highlights read less like gold armor and more like dark cloth/leather trim
 - limitation: the shoulder silhouette is still inherited from the generated frame, so this is color/identity cleanup, not structural costume correction
 
-### Loop 5: ProductionOK candidate package and engine proof
+### Loop 5: game-loadable candidate package and engine proof
 
 Packaged candidate:
 
@@ -349,28 +349,39 @@ Deterministic package checks:
 - loop delta: `5.155`
 - loop delta / mean step delta: `0.981`
 
-Current status:
+Initial automated status:
 
 ```text
 production_ready_candidate_for_game_sprite_walk
 ```
 
-This is ProductionOK for a local proof / game-loadable walk asset candidate. It is not proof of exact reference-faithful animation. The character still contains generated redesign choices, and the shoulder silhouette remains somewhat armor-like even after color cleanup.
+Human review correction:
+
+```text
+game_loadable_but_identity_and_saturation_retake
+```
+
+Reason:
+
+- the asset is technically game-loadable and the walk reads, but it looks almost like a different character from the source image;
+- the recolor pass over-suppressed chroma and made the sprite too dull/dark;
+- LocalVL over-rated identity consistency because it recognized broad cues such as hood, pale hair, and dark outfit, while missing the stronger human judgment that the design drifted too far;
+- therefore this should not be treated as ProductionOK, even though the manifest/Godot/package gates pass.
 
 ## Decision
 
 Current status:
 
 ```text
-production_ready_candidate_for_game_sprite_walk
+game_loadable_but_identity_and_saturation_retake
 ```
 
-This image is now a usable local proof for a 16-frame walk game asset candidate. It should be treated as a generated game-sprite redesign inspired by the reference, not a faithful direct animation of the original illustration.
+This image is a usable local proof for engine loading and walk-cycle packaging, but it is not an acceptable ProductionOK asset. The next route must preserve identity and palette before motion cleanup; darkening/recoloring a drifted generation is not enough.
 
 Next useful step:
 
-1. If exact identity matters, create or edit a clean side-view design sheet before motion generation.
-2. Keep the selected 16-frame odd-index route as the current walk-cycle baseline for this reference.
-3. Use `scripts/recolor_gold_armor_to_dark_cloth.py` when tiny gold accents drift into armor-like costume reads.
-4. Validate single-sprite packages through `godot/tests/single_sprite_asset_runner.gd` before calling them game-loadable.
-5. Distinguish `production_ready_candidate` from exact reference-faithful ProductionOK in future reports.
+1. Create or edit a clean side-view design sheet with the target palette before motion generation.
+2. Add a saturation/value guard so postprocess cannot make the accepted sprite flatter or darker than the source style.
+3. Keep the selected 16-frame odd-index route only as a motion/package proof, not as the adopted art target.
+4. Use `scripts/recolor_gold_armor_to_dark_cloth.py` only for narrow cleanup after identity is already correct.
+5. Validate single-sprite packages through `godot/tests/single_sprite_asset_runner.gd`, but do not let engine-loadability imply visual adoption.
