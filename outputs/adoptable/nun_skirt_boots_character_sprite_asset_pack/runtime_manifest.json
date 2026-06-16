@@ -1,0 +1,208 @@
+{
+  "actions": {
+    "walk": {
+      "fps": 8,
+      "loop": true,
+      "source_frame_count": 8,
+      "playback_frame_count": 8,
+      "playback_frame_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "origin": {
+        "x": 128,
+        "y": 374
+      },
+      "visible_bbox": {
+        "x": 36,
+        "y": 38,
+        "width": 188,
+        "height": 336
+      },
+      "collision_box": {
+        "x": 94,
+        "y": 80,
+        "width": 72,
+        "height": 294
+      },
+      "hit_frames": []
+    },
+    "idle": {
+      "fps": 6,
+      "loop": true,
+      "source_frame_count": 4,
+      "playback_frame_count": 4,
+      "playback_frame_indices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "origin": {
+        "x": 128,
+        "y": 374
+      },
+      "visible_bbox": {
+        "x": 37,
+        "y": 36,
+        "width": 117,
+        "height": 338
+      },
+      "collision_box": {
+        "x": 94,
+        "y": 80,
+        "width": 72,
+        "height": 294
+      },
+      "hit_frames": []
+    },
+    "run": {
+      "fps": 10,
+      "loop": true,
+      "source_frame_count": 8,
+      "playback_frame_count": 8,
+      "playback_frame_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "origin": {
+        "x": 128,
+        "y": 374
+      },
+      "visible_bbox": {
+        "x": 38,
+        "y": 49,
+        "width": 216,
+        "height": 325
+      },
+      "collision_box": {
+        "x": 94,
+        "y": 80,
+        "width": 72,
+        "height": 294
+      },
+      "hit_frames": []
+    },
+    "jump": {
+      "fps": 10,
+      "loop": false,
+      "source_frame_count": 12,
+      "playback_frame_count": 12,
+      "playback_frame_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "origin": {
+        "x": 128,
+        "y": 374
+      },
+      "visible_bbox": {
+        "x": 56,
+        "y": 31,
+        "width": 174,
+        "height": 343
+      },
+      "collision_box": {
+        "x": 94,
+        "y": 80,
+        "width": 72,
+        "height": 294
+      },
+      "hit_frames": []
+    },
+    "hurt": {
+      "fps": 8,
+      "loop": false,
+      "source_frame_count": 8,
+      "playback_frame_count": 8,
+      "playback_frame_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "origin": {
+        "x": 128,
+        "y": 374
+      },
+      "visible_bbox": {
+        "x": 63,
+        "y": 38,
+        "width": 173,
+        "height": 336
+      },
+      "collision_box": {
+        "x": 94,
+        "y": 80,
+        "width": 72,
+        "height": 294
+      },
+      "hit_frames": []
+    },
+    "attack_sword_light": {
+      "fps": 10,
+      "loop": false,
+      "source_frame_count": 11,
+      "playback_frame_count": 11,
+      "playback_frame_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "origin": {
+        "x": 128,
+        "y": 374
+      },
+      "visible_bbox": {
+        "x": 77,
+        "y": 108,
+        "width": 177,
+        "height": 266
+      },
+      "collision_box": {
+        "x": 94,
+        "y": 80,
+        "width": 72,
+        "height": 294
+      },
+      "hit_frames": [
+        5,
+        6
+      ]
+    }
+  }
+}

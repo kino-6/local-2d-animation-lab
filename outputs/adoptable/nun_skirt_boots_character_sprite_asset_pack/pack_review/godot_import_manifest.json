@@ -1,0 +1,29 @@
+{
+  "route": "character_sprite_asset_pack",
+  "actions": {
+    "walk": {
+      "frame_count": 8,
+      "loop": true
+    },
+    "idle": {
+      "frame_count": 4,
+      "loop": true
+    },
+    "run": {
+      "frame_count": 8,
+      "loop": true
+    },
+    "jump": {
+      "frame_count": 12,
+      "loop": false
+    },
+    "hurt": {
+      "frame_count": 8,
+      "loop": false
+    },
+    "attack_sword_light": {
+      "frame_count": 11,
+      "loop": false
+    }
+  }
+}

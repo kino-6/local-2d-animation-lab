@@ -2,7 +2,7 @@ extends Control
 
 const AssetManifest = preload("res://scripts/asset_manifest.gd")
 
-@export_file("*.json") var manifest_path := "../outputs/adoptable/character_sprite_asset_pack/manifest.json"
+@export_file("*.json") var manifest_path := "../outputs/adoptable/nun_skirt_boots_character_sprite_asset_pack/manifest.json"
 @export var start_action := "walk"
 
 @onready var sprite: AnimatedSprite2D = $Stage/Sprite

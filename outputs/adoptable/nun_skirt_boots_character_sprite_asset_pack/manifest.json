@@ -1,0 +1,465 @@
+{
+  "route": "character_sprite_asset_pack",
+  "asset_kind": "2d_game_sprite_asset_pack",
+  "asset_name": "comfyui2025_74298_nun_skirt_boots",
+  "source_design": "outputs/20260616_design_sheet_pdca/20260616_0820_nun_skirt_boots_design_sheet/side_view_v4_nun_skirt_boots/side_view_v4_nun_skirt_boots.png",
+  "source_action_sheets": {
+    "walk": "outputs/20260616_nun_action_generation/20260616_0905_imagegen_action_retake/walk_sheet.png",
+    "run": "outputs/20260616_nun_action_generation/20260616_0905_imagegen_action_retake/run_sheet.png",
+    "jump": "outputs/20260616_nun_action_generation/20260616_0905_imagegen_action_retake/jump_sheet.png",
+    "hurt": "outputs/20260616_nun_action_generation/20260616_0905_imagegen_action_retake/hurt_sheet.png",
+    "attack_sword_light": "outputs/20260616_nun_action_generation/20260616_0905_imagegen_action_retake/attack_sword_light_sheet.png"
+  },
+  "actions": {
+    "walk": {
+      "action": "walk",
+      "frame_count": 8,
+      "frame_size": {
+        "width": 256,
+        "height": 384
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "phase_names": [
+        "right_contact",
+        "right_down",
+        "right_passing",
+        "right_up",
+        "left_contact",
+        "left_down",
+        "left_passing",
+        "left_up"
+      ],
+      "frames": [
+        "actions/walk/frames/walk_000.png",
+        "actions/walk/frames/walk_001.png",
+        "actions/walk/frames/walk_002.png",
+        "actions/walk/frames/walk_003.png",
+        "actions/walk/frames/walk_004.png",
+        "actions/walk/frames/walk_005.png",
+        "actions/walk/frames/walk_006.png",
+        "actions/walk/frames/walk_007.png"
+      ],
+      "spritesheet": "actions/walk/spritesheet.png",
+      "preview_gif": "actions/walk/preview.gif",
+      "contact_sheet": "actions/walk/contact_sheet.png",
+      "production_ready_report": "actions/walk/production_ready_report.json",
+      "runtime": {
+        "fps": 8,
+        "loop": true,
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "origin": {
+          "x": 128,
+          "y": 374
+        },
+        "visible_bbox": {
+          "x": 36,
+          "y": 38,
+          "width": 188,
+          "height": 336
+        },
+        "collision_box": {
+          "x": 94,
+          "y": 80,
+          "width": 72,
+          "height": 294
+        },
+        "hit_frames": []
+      }
+    },
+    "idle": {
+      "action": "idle",
+      "frame_count": 4,
+      "frame_size": {
+        "width": 256,
+        "height": 384
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "phase_names": [
+        "neutral",
+        "breathe_up",
+        "breathe_peak",
+        "breathe_down"
+      ],
+      "frames": [
+        "actions/idle/frames/idle_000.png",
+        "actions/idle/frames/idle_001.png",
+        "actions/idle/frames/idle_002.png",
+        "actions/idle/frames/idle_003.png"
+      ],
+      "spritesheet": "actions/idle/spritesheet.png",
+      "preview_gif": "actions/idle/preview.gif",
+      "contact_sheet": "actions/idle/contact_sheet.png",
+      "production_ready_report": "actions/idle/production_ready_report.json",
+      "runtime": {
+        "fps": 6,
+        "loop": true,
+        "source_frame_count": 4,
+        "playback_frame_count": 4,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "origin": {
+          "x": 128,
+          "y": 374
+        },
+        "visible_bbox": {
+          "x": 37,
+          "y": 36,
+          "width": 117,
+          "height": 338
+        },
+        "collision_box": {
+          "x": 94,
+          "y": 80,
+          "width": 72,
+          "height": 294
+        },
+        "hit_frames": []
+      }
+    },
+    "run": {
+      "action": "run",
+      "frame_count": 8,
+      "frame_size": {
+        "width": 256,
+        "height": 384
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "phase_names": [
+        "right_contact",
+        "right_down",
+        "flight_forward",
+        "left_reach",
+        "left_contact",
+        "left_down",
+        "flight_backward",
+        "right_reach"
+      ],
+      "frames": [
+        "actions/run/frames/run_000.png",
+        "actions/run/frames/run_001.png",
+        "actions/run/frames/run_002.png",
+        "actions/run/frames/run_003.png",
+        "actions/run/frames/run_004.png",
+        "actions/run/frames/run_005.png",
+        "actions/run/frames/run_006.png",
+        "actions/run/frames/run_007.png"
+      ],
+      "spritesheet": "actions/run/spritesheet.png",
+      "preview_gif": "actions/run/preview.gif",
+      "contact_sheet": "actions/run/contact_sheet.png",
+      "production_ready_report": "actions/run/production_ready_report.json",
+      "runtime": {
+        "fps": 10,
+        "loop": true,
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "origin": {
+          "x": 128,
+          "y": 374
+        },
+        "visible_bbox": {
+          "x": 38,
+          "y": 49,
+          "width": 216,
+          "height": 325
+        },
+        "collision_box": {
+          "x": 94,
+          "y": 80,
+          "width": 72,
+          "height": 294
+        },
+        "hit_frames": []
+      }
+    },
+    "jump": {
+      "action": "jump",
+      "frame_count": 12,
+      "frame_size": {
+        "width": 256,
+        "height": 384
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "phase_names": [
+        "crouch",
+        "deep_crouch",
+        "takeoff",
+        "early_rise",
+        "rise",
+        "apex_approach",
+        "apex",
+        "fall",
+        "landing_contact",
+        "landing_settle",
+        "recover_half",
+        "recover"
+      ],
+      "frames": [
+        "actions/jump/frames/jump_000.png",
+        "actions/jump/frames/jump_001.png",
+        "actions/jump/frames/jump_002.png",
+        "actions/jump/frames/jump_003.png",
+        "actions/jump/frames/jump_004.png",
+        "actions/jump/frames/jump_005.png",
+        "actions/jump/frames/jump_006.png",
+        "actions/jump/frames/jump_007.png",
+        "actions/jump/frames/jump_008.png",
+        "actions/jump/frames/jump_009.png",
+        "actions/jump/frames/jump_010.png",
+        "actions/jump/frames/jump_011.png"
+      ],
+      "spritesheet": "actions/jump/spritesheet.png",
+      "preview_gif": "actions/jump/preview.gif",
+      "contact_sheet": "actions/jump/contact_sheet.png",
+      "production_ready_report": "actions/jump/production_ready_report.json",
+      "runtime": {
+        "fps": 10,
+        "loop": false,
+        "source_frame_count": 12,
+        "playback_frame_count": 12,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "origin": {
+          "x": 128,
+          "y": 374
+        },
+        "visible_bbox": {
+          "x": 56,
+          "y": 31,
+          "width": 174,
+          "height": 343
+        },
+        "collision_box": {
+          "x": 94,
+          "y": 80,
+          "width": 72,
+          "height": 294
+        },
+        "hit_frames": []
+      }
+    },
+    "hurt": {
+      "action": "hurt",
+      "frame_count": 8,
+      "frame_size": {
+        "width": 256,
+        "height": 384
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "phase_names": [
+        "brace",
+        "impact_recoil",
+        "strong_recoil",
+        "peak_recoil",
+        "stagger",
+        "settle",
+        "recover_half",
+        "recover"
+      ],
+      "frames": [
+        "actions/hurt/frames/hurt_000.png",
+        "actions/hurt/frames/hurt_001.png",
+        "actions/hurt/frames/hurt_002.png",
+        "actions/hurt/frames/hurt_003.png",
+        "actions/hurt/frames/hurt_004.png",
+        "actions/hurt/frames/hurt_005.png",
+        "actions/hurt/frames/hurt_006.png",
+        "actions/hurt/frames/hurt_007.png"
+      ],
+      "spritesheet": "actions/hurt/spritesheet.png",
+      "preview_gif": "actions/hurt/preview.gif",
+      "contact_sheet": "actions/hurt/contact_sheet.png",
+      "production_ready_report": "actions/hurt/production_ready_report.json",
+      "runtime": {
+        "fps": 8,
+        "loop": false,
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "origin": {
+          "x": 128,
+          "y": 374
+        },
+        "visible_bbox": {
+          "x": 63,
+          "y": 38,
+          "width": 173,
+          "height": 336
+        },
+        "collision_box": {
+          "x": 94,
+          "y": 80,
+          "width": 72,
+          "height": 294
+        },
+        "hit_frames": []
+      }
+    },
+    "attack_sword_light": {
+      "action": "attack_sword_light",
+      "frame_count": 11,
+      "frame_size": {
+        "width": 256,
+        "height": 384
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "phase_names": [
+        "ready",
+        "anticipation",
+        "draw_back",
+        "windup",
+        "slash_start",
+        "active_slash",
+        "follow_through",
+        "recoil",
+        "settle_1",
+        "recover",
+        "ready_return"
+      ],
+      "frames": [
+        "actions/attack_sword_light/frames/attack_sword_light_000.png",
+        "actions/attack_sword_light/frames/attack_sword_light_001.png",
+        "actions/attack_sword_light/frames/attack_sword_light_002.png",
+        "actions/attack_sword_light/frames/attack_sword_light_003.png",
+        "actions/attack_sword_light/frames/attack_sword_light_004.png",
+        "actions/attack_sword_light/frames/attack_sword_light_005.png",
+        "actions/attack_sword_light/frames/attack_sword_light_006.png",
+        "actions/attack_sword_light/frames/attack_sword_light_007.png",
+        "actions/attack_sword_light/frames/attack_sword_light_008.png",
+        "actions/attack_sword_light/frames/attack_sword_light_009.png",
+        "actions/attack_sword_light/frames/attack_sword_light_010.png"
+      ],
+      "spritesheet": "actions/attack_sword_light/spritesheet.png",
+      "preview_gif": "actions/attack_sword_light/preview.gif",
+      "contact_sheet": "actions/attack_sword_light/contact_sheet.png",
+      "production_ready_report": "actions/attack_sword_light/production_ready_report.json",
+      "runtime": {
+        "fps": 10,
+        "loop": false,
+        "source_frame_count": 11,
+        "playback_frame_count": 11,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "origin": {
+          "x": 128,
+          "y": 374
+        },
+        "visible_bbox": {
+          "x": 77,
+          "y": 108,
+          "width": 177,
+          "height": 266
+        },
+        "collision_box": {
+          "x": 94,
+          "y": 80,
+          "width": 72,
+          "height": 294
+        },
+        "hit_frames": [
+          5,
+          6
+        ]
+      }
+    }
+  },
+  "pack_review": {
+    "all_actions_contact_sheet": "pack_review/all_actions_contact_sheet.png",
+    "quality_report": "pack_review/quality_report.json",
+    "godot_import_manifest": "pack_review/godot_import_manifest.json"
+  },
+  "production_gate": {
+    "target": "nun_skirt_boots_character_sprite_asset_pack",
+    "decision": "production_ready",
+    "production_ready": true,
+    "checks": {
+      "walk_production_ready": true,
+      "idle_production_ready": true,
+      "run_production_ready": true,
+      "jump_production_ready": true,
+      "hurt_production_ready": true,
+      "attack_sword_light_production_ready": true,
+      "godot_pack_manifest_ready": true
+    },
+    "manual_review_required": [
+      "Open preview GIFs and Godot viewer to confirm real motion feel.",
+      "Confirm attack sword/effect separation is sufficient for the target game."
+    ],
+    "review_contact_sheet": "pack_review/all_actions_contact_sheet.png"
+  },
+  "production_ready": true,
+  "backend_usage": {
+    "uses_builtin_image_generation": true,
+    "uses_comfyui": false,
+    "uses_wan_video": false,
+    "uses_controlnet": false,
+    "uses_120_frame_generation": false
+  },
+  "known_limits": [
+    "This pack is generated from a design sheet and action sprite sheets; it is not frame-by-frame hand-authored art.",
+    "Weapon/effect layers are not yet separated for attack_sword_light."
+  ]
+}

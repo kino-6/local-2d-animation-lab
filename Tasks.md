@@ -142,9 +142,30 @@
 - [x] Incorporated user review that long robes raise walk animation difficulty.
 - [x] Generated a skirt + boots nun variant that keeps the mood while making legs/feet readable.
 - [x] Selected `outputs/20260616_design_sheet_pdca/20260616_0820_nun_skirt_boots_design_sheet/side_view_v4_nun_skirt_boots/side_view_v4_nun_skirt_boots.png` as the next walk-cycle source.
-- [ ] Use `side_view_v4_nun_skirt_boots.png` as the source for the next walk cycle attempt.
-- [ ] Add an identity/palette gate before packaging: reject outputs that look like a different character or collapse into dull low-value black.
-- [ ] Preserve white hair, black glossy hood, red collar, gold forehead band, and sleepy pale face across frames.
-- [ ] Preserve skirt hem, black stockings, and boots; do not accept pants conversion, robe-only silhouette, biker gear, generic knight/rogue redesigns, heavy shoulder armor drift, or weapon/action expansion.
-- [ ] Keep legs/feet readable for contact and passing poses.
-- [ ] Package only after identity and palette pass, then run Godot playback validation.
+- [x] Use `side_view_v4_nun_skirt_boots.png` as the source for the next walk/action pack attempt.
+- [x] Add an identity/palette gate before packaging: reject outputs that look like a different character or collapse into dull low-value black.
+- [x] Preserve white hair, black glossy hood, red collar, gold forehead band, and sleepy pale face across frames.
+- [x] Preserve skirt hem, black stockings, and boots; do not accept pants conversion, robe-only silhouette, biker gear, generic knight/rogue redesigns, heavy shoulder armor drift, or weapon/action expansion.
+- [x] Keep legs/feet readable for contact and passing poses.
+- [x] Package only after identity and palette pass, then run Godot playback validation.
+
+## Completed Nun Skirt Boots Production Pack
+
+- [x] Generated game-action sheets for `walk`, `run`, `jump`, `hurt`, and `attack_sword_light`.
+- [x] Rejected the first walk/attack extraction where neighboring feet, sword arcs, and cropped body fragments leaked into frames.
+- [x] Retook `walk` and `attack_sword_light` with wider frame spacing and no large baked slash effect.
+- [x] Added `scripts/build_imagegen_action_pack.py` to convert sheet-first imagegen outputs into a Godot-loadable sprite pack.
+- [x] Added connected-component extraction before proportional slicing so cleanly separated source sheets become clean frame PNGs.
+- [x] Adopted 11 clean attack frames instead of forcing a broken 12-frame split from the generated source.
+- [x] Built `outputs/adoptable/nun_skirt_boots_character_sprite_asset_pack/`.
+- [x] Generated per-action frames, spritesheets, preview GIFs, contact sheets, `manifest.json`, `runtime_manifest.json`, and `production_gate.json`.
+- [x] Updated the Godot character sprite pack viewer default manifest to the Nun skirt boots pack.
+- [x] Added regression coverage for the imagegen action pack builder.
+- [x] Documented the PDCA result in `docs/nun_skirt_boots_action_pack_pdca.md`.
+
+## Verification For Nun Skirt Boots Pack
+
+- [x] `uv run pytest tests\test_build_imagegen_action_pack.py`
+- [x] `godot --headless --path godot --script res://tests/pack_e2e_runner.gd -- --manifest outputs/adoptable/nun_skirt_boots_character_sprite_asset_pack/manifest.json`
+- [x] `godot --headless --path godot --quit`
+- [x] `git diff --check`
