@@ -37,6 +37,10 @@ const PREFERRED_ACTION_ORDER := [
 
 
 func _ready() -> void:
+	var args := OS.get_cmdline_user_args()
+	manifest_path = _arg_value(args, "--manifest", manifest_path)
+	start_action = _arg_value(args, "--action", start_action)
+
 	manifest = AssetManifest.load_manifest(manifest_path)
 	validation = AssetManifest.validate_pack(manifest)
 	if not validation.get("ok", false):
@@ -227,6 +231,13 @@ func _action_tooltip(action: String) -> String:
 		"loop" if bool(runtime.get("loop", true)) else "one-shot",
 		", ".join(phases),
 	]
+
+
+func _arg_value(args: PackedStringArray, name: String, default_value: String) -> String:
+	for index in range(args.size() - 1):
+		if args[index] == name:
+			return args[index + 1]
+	return default_value
 
 
 func _scale_sprite() -> void:
