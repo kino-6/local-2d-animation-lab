@@ -6,6 +6,7 @@ const AssetManifest = preload("res://scripts/asset_manifest.gd")
 func _init() -> void:
 	var args := OS.get_cmdline_user_args()
 	var manifest_path := _arg_value(args, "--manifest", "")
+	var require_production_ready := args.has("--require-production-ready")
 	if manifest_path == "":
 		_fail("missing --manifest <path>")
 		return
@@ -45,6 +46,7 @@ func _init() -> void:
 			"frame_count": actual_count,
 			"loop": frames.get_animation_loop(action),
 			"speed": frames.get_animation_speed(action),
+			"visual_quality": validation["actions"][action].get("visual_quality", {}),
 		}
 
 	var result := {
@@ -54,7 +56,14 @@ func _init() -> void:
 		"actions": action_payload,
 		"frame_size": validation["frame_size"],
 		"production_ready": validation["production_ready"],
+		"visual_quality": validation.get("visual_quality", {}),
 	}
+	if require_production_ready and not bool(validation["production_ready"]):
+		result["ok"] = false
+		result["error"] = "pack is not production_ready"
+		printerr(JSON.stringify(result))
+		quit(2)
+		return
 	print(JSON.stringify(result))
 	quit(0)
 

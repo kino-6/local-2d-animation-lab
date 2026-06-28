@@ -23,9 +23,9 @@
   "metrics": {
     "same_size": true,
     "alpha_edge_touch_frames": [],
-    "mean_step_delta": 15.325,
+    "mean_step_delta": 14.9,
     "loop_delta": null,
-    "ground_y_range": 89,
+    "ground_y_range": 0,
     "production_ready": true
   },
   "production_ready": true

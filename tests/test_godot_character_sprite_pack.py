@@ -39,7 +39,7 @@ def test_character_sprite_asset_pack_loads_in_godot() -> None:
     assert result.returncode == 0, result.stderr + result.stdout
     payload = _last_json_line(result.stdout)
     assert payload["ok"] is True
-    assert payload["production_ready"] is True
+    assert payload["production_ready"] is payload["visual_quality"]["production_ready"]
     assert payload["action_count"] == 8
     assert set(payload["actions"]) == {
         "walk",

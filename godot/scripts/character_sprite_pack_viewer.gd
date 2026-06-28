@@ -135,6 +135,9 @@ func _play_action(action: String) -> void:
 
 	_center_stage_for_action(action_info)
 	var frame_size: Dictionary = action_info.get("frame_size", {})
+	var visual_quality: Dictionary = validation.get("visual_quality", {})
+	var action_visual: Dictionary = visual_quality.get("actions", {}).get(action, {})
+	var quality_text := "production_ready" if bool(validation.get("production_ready", false)) else str(visual_quality.get("decision", "quality_not_available"))
 	info.text = "%s / %d frames / %dx%d / %s / %s" % [
 		action,
 		int(action_info.get("frame_count", 0)),
@@ -148,6 +151,11 @@ func _play_action(action: String) -> void:
 		str(runtime.get("origin", {})),
 		str(runtime.get("collision_box", {})),
 	]
+	if not bool(validation.get("production_ready", false)):
+		action_meta.text += " quality=%s %s" % [
+			quality_text,
+			str(action_visual.get("findings", [])),
+		]
 	_update_frame_meta()
 
 

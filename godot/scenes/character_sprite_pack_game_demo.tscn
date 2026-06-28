@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://character_sprite_pack_game_demo"]
+
+[ext_resource type="Script" path="res://scripts/character_sprite_pack_player.gd" id="1"]
+
+[node name="CharacterSpritePackGameDemo" type="Node2D"]
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(640, 520)
+script = ExtResource("1")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Player"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+

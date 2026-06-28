@@ -221,6 +221,7 @@ static func validate_pack(manifest: Dictionary) -> Dictionary:
 	if actions.is_empty():
 		return {"ok": false, "error": "pack has no actions"}
 
+	var visual_quality := pack_visual_quality(manifest)
 	var action_results := {}
 	var first_size := Vector2i.ZERO
 	for action in actions.keys():
@@ -277,15 +278,78 @@ static func validate_pack(manifest: Dictionary) -> Dictionary:
 			"loop": bool(runtime.get("loop", true)),
 			"origin": runtime.get("origin", {}),
 			"collision_box": runtime.get("collision_box", {}),
+			"visual_quality": visual_quality.get("actions", {}).get(action_name, {}),
 		}
 
+	var manifest_production_ready := bool(manifest.get("production_ready", false))
+	var visual_production_ready := bool(visual_quality.get("production_ready", manifest_production_ready))
 	return {
 		"ok": true,
 		"route": manifest.get("route", ""),
-		"production_ready": bool(manifest.get("production_ready", false)),
+		"production_ready": manifest_production_ready and visual_production_ready,
 		"action_count": actions.size(),
 		"actions": action_results,
 		"frame_size": {"width": first_size.x, "height": first_size.y},
+		"visual_quality": visual_quality,
+	}
+
+
+static func pack_visual_quality(manifest: Dictionary) -> Dictionary:
+	var visual_gate: Dictionary = manifest.get("visual_gate", {})
+	var report_path := str(visual_gate.get("report", ""))
+	if report_path == "":
+		report_path = "pack_review/visual_gate_report.json"
+	var resolved_path := resolve_asset_path(report_path, manifest)
+	if not FileAccess.file_exists(resolved_path):
+		return {
+			"available": false,
+			"production_ready": bool(manifest.get("production_ready", false)),
+			"decision": "not_available",
+			"report": report_path,
+			"blocking_actions": [],
+			"actions": {},
+		}
+
+	var file := FileAccess.open(resolved_path, FileAccess.READ)
+	if file == null:
+		return {
+			"available": false,
+			"production_ready": false,
+			"decision": "report_open_failed",
+			"report": report_path,
+			"blocking_actions": [],
+			"actions": {},
+		}
+	var parsed = JSON.parse_string(file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return {
+			"available": false,
+			"production_ready": false,
+			"decision": "report_parse_failed",
+			"report": report_path,
+			"blocking_actions": [],
+			"actions": {},
+		}
+
+	var report: Dictionary = parsed
+	var action_payload := {}
+	var report_actions: Dictionary = report.get("actions", {})
+	for action in report_actions.keys():
+		var action_name := str(action)
+		var entry: Dictionary = report_actions[action]
+		action_payload[action_name] = {
+			"decision": str(entry.get("decision", "")),
+			"findings": entry.get("findings", []),
+			"metrics": entry.get("metrics", {}),
+		}
+
+	return {
+		"available": true,
+		"production_ready": bool(report.get("production_ready", false)),
+		"decision": str(report.get("decision", "")),
+		"report": report_path,
+		"blocking_actions": report.get("blocking_actions", []),
+		"actions": action_payload,
 	}
 
 

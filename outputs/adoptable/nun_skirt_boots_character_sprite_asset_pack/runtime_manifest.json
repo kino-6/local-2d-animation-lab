@@ -119,10 +119,10 @@
         "y": 374
       },
       "visible_bbox": {
-        "x": 56,
-        "y": 31,
-        "width": 174,
-        "height": 343
+        "x": 72,
+        "y": 76,
+        "width": 132,
+        "height": 298
       },
       "collision_box": {
         "x": 94,

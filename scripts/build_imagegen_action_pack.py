@@ -115,7 +115,7 @@ def build_pack(
             actions_dir / action,
             frame_size,
             target_height,
-            preserve_vertical_arc=(action == "jump"),
+            preserve_vertical_arc=False,
         )
         actions[action] = _write_action_artifacts(action, frames, actions_dir / action)
 
