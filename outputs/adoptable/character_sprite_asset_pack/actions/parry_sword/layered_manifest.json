@@ -1,0 +1,108 @@
+{
+  "action": "parry_sword",
+  "status": "native_layered_production_ready",
+  "source": "native_separated_layers",
+  "composite_source": "weapon + body + effect",
+  "layers": [
+    "body",
+    "weapon",
+    "effect"
+  ],
+  "z_order": [
+    "weapon",
+    "body",
+    "effect"
+  ],
+  "layer_artifacts": {
+    "body": {
+      "frames": [
+        "layers/body/frames/parry_sword_000.png",
+        "layers/body/frames/parry_sword_001.png",
+        "layers/body/frames/parry_sword_002.png",
+        "layers/body/frames/parry_sword_003.png",
+        "layers/body/frames/parry_sword_004.png",
+        "layers/body/frames/parry_sword_005.png",
+        "layers/body/frames/parry_sword_006.png",
+        "layers/body/frames/parry_sword_007.png"
+      ],
+      "spritesheet": "layers/body/spritesheet.png",
+      "preview_gif": "layers/body/preview.gif",
+      "contact_sheet": "layers/body/contact_sheet.png",
+      "non_empty_frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    "weapon": {
+      "frames": [
+        "layers/weapon/frames/parry_sword_000.png",
+        "layers/weapon/frames/parry_sword_001.png",
+        "layers/weapon/frames/parry_sword_002.png",
+        "layers/weapon/frames/parry_sword_003.png",
+        "layers/weapon/frames/parry_sword_004.png",
+        "layers/weapon/frames/parry_sword_005.png",
+        "layers/weapon/frames/parry_sword_006.png",
+        "layers/weapon/frames/parry_sword_007.png"
+      ],
+      "spritesheet": "layers/weapon/spritesheet.png",
+      "preview_gif": "layers/weapon/preview.gif",
+      "contact_sheet": "layers/weapon/contact_sheet.png",
+      "non_empty_frames": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "effect": {
+      "frames": [
+        "layers/effect/frames/parry_sword_000.png",
+        "layers/effect/frames/parry_sword_001.png",
+        "layers/effect/frames/parry_sword_002.png",
+        "layers/effect/frames/parry_sword_003.png",
+        "layers/effect/frames/parry_sword_004.png",
+        "layers/effect/frames/parry_sword_005.png",
+        "layers/effect/frames/parry_sword_006.png",
+        "layers/effect/frames/parry_sword_007.png"
+      ],
+      "spritesheet": "layers/effect/spritesheet.png",
+      "preview_gif": "layers/effect/preview.gif",
+      "contact_sheet": "layers/effect/contact_sheet.png",
+      "non_empty_frames": [
+        3,
+        4
+      ]
+    }
+  },
+  "weapon_visible_frames": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "effect_visible_frames": [
+    3,
+    4
+  ],
+  "timing_windows": {
+    "hit_frames": [],
+    "parry_frames": [
+      3,
+      4
+    ],
+    "invulnerable_frames": []
+  },
+  "notes": [
+    "Body, weapon, and effect layers are generated as separate native sources before composition.",
+    "The composed frames remain the compatibility output for Godot and Aseprite imports.",
+    "Weapon anchor positions use explicit frame anchors for the accepted body-only sheets and may need artist adjustment for final combat polish."
+  ]
+}

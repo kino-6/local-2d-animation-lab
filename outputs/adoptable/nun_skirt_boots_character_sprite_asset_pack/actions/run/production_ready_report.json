@@ -1,0 +1,28 @@
+{
+  "action": "run",
+  "status": "production_ready",
+  "frame_count": 8,
+  "frame_size": {
+    "width": 256,
+    "height": 384
+  },
+  "phase_names": [
+    "right_contact",
+    "right_down",
+    "flight_forward",
+    "left_reach",
+    "left_contact",
+    "left_down",
+    "flight_backward",
+    "right_reach"
+  ],
+  "metrics": {
+    "same_size": true,
+    "alpha_edge_touch_frames": [],
+    "mean_step_delta": 23.822,
+    "loop_delta": 25.952158610026043,
+    "ground_y_range": 0,
+    "production_ready": true
+  },
+  "production_ready": true
+}

@@ -1,0 +1,10 @@
+{
+  "actions": {
+    "walk": "production_ready",
+    "idle": "production_ready",
+    "run": "production_ready",
+    "jump": "production_ready",
+    "hurt": "production_ready",
+    "attack_sword_light": "production_ready"
+  }
+}

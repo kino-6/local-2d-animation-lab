@@ -77,6 +77,7 @@ Keep this README limited to stable entry points. Specific PDCA attempts, failed 
 
 Stable command entry points:
 
+- Add small production-ready sprite actions from rough sheets: `docs/local_skills/route-a-action-rough-to-pack/SKILL.md`
 - Build reusable controls: `scripts/build_pose_templates.py`
 - Import extracted motion-source poses: `scripts/import_motion_source_pose.py`
 - Run SDXL/OpenPose PDCA: `scripts/pdca_controlnet_assets.py`
@@ -85,6 +86,57 @@ Stable command entry points:
 - Validate selected outputs in Godot: `scripts/godot_validate_summary.py`
 - Gate local artifacts before adoption: `scripts/repair_frame_artifacts.py`
 - Prepare a clean Wan start frame: `scripts/prepare_wan_start_frame.py`
+
+## Godot Asset Preview
+
+The Godot project opens `godot/scenes/character_sprite_pack_viewer.tscn` by default.
+If no asset is specified, it previews the current adopted pack:
+
+```text
+outputs/adoptable/nun_skirt_boots_character_sprite_asset_pack/manifest.json
+```
+
+Current adopted character packs are indexed in `outputs/adoptable/README.md`.
+
+| Character | Manifest |
+| --- | --- |
+| Sailor schoolgirl | `outputs/adoptable/character_sprite_asset_pack/manifest.json` |
+| Gothic nun, skirt + boots | `outputs/adoptable/nun_skirt_boots_character_sprite_asset_pack/manifest.json` |
+
+To visually inspect another `character_sprite_asset_pack`, pass its manifest path after `--`:
+
+```bash
+godot --path godot -- \
+  --manifest outputs/adoptable/nun_skirt_boots_character_sprite_asset_pack/manifest.json \
+  --action walk
+```
+
+`--manifest` accepts repo-relative paths like `outputs/...` or absolute paths. `--action` is optional; when omitted, the viewer starts with `walk` if that action exists. In the viewer, use `1-8` or Left/Right to switch actions, Space to pause, `R` to restart, and `Z`/`X`/`C` for 0.5x/1x/2x speed.
+
+For automated validation without opening the viewer:
+
+```bash
+godot --headless --path godot --script res://tests/pack_e2e_runner.gd -- \
+  --manifest outputs/adoptable/nun_skirt_boots_character_sprite_asset_pack/manifest.json
+```
+
+For visual-quality E2E checks before human review, run:
+
+```bash
+uv run python scripts/visual_asset_gate.py \
+  --manifest outputs/adoptable/nun_skirt_boots_character_sprite_asset_pack/manifest.json \
+  --report outputs/adoptable/nun_skirt_boots_character_sprite_asset_pack/pack_review/visual_gate_report.json
+```
+
+The visual gate catches deterministic review risks such as crop/edge touch, stray frame fragments,
+scale or center jitter, brightness/saturation drift, upper-body hand cue dropout, and loop closure
+jumps. For safe mechanical cleanup, write a separate fixed copy:
+
+```bash
+uv run python scripts/visual_asset_gate.py \
+  --manifest outputs/adoptable/nun_skirt_boots_character_sprite_asset_pack/manifest.json \
+  --auto-fix-output outputs/visual_fixed/nun_skirt_boots_character_sprite_asset_pack
+```
 
 ```bash
 python -m natural_sprite_lab \

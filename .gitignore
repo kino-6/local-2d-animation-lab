@@ -1,5 +1,9 @@
 assets/user
 
+# Local agent workflow notes
+.agents/ecc-workflow/workspace/*
+!.agents/ecc-workflow/workspace/README.md
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

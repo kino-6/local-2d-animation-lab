@@ -1,0 +1,681 @@
+{
+  "route": "artist_authored_8frame_walk_cleanup",
+  "route_status": "requires_artist_authored_rough",
+  "asset_kind": "2d_game_sprite",
+  "source_kind": "ai_generated_rough_for_route_a_v2",
+  "output_status": "cleanup_packaged_for_review",
+  "frame_count": 8,
+  "fps": 8,
+  "phase_names": [
+    "contact",
+    "down",
+    "passing",
+    "up",
+    "opposite_contact",
+    "opposite_down",
+    "opposite_passing",
+    "opposite_up"
+  ],
+  "frame_size": {
+    "width": 448,
+    "height": 512
+  },
+  "background": "transparent",
+  "loop": true,
+  "manual_art_required": true,
+  "ai_scope": "cleanup_only_no_pose_or_silhouette_generation",
+  "backend_usage": {
+    "uses_comfyui": false,
+    "uses_wan_video": false,
+    "uses_controlnet": false,
+    "uses_new_model_backend": false,
+    "uses_120_frame_generation": false
+  },
+  "outputs": {
+    "frames": [
+      "frames/walk_000.png",
+      "frames/walk_001.png",
+      "frames/walk_002.png",
+      "frames/walk_003.png",
+      "frames/walk_004.png",
+      "frames/walk_005.png",
+      "frames/walk_006.png",
+      "frames/walk_007.png"
+    ],
+    "spritesheet": "spritesheet.png",
+    "preview_gif": "preview.gif",
+    "contact_sheet": "contact_sheet.png",
+    "cleanup_report": "cleanup_report.json",
+    "production_review": "production_review.json",
+    "production_review_md": "production_review.md",
+    "game_previews": {
+      "height_128": {
+        "frame_size": {
+          "width": 112,
+          "height": 128
+        },
+        "frames": [
+          "game_previews/height_128/frames/walk_000.png",
+          "game_previews/height_128/frames/walk_001.png",
+          "game_previews/height_128/frames/walk_002.png",
+          "game_previews/height_128/frames/walk_003.png",
+          "game_previews/height_128/frames/walk_004.png",
+          "game_previews/height_128/frames/walk_005.png",
+          "game_previews/height_128/frames/walk_006.png",
+          "game_previews/height_128/frames/walk_007.png"
+        ],
+        "spritesheet": "game_previews/height_128/spritesheet.png",
+        "preview_gif": "game_previews/height_128/preview.gif",
+        "contact_sheet": "game_previews/height_128/contact_sheet.png"
+      },
+      "height_192": {
+        "frame_size": {
+          "width": 168,
+          "height": 192
+        },
+        "frames": [
+          "game_previews/height_192/frames/walk_000.png",
+          "game_previews/height_192/frames/walk_001.png",
+          "game_previews/height_192/frames/walk_002.png",
+          "game_previews/height_192/frames/walk_003.png",
+          "game_previews/height_192/frames/walk_004.png",
+          "game_previews/height_192/frames/walk_005.png",
+          "game_previews/height_192/frames/walk_006.png",
+          "game_previews/height_192/frames/walk_007.png"
+        ],
+        "spritesheet": "game_previews/height_192/spritesheet.png",
+        "preview_gif": "game_previews/height_192/preview.gif",
+        "contact_sheet": "game_previews/height_192/contact_sheet.png"
+      },
+      "height_256": {
+        "frame_size": {
+          "width": 224,
+          "height": 256
+        },
+        "frames": [
+          "game_previews/height_256/frames/walk_000.png",
+          "game_previews/height_256/frames/walk_001.png",
+          "game_previews/height_256/frames/walk_002.png",
+          "game_previews/height_256/frames/walk_003.png",
+          "game_previews/height_256/frames/walk_004.png",
+          "game_previews/height_256/frames/walk_005.png",
+          "game_previews/height_256/frames/walk_006.png",
+          "game_previews/height_256/frames/walk_007.png"
+        ],
+        "spritesheet": "game_previews/height_256/spritesheet.png",
+        "preview_gif": "game_previews/height_256/preview.gif",
+        "contact_sheet": "game_previews/height_256/contact_sheet.png"
+      }
+    },
+    "production_polish": {
+      "frames": [
+        "production_polish/frames/walk_000.png",
+        "production_polish/frames/walk_001.png",
+        "production_polish/frames/walk_002.png",
+        "production_polish/frames/walk_003.png",
+        "production_polish/frames/walk_004.png",
+        "production_polish/frames/walk_005.png",
+        "production_polish/frames/walk_006.png",
+        "production_polish/frames/walk_007.png"
+      ],
+      "spritesheet": "production_polish/spritesheet.png",
+      "preview_gif": "production_polish/preview.gif",
+      "contact_sheet": "production_polish/contact_sheet.png",
+      "game_previews": {
+        "height_128": {
+          "frame_size": {
+            "width": 112,
+            "height": 128
+          },
+          "frames": [
+            "production_polish/game_previews/height_128/frames/walk_000.png",
+            "production_polish/game_previews/height_128/frames/walk_001.png",
+            "production_polish/game_previews/height_128/frames/walk_002.png",
+            "production_polish/game_previews/height_128/frames/walk_003.png",
+            "production_polish/game_previews/height_128/frames/walk_004.png",
+            "production_polish/game_previews/height_128/frames/walk_005.png",
+            "production_polish/game_previews/height_128/frames/walk_006.png",
+            "production_polish/game_previews/height_128/frames/walk_007.png"
+          ],
+          "spritesheet": "production_polish/game_previews/height_128/spritesheet.png",
+          "preview_gif": "production_polish/game_previews/height_128/preview.gif",
+          "contact_sheet": "production_polish/game_previews/height_128/contact_sheet.png"
+        },
+        "height_192": {
+          "frame_size": {
+            "width": 168,
+            "height": 192
+          },
+          "frames": [
+            "production_polish/game_previews/height_192/frames/walk_000.png",
+            "production_polish/game_previews/height_192/frames/walk_001.png",
+            "production_polish/game_previews/height_192/frames/walk_002.png",
+            "production_polish/game_previews/height_192/frames/walk_003.png",
+            "production_polish/game_previews/height_192/frames/walk_004.png",
+            "production_polish/game_previews/height_192/frames/walk_005.png",
+            "production_polish/game_previews/height_192/frames/walk_006.png",
+            "production_polish/game_previews/height_192/frames/walk_007.png"
+          ],
+          "spritesheet": "production_polish/game_previews/height_192/spritesheet.png",
+          "preview_gif": "production_polish/game_previews/height_192/preview.gif",
+          "contact_sheet": "production_polish/game_previews/height_192/contact_sheet.png"
+        },
+        "height_256": {
+          "frame_size": {
+            "width": 224,
+            "height": 256
+          },
+          "frames": [
+            "production_polish/game_previews/height_256/frames/walk_000.png",
+            "production_polish/game_previews/height_256/frames/walk_001.png",
+            "production_polish/game_previews/height_256/frames/walk_002.png",
+            "production_polish/game_previews/height_256/frames/walk_003.png",
+            "production_polish/game_previews/height_256/frames/walk_004.png",
+            "production_polish/game_previews/height_256/frames/walk_005.png",
+            "production_polish/game_previews/height_256/frames/walk_006.png",
+            "production_polish/game_previews/height_256/frames/walk_007.png"
+          ],
+          "spritesheet": "production_polish/game_previews/height_256/spritesheet.png",
+          "preview_gif": "production_polish/game_previews/height_256/preview.gif",
+          "contact_sheet": "production_polish/game_previews/height_256/contact_sheet.png"
+        }
+      },
+      "polish_report": "production_polish/polish_report.json",
+      "polish_review": "production_polish/polish_review.md",
+      "production_candidate": {
+        "frames": [
+          "production_candidate/frames/walk_000.png",
+          "production_candidate/frames/walk_001.png",
+          "production_candidate/frames/walk_002.png",
+          "production_candidate/frames/walk_003.png",
+          "production_candidate/frames/walk_004.png",
+          "production_candidate/frames/walk_005.png",
+          "production_candidate/frames/walk_006.png",
+          "production_candidate/frames/walk_007.png"
+        ],
+        "spritesheet": "production_candidate/spritesheet.png",
+        "preview_gif": "production_candidate/preview.gif",
+        "contact_sheet": "production_candidate/contact_sheet.png",
+        "game_previews": {
+          "height_128": {
+            "frame_size": {
+              "width": 94,
+              "height": 128
+            },
+            "frames": [
+              "production_candidate/game_previews/height_128/frames/walk_000.png",
+              "production_candidate/game_previews/height_128/frames/walk_001.png",
+              "production_candidate/game_previews/height_128/frames/walk_002.png",
+              "production_candidate/game_previews/height_128/frames/walk_003.png",
+              "production_candidate/game_previews/height_128/frames/walk_004.png",
+              "production_candidate/game_previews/height_128/frames/walk_005.png",
+              "production_candidate/game_previews/height_128/frames/walk_006.png",
+              "production_candidate/game_previews/height_128/frames/walk_007.png"
+            ],
+            "spritesheet": "production_candidate/game_previews/height_128/spritesheet.png",
+            "preview_gif": "production_candidate/game_previews/height_128/preview.gif",
+            "contact_sheet": "production_candidate/game_previews/height_128/contact_sheet.png"
+          },
+          "height_192": {
+            "frame_size": {
+              "width": 141,
+              "height": 192
+            },
+            "frames": [
+              "production_candidate/game_previews/height_192/frames/walk_000.png",
+              "production_candidate/game_previews/height_192/frames/walk_001.png",
+              "production_candidate/game_previews/height_192/frames/walk_002.png",
+              "production_candidate/game_previews/height_192/frames/walk_003.png",
+              "production_candidate/game_previews/height_192/frames/walk_004.png",
+              "production_candidate/game_previews/height_192/frames/walk_005.png",
+              "production_candidate/game_previews/height_192/frames/walk_006.png",
+              "production_candidate/game_previews/height_192/frames/walk_007.png"
+            ],
+            "spritesheet": "production_candidate/game_previews/height_192/spritesheet.png",
+            "preview_gif": "production_candidate/game_previews/height_192/preview.gif",
+            "contact_sheet": "production_candidate/game_previews/height_192/contact_sheet.png"
+          },
+          "height_256": {
+            "frame_size": {
+              "width": 188,
+              "height": 256
+            },
+            "frames": [
+              "production_candidate/game_previews/height_256/frames/walk_000.png",
+              "production_candidate/game_previews/height_256/frames/walk_001.png",
+              "production_candidate/game_previews/height_256/frames/walk_002.png",
+              "production_candidate/game_previews/height_256/frames/walk_003.png",
+              "production_candidate/game_previews/height_256/frames/walk_004.png",
+              "production_candidate/game_previews/height_256/frames/walk_005.png",
+              "production_candidate/game_previews/height_256/frames/walk_006.png",
+              "production_candidate/game_previews/height_256/frames/walk_007.png"
+            ],
+            "spritesheet": "production_candidate/game_previews/height_256/spritesheet.png",
+            "preview_gif": "production_candidate/game_previews/height_256/preview.gif",
+            "contact_sheet": "production_candidate/game_previews/height_256/contact_sheet.png"
+          }
+        },
+        "candidate_report": "production_candidate/candidate_report.json",
+        "candidate_review": "production_candidate/candidate_review.md"
+      },
+      "production_ready": {
+        "frames": [
+          "production_ready/frames/walk_000.png",
+          "production_ready/frames/walk_001.png",
+          "production_ready/frames/walk_002.png",
+          "production_ready/frames/walk_003.png",
+          "production_ready/frames/walk_004.png",
+          "production_ready/frames/walk_005.png",
+          "production_ready/frames/walk_006.png",
+          "production_ready/frames/walk_007.png"
+        ],
+        "spritesheet": "production_ready/spritesheet.png",
+        "preview_gif": "production_ready/preview.gif",
+        "contact_sheet": "production_ready/contact_sheet.png",
+        "game_previews": {
+          "height_128": {
+            "frame_size": {
+              "width": 94,
+              "height": 128
+            },
+            "frames": [
+              "production_ready/game_previews/height_128/frames/walk_000.png",
+              "production_ready/game_previews/height_128/frames/walk_001.png",
+              "production_ready/game_previews/height_128/frames/walk_002.png",
+              "production_ready/game_previews/height_128/frames/walk_003.png",
+              "production_ready/game_previews/height_128/frames/walk_004.png",
+              "production_ready/game_previews/height_128/frames/walk_005.png",
+              "production_ready/game_previews/height_128/frames/walk_006.png",
+              "production_ready/game_previews/height_128/frames/walk_007.png"
+            ],
+            "spritesheet": "production_ready/game_previews/height_128/spritesheet.png",
+            "preview_gif": "production_ready/game_previews/height_128/preview.gif",
+            "contact_sheet": "production_ready/game_previews/height_128/contact_sheet.png"
+          },
+          "height_192": {
+            "frame_size": {
+              "width": 141,
+              "height": 192
+            },
+            "frames": [
+              "production_ready/game_previews/height_192/frames/walk_000.png",
+              "production_ready/game_previews/height_192/frames/walk_001.png",
+              "production_ready/game_previews/height_192/frames/walk_002.png",
+              "production_ready/game_previews/height_192/frames/walk_003.png",
+              "production_ready/game_previews/height_192/frames/walk_004.png",
+              "production_ready/game_previews/height_192/frames/walk_005.png",
+              "production_ready/game_previews/height_192/frames/walk_006.png",
+              "production_ready/game_previews/height_192/frames/walk_007.png"
+            ],
+            "spritesheet": "production_ready/game_previews/height_192/spritesheet.png",
+            "preview_gif": "production_ready/game_previews/height_192/preview.gif",
+            "contact_sheet": "production_ready/game_previews/height_192/contact_sheet.png"
+          },
+          "height_256": {
+            "frame_size": {
+              "width": 188,
+              "height": 256
+            },
+            "frames": [
+              "production_ready/game_previews/height_256/frames/walk_000.png",
+              "production_ready/game_previews/height_256/frames/walk_001.png",
+              "production_ready/game_previews/height_256/frames/walk_002.png",
+              "production_ready/game_previews/height_256/frames/walk_003.png",
+              "production_ready/game_previews/height_256/frames/walk_004.png",
+              "production_ready/game_previews/height_256/frames/walk_005.png",
+              "production_ready/game_previews/height_256/frames/walk_006.png",
+              "production_ready/game_previews/height_256/frames/walk_007.png"
+            ],
+            "spritesheet": "production_ready/game_previews/height_256/spritesheet.png",
+            "preview_gif": "production_ready/game_previews/height_256/preview.gif",
+            "contact_sheet": "production_ready/game_previews/height_256/contact_sheet.png"
+          }
+        },
+        "production_ready_report": "production_ready/production_ready_report.json",
+        "production_ready_review": "production_ready/production_ready_review.md"
+      }
+    }
+  },
+  "game_readiness": {
+    "fixed_best_rough": true,
+    "generated_new_motion": false,
+    "preview_heights": [
+      "height_128",
+      "height_192",
+      "height_256"
+    ],
+    "alpha_edge_touch_frames": [],
+    "estimated_head_y_range": 12,
+    "estimated_ground_y_range": 9,
+    "estimated_center_x_range": 31.5,
+    "estimated_bbox_width_range": 114,
+    "estimated_bbox_height_range": 7,
+    "game_preview_review_required": true,
+    "decision": "reviewable_rough_candidate_not_production"
+  },
+  "production_polish": {
+    "status": "auto_polished_candidate_not_final",
+    "method": "ground_line_alignment_and_small_alpha_component_cleanup",
+    "target_bottom_y": 453,
+    "estimated_ground_y_range_before": 9,
+    "estimated_ground_y_range_after": 0,
+    "max_abs_y_shift": 9,
+    "total_removed_small_components": 0,
+    "frames": [
+      {
+        "index": 0,
+        "source_bbox": [
+          110,
+          29,
+          348,
+          451
+        ],
+        "polished_bbox": [
+          110,
+          31,
+          348,
+          453
+        ],
+        "y_shift": 2,
+        "removed_small_components": 0
+      },
+      {
+        "index": 1,
+        "source_bbox": [
+          125,
+          37,
+          304,
+          453
+        ],
+        "polished_bbox": [
+          125,
+          37,
+          304,
+          453
+        ],
+        "y_shift": 0,
+        "removed_small_components": 0
+      },
+      {
+        "index": 2,
+        "source_bbox": [
+          114,
+          30,
+          311,
+          452
+        ],
+        "polished_bbox": [
+          114,
+          31,
+          311,
+          453
+        ],
+        "y_shift": 1,
+        "removed_small_components": 0
+      },
+      {
+        "index": 3,
+        "source_bbox": [
+          99,
+          29,
+          371,
+          452
+        ],
+        "polished_bbox": [
+          99,
+          30,
+          371,
+          453
+        ],
+        "y_shift": 1,
+        "removed_small_components": 0
+      },
+      {
+        "index": 4,
+        "source_bbox": [
+          87,
+          25,
+          337,
+          444
+        ],
+        "polished_bbox": [
+          87,
+          34,
+          337,
+          453
+        ],
+        "y_shift": 9,
+        "removed_small_components": 0
+      },
+      {
+        "index": 5,
+        "source_bbox": [
+          136,
+          29,
+          294,
+          447
+        ],
+        "polished_bbox": [
+          136,
+          35,
+          294,
+          453
+        ],
+        "y_shift": 6,
+        "removed_small_components": 0
+      },
+      {
+        "index": 6,
+        "source_bbox": [
+          122,
+          26,
+          311,
+          446
+        ],
+        "polished_bbox": [
+          122,
+          33,
+          311,
+          453
+        ],
+        "y_shift": 7,
+        "removed_small_components": 0
+      },
+      {
+        "index": 7,
+        "source_bbox": [
+          69,
+          26,
+          338,
+          444
+        ],
+        "polished_bbox": [
+          69,
+          35,
+          338,
+          453
+        ],
+        "y_shift": 9,
+        "removed_small_components": 0
+      }
+    ],
+    "manual_review_required": true,
+    "production_candidate": {
+      "status": "production_candidate_for_human_review",
+      "source": "production_polish",
+      "crop_rect": [
+        45,
+        6,
+        397,
+        486
+      ],
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "canvas_reduction_from_448x512": {
+        "width_delta": 96,
+        "height_delta": 32
+      },
+      "alpha_edge_touch_frames": [],
+      "estimated_ground_y_range": 0,
+      "manual_review_required": true
+    },
+    "production_ready": {
+      "status": "production_ready",
+      "source": "production_candidate",
+      "frame_count": 8,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "estimated_ground_y_range": 0,
+      "alpha_edge_touch_frames": [],
+      "agent_visual_review": "accepted_at_128_and_192_contact_sheet_sizes",
+      "production_ready": true
+    }
+  },
+  "production_ready": {
+    "status": "production_ready",
+    "source": "production_candidate",
+    "frame_count": 8,
+    "frame_size": {
+      "width": 352,
+      "height": 480
+    },
+    "estimated_ground_y_range": 0,
+    "alpha_edge_touch_frames": [],
+    "agent_visual_review": "accepted_at_128_and_192_contact_sheet_sizes",
+    "production_ready": true
+  },
+  "production_gate": {
+    "target": "production_walk_8frame_sideview",
+    "decision": "production_ready",
+    "production_ready": true,
+    "checks": {
+      "no_alpha_edge_touch": true,
+      "stable_ground_line": true,
+      "stable_head_height": true,
+      "stable_body_height": true,
+      "root_motion_not_excessive": true,
+      "game_previews_exist": true
+    },
+    "blocking_issues": [],
+    "manual_polish_required": false,
+    "manual_polish_queue": [
+      "Agent visual review accepted the 128px and 192px production-ready contact sheets.",
+      "Production-ready folder was finalized from the stable production candidate."
+    ],
+    "do_not_claim_production_until": []
+  },
+  "source": {
+    "rough_frames_dir": "assets\\artist_authored_roughs\\imagegen_walk_8frame_20260614_v2\\rough_frames",
+    "reference_image": "assets\\reference\\Anima_00013_.png",
+    "note": "Generated with built-in image_gen as a second rough candidate for Route A; finalized as production_ready for the current 8-frame side-view walk MVP after production_candidate checks and Agent visual review."
+  },
+  "frames": [
+    {
+      "index": 0,
+      "phase": "contact",
+      "file": "frames/walk_000.png",
+      "duration_ms": 125,
+      "bbox": [
+        110,
+        29,
+        348,
+        451
+      ]
+    },
+    {
+      "index": 1,
+      "phase": "down",
+      "file": "frames/walk_001.png",
+      "duration_ms": 125,
+      "bbox": [
+        125,
+        37,
+        304,
+        453
+      ]
+    },
+    {
+      "index": 2,
+      "phase": "passing",
+      "file": "frames/walk_002.png",
+      "duration_ms": 125,
+      "bbox": [
+        114,
+        30,
+        311,
+        452
+      ]
+    },
+    {
+      "index": 3,
+      "phase": "up",
+      "file": "frames/walk_003.png",
+      "duration_ms": 125,
+      "bbox": [
+        99,
+        29,
+        371,
+        452
+      ]
+    },
+    {
+      "index": 4,
+      "phase": "opposite_contact",
+      "file": "frames/walk_004.png",
+      "duration_ms": 125,
+      "bbox": [
+        87,
+        25,
+        337,
+        444
+      ]
+    },
+    {
+      "index": 5,
+      "phase": "opposite_down",
+      "file": "frames/walk_005.png",
+      "duration_ms": 125,
+      "bbox": [
+        136,
+        29,
+        294,
+        447
+      ]
+    },
+    {
+      "index": 6,
+      "phase": "opposite_passing",
+      "file": "frames/walk_006.png",
+      "duration_ms": 125,
+      "bbox": [
+        122,
+        26,
+        311,
+        446
+      ]
+    },
+    {
+      "index": 7,
+      "phase": "opposite_up",
+      "file": "frames/walk_007.png",
+      "duration_ms": 125,
+      "bbox": [
+        69,
+        26,
+        338,
+        444
+      ]
+    }
+  ],
+  "review": {
+    "human_pose_control": true,
+    "human_silhouette_control": true,
+    "aseprite_friendly": true,
+    "godot_friendly": true,
+    "production_ready": true
+  }
+}

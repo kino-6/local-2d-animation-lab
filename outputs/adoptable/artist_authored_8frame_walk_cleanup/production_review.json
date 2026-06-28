@@ -1,0 +1,20 @@
+{
+  "target": "production_walk_8frame_sideview",
+  "decision": "production_ready",
+  "production_ready": true,
+  "checks": {
+    "no_alpha_edge_touch": true,
+    "stable_ground_line": true,
+    "stable_head_height": true,
+    "stable_body_height": true,
+    "root_motion_not_excessive": true,
+    "game_previews_exist": true
+  },
+  "blocking_issues": [],
+  "manual_polish_required": false,
+  "manual_polish_queue": [
+    "Agent visual review accepted the 128px and 192px production-ready contact sheets.",
+    "Production-ready folder was finalized from the stable production candidate."
+  ],
+  "do_not_claim_production_until": []
+}

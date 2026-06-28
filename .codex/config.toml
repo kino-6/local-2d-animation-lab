@@ -1,0 +1,21 @@
+# Project-local Codex safety baseline.
+#
+# Keep this file small: no host credentials, no notifications, and no default MCP servers.
+# Add task-specific tools in user-local config or through the active Codex session when needed.
+
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+web_search = "live"
+
+persistent_instructions = "Follow .codex/AGENTS.md. For substantial changes, perform the project final Gate check before summarizing."
+
+[profiles.strict]
+approval_policy = "on-request"
+sandbox_mode = "read-only"
+web_search = "cached"
+
+[profiles.local-write]
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+web_search = "live"
+

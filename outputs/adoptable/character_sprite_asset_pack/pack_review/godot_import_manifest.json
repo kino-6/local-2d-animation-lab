@@ -1,0 +1,450 @@
+{
+  "asset_kind": "AnimatedSprite2D_action_pack",
+  "origin_policy": "bottom_center_canvas",
+  "spritesheet_authoring_policy": {
+    "source_inspiration": "NO6KIKO/gorest-2d-animation-spritesheet-generator",
+    "source_url": "https://github.com/NO6KIKO/gorest-2d-animation-spritesheet-generator",
+    "generation_preference": "full_spritesheet_first_then_split_frames",
+    "normalization": "global_uniform_scale_not_per_frame_resize",
+    "anchor_policy": "stable_root_anchor_with_bottom_center_runtime_origin",
+    "grid_policy": "detect_source_cells_before_falling_back_to_proportional_grid",
+    "tail_frame_policy": "do_not_export_a_duplicate_first_frame_as_the_final_loop_frame",
+    "route_fit": "non_conflicting_route_a_guidance_for_future_generated_rough_sheets"
+  },
+  "actions": {
+    "walk": {
+      "spritesheet": "actions/walk/spritesheet.png",
+      "frames": [
+        "actions/walk/frames/walk_000.png",
+        "actions/walk/frames/walk_001.png",
+        "actions/walk/frames/walk_002.png",
+        "actions/walk/frames/walk_003.png",
+        "actions/walk/frames/walk_004.png",
+        "actions/walk/frames/walk_005.png",
+        "actions/walk/frames/walk_006.png",
+        "actions/walk/frames/walk_007.png"
+      ],
+      "fps": 8,
+      "loop": true,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 20,
+        "y": 20,
+        "width": 310,
+        "height": 431
+      },
+      "hit_frames": [],
+      "invulnerable_frames": [],
+      "parry_frames": [],
+      "layered": null,
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
+      "transition_notes": [
+        "idle",
+        "run",
+        "jump",
+        "hurt",
+        "dodge_backstep",
+        "parry_sword",
+        "attack_sword_light"
+      ]
+    },
+    "idle": {
+      "spritesheet": "actions/idle/spritesheet.png",
+      "frames": [
+        "actions/idle/frames/idle_000.png",
+        "actions/idle/frames/idle_001.png",
+        "actions/idle/frames/idle_002.png",
+        "actions/idle/frames/idle_003.png"
+      ],
+      "fps": 8,
+      "loop": true,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 87,
+        "y": 23,
+        "width": 166,
+        "height": 428
+      },
+      "hit_frames": [],
+      "invulnerable_frames": [],
+      "parry_frames": [],
+      "layered": null,
+      "frame_density_review": {
+        "source_frame_count": 4,
+        "playback_frame_count": 4,
+        "recommended_min": 4,
+        "recommended_max": 6,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
+      "transition_notes": [
+        "walk",
+        "run",
+        "jump",
+        "hurt",
+        "dodge_backstep",
+        "parry_sword",
+        "attack_sword_light"
+      ]
+    },
+    "run": {
+      "spritesheet": "actions/run/spritesheet.png",
+      "frames": [
+        "actions/run/frames/run_000.png",
+        "actions/run/frames/run_001.png",
+        "actions/run/frames/run_002.png",
+        "actions/run/frames/run_003.png",
+        "actions/run/frames/run_004.png",
+        "actions/run/frames/run_005.png",
+        "actions/run/frames/run_006.png",
+        "actions/run/frames/run_007.png"
+      ],
+      "fps": 8,
+      "loop": true,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 26,
+        "y": 49,
+        "width": 305,
+        "height": 368
+      },
+      "hit_frames": [],
+      "invulnerable_frames": [],
+      "parry_frames": [],
+      "layered": null,
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
+      "transition_notes": [
+        "idle",
+        "walk",
+        "jump",
+        "hurt",
+        "dodge_backstep",
+        "parry_sword",
+        "attack_sword_light"
+      ]
+    },
+    "jump": {
+      "spritesheet": "actions/jump/spritesheet.png",
+      "frames": [
+        "actions/jump/frames/jump_000.png",
+        "actions/jump/frames/jump_001.png",
+        "actions/jump/frames/jump_002.png",
+        "actions/jump/frames/jump_003.png",
+        "actions/jump/frames/jump_004.png",
+        "actions/jump/frames/jump_005.png",
+        "actions/jump/frames/jump_006.png",
+        "actions/jump/frames/jump_007.png",
+        "actions/jump/frames/jump_008.png",
+        "actions/jump/frames/jump_009.png",
+        "actions/jump/frames/jump_010.png",
+        "actions/jump/frames/jump_011.png"
+      ],
+      "fps": 8,
+      "loop": false,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 5,
+        "y": 9,
+        "width": 347,
+        "height": 442
+      },
+      "hit_frames": [],
+      "invulnerable_frames": [],
+      "parry_frames": [],
+      "layered": null,
+      "frame_density_review": {
+        "source_frame_count": 12,
+        "playback_frame_count": 12,
+        "recommended_min": 12,
+        "recommended_max": 16,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
+      "transition_notes": [
+        "idle",
+        "walk",
+        "run",
+        "hurt",
+        "dodge_backstep",
+        "parry_sword",
+        "attack_sword_light"
+      ]
+    },
+    "hurt": {
+      "spritesheet": "actions/hurt/spritesheet.png",
+      "frames": [
+        "actions/hurt/frames/hurt_000.png",
+        "actions/hurt/frames/hurt_001.png",
+        "actions/hurt/frames/hurt_002.png",
+        "actions/hurt/frames/hurt_003.png",
+        "actions/hurt/frames/hurt_004.png",
+        "actions/hurt/frames/hurt_005.png",
+        "actions/hurt/frames/hurt_006.png",
+        "actions/hurt/frames/hurt_007.png"
+      ],
+      "fps": 8,
+      "loop": false,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 35,
+        "y": 71,
+        "width": 270,
+        "height": 380
+      },
+      "hit_frames": [],
+      "invulnerable_frames": [],
+      "parry_frames": [],
+      "layered": null,
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
+      "transition_notes": [
+        "idle",
+        "walk",
+        "dodge_backstep",
+        "parry_sword",
+        "attack_sword_light"
+      ]
+    },
+    "dodge_backstep": {
+      "spritesheet": "actions/dodge_backstep/spritesheet.png",
+      "frames": [
+        "actions/dodge_backstep/frames/dodge_backstep_000.png",
+        "actions/dodge_backstep/frames/dodge_backstep_001.png",
+        "actions/dodge_backstep/frames/dodge_backstep_002.png",
+        "actions/dodge_backstep/frames/dodge_backstep_003.png",
+        "actions/dodge_backstep/frames/dodge_backstep_004.png",
+        "actions/dodge_backstep/frames/dodge_backstep_005.png",
+        "actions/dodge_backstep/frames/dodge_backstep_006.png",
+        "actions/dodge_backstep/frames/dodge_backstep_007.png"
+      ],
+      "fps": 8,
+      "loop": false,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 0,
+        "y": 87,
+        "width": 339,
+        "height": 364
+      },
+      "hit_frames": [],
+      "invulnerable_frames": [
+        2,
+        3,
+        4
+      ],
+      "parry_frames": [],
+      "layered": null,
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
+      "transition_notes": [
+        "idle",
+        "walk",
+        "run",
+        "jump",
+        "hurt",
+        "parry_sword",
+        "attack_sword_light"
+      ]
+    },
+    "parry_sword": {
+      "spritesheet": "actions/parry_sword/spritesheet.png",
+      "frames": [
+        "actions/parry_sword/frames/parry_sword_000.png",
+        "actions/parry_sword/frames/parry_sword_001.png",
+        "actions/parry_sword/frames/parry_sword_002.png",
+        "actions/parry_sword/frames/parry_sword_003.png",
+        "actions/parry_sword/frames/parry_sword_004.png",
+        "actions/parry_sword/frames/parry_sword_005.png",
+        "actions/parry_sword/frames/parry_sword_006.png",
+        "actions/parry_sword/frames/parry_sword_007.png"
+      ],
+      "fps": 8,
+      "loop": false,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 0,
+        "y": 7,
+        "width": 345,
+        "height": 444
+      },
+      "hit_frames": [],
+      "invulnerable_frames": [],
+      "parry_frames": [
+        3,
+        4
+      ],
+      "layered": {
+        "manifest": "actions/parry_sword/layered_manifest.json",
+        "layers": [
+          "body",
+          "weapon",
+          "effect"
+        ],
+        "z_order": [
+          "weapon",
+          "body",
+          "effect"
+        ],
+        "source": "native_separated_layers"
+      },
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
+      "transition_notes": [
+        "idle",
+        "walk",
+        "run",
+        "jump",
+        "hurt",
+        "dodge_backstep",
+        "attack_sword_light"
+      ]
+    },
+    "attack_sword_light": {
+      "spritesheet": "actions/attack_sword_light/spritesheet.png",
+      "frames": [
+        "actions/attack_sword_light/frames/attack_sword_light_000.png",
+        "actions/attack_sword_light/frames/attack_sword_light_001.png",
+        "actions/attack_sword_light/frames/attack_sword_light_002.png",
+        "actions/attack_sword_light/frames/attack_sword_light_003.png",
+        "actions/attack_sword_light/frames/attack_sword_light_004.png",
+        "actions/attack_sword_light/frames/attack_sword_light_005.png",
+        "actions/attack_sword_light/frames/attack_sword_light_006.png",
+        "actions/attack_sword_light/frames/attack_sword_light_007.png",
+        "actions/attack_sword_light/frames/attack_sword_light_008.png",
+        "actions/attack_sword_light/frames/attack_sword_light_009.png",
+        "actions/attack_sword_light/frames/attack_sword_light_010.png",
+        "actions/attack_sword_light/frames/attack_sword_light_011.png",
+        "actions/attack_sword_light/frames/attack_sword_light_012.png",
+        "actions/attack_sword_light/frames/attack_sword_light_013.png",
+        "actions/attack_sword_light/frames/attack_sword_light_014.png",
+        "actions/attack_sword_light/frames/attack_sword_light_015.png"
+      ],
+      "fps": 8,
+      "loop": false,
+      "frame_duration_ms": 125,
+      "origin": {
+        "policy": "bottom_center_canvas",
+        "x": 176,
+        "y": 480
+      },
+      "collision_box": {
+        "x": 7,
+        "y": 23,
+        "width": 333,
+        "height": 428
+      },
+      "hit_frames": [
+        6,
+        7
+      ],
+      "invulnerable_frames": [],
+      "parry_frames": [],
+      "layered": {
+        "manifest": "actions/attack_sword_light/layered_manifest.json",
+        "layers": [
+          "body",
+          "weapon",
+          "effect"
+        ],
+        "z_order": [
+          "weapon",
+          "body",
+          "effect"
+        ],
+        "source": "native_separated_layers"
+      },
+      "frame_density_review": {
+        "source_frame_count": 16,
+        "playback_frame_count": 16,
+        "recommended_min": 12,
+        "recommended_max": 18,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      },
+      "transition_notes": [
+        "idle",
+        "walk",
+        "run",
+        "jump",
+        "hurt",
+        "dodge_backstep",
+        "parry_sword"
+      ]
+    }
+  }
+}

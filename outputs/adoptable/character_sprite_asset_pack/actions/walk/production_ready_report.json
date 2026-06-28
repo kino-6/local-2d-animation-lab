@@ -1,0 +1,22 @@
+{
+  "status": "production_ready",
+  "source": "production_candidate",
+  "frame_count": 8,
+  "frame_size": {
+    "width": 352,
+    "height": 480
+  },
+  "estimated_ground_y_range": 0,
+  "alpha_edge_touch_frames": [],
+  "agent_visual_review": "accepted_at_128_and_192_contact_sheet_sizes",
+  "production_ready": true,
+  "frame_density_review": {
+    "source_frame_count": 8,
+    "playback_frame_count": 8,
+    "recommended_min": 8,
+    "recommended_max": 12,
+    "decision": "within_recommended_range",
+    "policy": "review_guidance_not_universal_rule",
+    "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+  }
+}

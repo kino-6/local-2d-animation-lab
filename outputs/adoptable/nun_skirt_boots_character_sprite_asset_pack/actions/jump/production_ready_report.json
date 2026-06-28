@@ -1,0 +1,32 @@
+{
+  "action": "jump",
+  "status": "production_ready",
+  "frame_count": 12,
+  "frame_size": {
+    "width": 256,
+    "height": 384
+  },
+  "phase_names": [
+    "crouch",
+    "deep_crouch",
+    "takeoff",
+    "early_rise",
+    "rise",
+    "apex_approach",
+    "apex",
+    "fall",
+    "landing_contact",
+    "landing_settle",
+    "recover_half",
+    "recover"
+  ],
+  "metrics": {
+    "same_size": true,
+    "alpha_edge_touch_frames": [],
+    "mean_step_delta": 14.9,
+    "loop_delta": null,
+    "ground_y_range": 0,
+    "production_ready": true
+  },
+  "production_ready": true
+}

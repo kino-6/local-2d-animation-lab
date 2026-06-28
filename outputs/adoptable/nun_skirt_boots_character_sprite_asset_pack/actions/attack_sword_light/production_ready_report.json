@@ -1,0 +1,31 @@
+{
+  "action": "attack_sword_light",
+  "status": "production_ready",
+  "frame_count": 11,
+  "frame_size": {
+    "width": 256,
+    "height": 384
+  },
+  "phase_names": [
+    "ready",
+    "anticipation",
+    "draw_back",
+    "windup",
+    "slash_start",
+    "active_slash",
+    "follow_through",
+    "recoil",
+    "settle_1",
+    "recover",
+    "ready_return"
+  ],
+  "metrics": {
+    "same_size": true,
+    "alpha_edge_touch_frames": [],
+    "mean_step_delta": 10.295,
+    "loop_delta": null,
+    "ground_y_range": 0,
+    "production_ready": true
+  },
+  "production_ready": true
+}

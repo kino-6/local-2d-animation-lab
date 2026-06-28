@@ -1,0 +1,1856 @@
+{
+  "route": "character_sprite_asset_pack",
+  "asset_kind": "2d_game_sprite_asset_pack",
+  "source_reference": "assets/reference/Anima_00013_.png",
+  "canonical_identity": {
+    "pink_bob_hair": "pink hair silhouette",
+    "side_profile_anime_girl": "right-facing side-profile anime girl",
+    "sailor_white_top": "sailor-style white top",
+    "red_tie": "red tie",
+    "navy_skirt": "navy skirt",
+    "dark_socks": "dark socks",
+    "brown_shoes": "brown shoes"
+  },
+  "actions": {
+    "walk": {
+      "action": "walk",
+      "frame_count": 8,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "artist_authored_8frame_walk_cleanup/production_ready",
+      "phase_names": [
+        "right_contact",
+        "right_down",
+        "right_passing",
+        "right_up",
+        "left_contact",
+        "left_down",
+        "left_passing",
+        "left_up"
+      ],
+      "frames": [
+        "actions/walk/frames/walk_000.png",
+        "actions/walk/frames/walk_001.png",
+        "actions/walk/frames/walk_002.png",
+        "actions/walk/frames/walk_003.png",
+        "actions/walk/frames/walk_004.png",
+        "actions/walk/frames/walk_005.png",
+        "actions/walk/frames/walk_006.png",
+        "actions/walk/frames/walk_007.png"
+      ],
+      "spritesheet": "actions/walk/spritesheet.png",
+      "preview_gif": "actions/walk/preview.gif",
+      "contact_sheet": "actions/walk/contact_sheet.png",
+      "production_ready_report": "actions/walk/production_ready_report.json",
+      "runtime": {
+        "fps": 8,
+        "frame_duration_ms": 125,
+        "loop": true,
+        "source_frame_count": 8,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "playback_frame_count": 8,
+        "hit_frames": [],
+        "invulnerable_frames": [],
+        "parry_frames": [],
+        "frame_density_note": "Playback indices may add limited-animation holds for runtime feel. True inbetween art should come from an authored or I2I rough retake.",
+        "origin": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "pivot": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "origin_note": "Use a stable bottom-center canvas origin so action transitions do not jump.",
+        "collision_box": {
+          "x": 20,
+          "y": 20,
+          "width": 310,
+          "height": 431
+        },
+        "visible_bbox": {
+          "x": 24,
+          "y": 24,
+          "width": 302,
+          "height": 423
+        },
+        "ground_y_range": 0,
+        "phase_events": [
+          {
+            "frame": 0,
+            "phase": "right_contact"
+          },
+          {
+            "frame": 1,
+            "phase": "right_down"
+          },
+          {
+            "frame": 2,
+            "phase": "right_passing"
+          },
+          {
+            "frame": 3,
+            "phase": "right_up"
+          },
+          {
+            "frame": 4,
+            "phase": "left_contact"
+          },
+          {
+            "frame": 5,
+            "phase": "left_down"
+          },
+          {
+            "frame": 6,
+            "phase": "left_passing"
+          },
+          {
+            "frame": 7,
+            "phase": "left_up"
+          }
+        ],
+        "transition_notes": [
+          "idle",
+          "run",
+          "jump",
+          "hurt",
+          "dodge_backstep",
+          "parry_sword",
+          "attack_sword_light"
+        ],
+        "review_role": "baseline locomotion loop",
+        "import_assumptions": {
+          "godot": "SpriteFrames or AnimatedSprite2D per action; use origin as bottom-center canvas.",
+          "aseprite": "Import frames as one tag per action; keep transparent canvas size unchanged."
+        },
+        "frame_density_review": {
+          "source_frame_count": 8,
+          "playback_frame_count": 8,
+          "recommended_min": 8,
+          "recommended_max": 12,
+          "decision": "within_recommended_range",
+          "policy": "review_guidance_not_universal_rule",
+          "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+        }
+      },
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      }
+    },
+    "idle": {
+      "action": "idle",
+      "frame_count": 4,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "walk_005.png",
+      "phase_names": [
+        "neutral",
+        "breathe_up",
+        "breathe_peak",
+        "breathe_down"
+      ],
+      "frames": [
+        "actions/idle/frames/idle_000.png",
+        "actions/idle/frames/idle_001.png",
+        "actions/idle/frames/idle_002.png",
+        "actions/idle/frames/idle_003.png"
+      ],
+      "spritesheet": "actions/idle/spritesheet.png",
+      "preview_gif": "actions/idle/preview.gif",
+      "contact_sheet": "actions/idle/contact_sheet.png",
+      "game_previews": {
+        "height_128": {
+          "frame_size": {
+            "width": 94,
+            "height": 128
+          },
+          "frames": [
+            "actions/idle/game_previews/height_128/frames/idle_000.png",
+            "actions/idle/game_previews/height_128/frames/idle_001.png",
+            "actions/idle/game_previews/height_128/frames/idle_002.png",
+            "actions/idle/game_previews/height_128/frames/idle_003.png"
+          ],
+          "spritesheet": "actions/idle/game_previews/height_128/spritesheet.png",
+          "preview_gif": "actions/idle/game_previews/height_128/preview.gif",
+          "contact_sheet": "actions/idle/game_previews/height_128/contact_sheet.png"
+        },
+        "height_192": {
+          "frame_size": {
+            "width": 141,
+            "height": 192
+          },
+          "frames": [
+            "actions/idle/game_previews/height_192/frames/idle_000.png",
+            "actions/idle/game_previews/height_192/frames/idle_001.png",
+            "actions/idle/game_previews/height_192/frames/idle_002.png",
+            "actions/idle/game_previews/height_192/frames/idle_003.png"
+          ],
+          "spritesheet": "actions/idle/game_previews/height_192/spritesheet.png",
+          "preview_gif": "actions/idle/game_previews/height_192/preview.gif",
+          "contact_sheet": "actions/idle/game_previews/height_192/contact_sheet.png"
+        },
+        "height_256": {
+          "frame_size": {
+            "width": 188,
+            "height": 256
+          },
+          "frames": [
+            "actions/idle/game_previews/height_256/frames/idle_000.png",
+            "actions/idle/game_previews/height_256/frames/idle_001.png",
+            "actions/idle/game_previews/height_256/frames/idle_002.png",
+            "actions/idle/game_previews/height_256/frames/idle_003.png"
+          ],
+          "spritesheet": "actions/idle/game_previews/height_256/spritesheet.png",
+          "preview_gif": "actions/idle/game_previews/height_256/preview.gif",
+          "contact_sheet": "actions/idle/game_previews/height_256/contact_sheet.png"
+        }
+      },
+      "production_ready_report": "actions/idle/production_ready_report.json",
+      "runtime": {
+        "fps": 8,
+        "frame_duration_ms": 125,
+        "loop": true,
+        "source_frame_count": 4,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "playback_frame_count": 4,
+        "hit_frames": [],
+        "invulnerable_frames": [],
+        "parry_frames": [],
+        "frame_density_note": "Playback indices may add limited-animation holds for runtime feel. True inbetween art should come from an authored or I2I rough retake.",
+        "origin": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "pivot": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "origin_note": "Use a stable bottom-center canvas origin so action transitions do not jump.",
+        "collision_box": {
+          "x": 87,
+          "y": 23,
+          "width": 166,
+          "height": 428
+        },
+        "visible_bbox": {
+          "x": 91,
+          "y": 27,
+          "width": 158,
+          "height": 420
+        },
+        "ground_y_range": 0,
+        "phase_events": [
+          {
+            "frame": 0,
+            "phase": "neutral"
+          },
+          {
+            "frame": 1,
+            "phase": "breathe_up"
+          },
+          {
+            "frame": 2,
+            "phase": "breathe_peak"
+          },
+          {
+            "frame": 3,
+            "phase": "breathe_down"
+          }
+        ],
+        "transition_notes": [
+          "walk",
+          "run",
+          "jump",
+          "hurt",
+          "dodge_backstep",
+          "parry_sword",
+          "attack_sword_light"
+        ],
+        "review_role": "subtle standing loop",
+        "import_assumptions": {
+          "godot": "SpriteFrames or AnimatedSprite2D per action; use origin as bottom-center canvas.",
+          "aseprite": "Import frames as one tag per action; keep transparent canvas size unchanged."
+        },
+        "frame_density_review": {
+          "source_frame_count": 4,
+          "playback_frame_count": 4,
+          "recommended_min": 4,
+          "recommended_max": 6,
+          "decision": "within_recommended_range",
+          "policy": "review_guidance_not_universal_rule",
+          "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+        }
+      },
+      "frame_density_review": {
+        "source_frame_count": 4,
+        "playback_frame_count": 4,
+        "recommended_min": 4,
+        "recommended_max": 6,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      }
+    },
+    "run": {
+      "action": "run",
+      "frame_count": 8,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "imagegen_run_8frame_20260614_rough",
+      "phase_names": [
+        "right_contact",
+        "right_down",
+        "flight_forward",
+        "left_reach",
+        "left_contact",
+        "left_down",
+        "flight_backward",
+        "right_reach"
+      ],
+      "frames": [
+        "actions/run/frames/run_000.png",
+        "actions/run/frames/run_001.png",
+        "actions/run/frames/run_002.png",
+        "actions/run/frames/run_003.png",
+        "actions/run/frames/run_004.png",
+        "actions/run/frames/run_005.png",
+        "actions/run/frames/run_006.png",
+        "actions/run/frames/run_007.png"
+      ],
+      "spritesheet": "actions/run/spritesheet.png",
+      "preview_gif": "actions/run/preview.gif",
+      "contact_sheet": "actions/run/contact_sheet.png",
+      "game_previews": {
+        "height_128": {
+          "frame_size": {
+            "width": 94,
+            "height": 128
+          },
+          "frames": [
+            "actions/run/game_previews/height_128/frames/run_000.png",
+            "actions/run/game_previews/height_128/frames/run_001.png",
+            "actions/run/game_previews/height_128/frames/run_002.png",
+            "actions/run/game_previews/height_128/frames/run_003.png",
+            "actions/run/game_previews/height_128/frames/run_004.png",
+            "actions/run/game_previews/height_128/frames/run_005.png",
+            "actions/run/game_previews/height_128/frames/run_006.png",
+            "actions/run/game_previews/height_128/frames/run_007.png"
+          ],
+          "spritesheet": "actions/run/game_previews/height_128/spritesheet.png",
+          "preview_gif": "actions/run/game_previews/height_128/preview.gif",
+          "contact_sheet": "actions/run/game_previews/height_128/contact_sheet.png"
+        },
+        "height_192": {
+          "frame_size": {
+            "width": 141,
+            "height": 192
+          },
+          "frames": [
+            "actions/run/game_previews/height_192/frames/run_000.png",
+            "actions/run/game_previews/height_192/frames/run_001.png",
+            "actions/run/game_previews/height_192/frames/run_002.png",
+            "actions/run/game_previews/height_192/frames/run_003.png",
+            "actions/run/game_previews/height_192/frames/run_004.png",
+            "actions/run/game_previews/height_192/frames/run_005.png",
+            "actions/run/game_previews/height_192/frames/run_006.png",
+            "actions/run/game_previews/height_192/frames/run_007.png"
+          ],
+          "spritesheet": "actions/run/game_previews/height_192/spritesheet.png",
+          "preview_gif": "actions/run/game_previews/height_192/preview.gif",
+          "contact_sheet": "actions/run/game_previews/height_192/contact_sheet.png"
+        },
+        "height_256": {
+          "frame_size": {
+            "width": 188,
+            "height": 256
+          },
+          "frames": [
+            "actions/run/game_previews/height_256/frames/run_000.png",
+            "actions/run/game_previews/height_256/frames/run_001.png",
+            "actions/run/game_previews/height_256/frames/run_002.png",
+            "actions/run/game_previews/height_256/frames/run_003.png",
+            "actions/run/game_previews/height_256/frames/run_004.png",
+            "actions/run/game_previews/height_256/frames/run_005.png",
+            "actions/run/game_previews/height_256/frames/run_006.png",
+            "actions/run/game_previews/height_256/frames/run_007.png"
+          ],
+          "spritesheet": "actions/run/game_previews/height_256/spritesheet.png",
+          "preview_gif": "actions/run/game_previews/height_256/preview.gif",
+          "contact_sheet": "actions/run/game_previews/height_256/contact_sheet.png"
+        }
+      },
+      "production_ready_report": "actions/run/production_ready_report.json",
+      "runtime": {
+        "fps": 8,
+        "frame_duration_ms": 125,
+        "loop": true,
+        "source_frame_count": 8,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "playback_frame_count": 8,
+        "hit_frames": [],
+        "invulnerable_frames": [],
+        "parry_frames": [],
+        "frame_density_note": "Playback indices may add limited-animation holds for runtime feel. True inbetween art should come from an authored or I2I rough retake.",
+        "origin": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "pivot": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "origin_note": "Use a stable bottom-center canvas origin so action transitions do not jump.",
+        "collision_box": {
+          "x": 26,
+          "y": 49,
+          "width": 305,
+          "height": 368
+        },
+        "visible_bbox": {
+          "x": 30,
+          "y": 53,
+          "width": 297,
+          "height": 360
+        },
+        "ground_y_range": 68,
+        "phase_events": [
+          {
+            "frame": 0,
+            "phase": "right_contact"
+          },
+          {
+            "frame": 1,
+            "phase": "right_down"
+          },
+          {
+            "frame": 2,
+            "phase": "flight_forward"
+          },
+          {
+            "frame": 3,
+            "phase": "left_reach"
+          },
+          {
+            "frame": 4,
+            "phase": "left_contact"
+          },
+          {
+            "frame": 5,
+            "phase": "left_down"
+          },
+          {
+            "frame": 6,
+            "phase": "flight_backward"
+          },
+          {
+            "frame": 7,
+            "phase": "right_reach"
+          }
+        ],
+        "transition_notes": [
+          "idle",
+          "walk",
+          "jump",
+          "hurt",
+          "dodge_backstep",
+          "parry_sword",
+          "attack_sword_light"
+        ],
+        "review_role": "faster locomotion loop",
+        "import_assumptions": {
+          "godot": "SpriteFrames or AnimatedSprite2D per action; use origin as bottom-center canvas.",
+          "aseprite": "Import frames as one tag per action; keep transparent canvas size unchanged."
+        },
+        "frame_density_review": {
+          "source_frame_count": 8,
+          "playback_frame_count": 8,
+          "recommended_min": 8,
+          "recommended_max": 12,
+          "decision": "within_recommended_range",
+          "policy": "review_guidance_not_universal_rule",
+          "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+        }
+      },
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      }
+    },
+    "jump": {
+      "action": "jump",
+      "frame_count": 12,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "imagegen_jump_12frame_tiles_20260615_rough",
+      "phase_names": [
+        "neutral_crouch",
+        "deep_crouch",
+        "takeoff_extend",
+        "early_rise",
+        "rising_knees_bent",
+        "apex_approach",
+        "apex_hold",
+        "falling_extend",
+        "falling_reach",
+        "landing_contact",
+        "landing_settle",
+        "landing_recovery"
+      ],
+      "frames": [
+        "actions/jump/frames/jump_000.png",
+        "actions/jump/frames/jump_001.png",
+        "actions/jump/frames/jump_002.png",
+        "actions/jump/frames/jump_003.png",
+        "actions/jump/frames/jump_004.png",
+        "actions/jump/frames/jump_005.png",
+        "actions/jump/frames/jump_006.png",
+        "actions/jump/frames/jump_007.png",
+        "actions/jump/frames/jump_008.png",
+        "actions/jump/frames/jump_009.png",
+        "actions/jump/frames/jump_010.png",
+        "actions/jump/frames/jump_011.png"
+      ],
+      "spritesheet": "actions/jump/spritesheet.png",
+      "preview_gif": "actions/jump/preview.gif",
+      "contact_sheet": "actions/jump/contact_sheet.png",
+      "game_previews": {
+        "height_128": {
+          "frame_size": {
+            "width": 94,
+            "height": 128
+          },
+          "frames": [
+            "actions/jump/game_previews/height_128/frames/jump_000.png",
+            "actions/jump/game_previews/height_128/frames/jump_001.png",
+            "actions/jump/game_previews/height_128/frames/jump_002.png",
+            "actions/jump/game_previews/height_128/frames/jump_003.png",
+            "actions/jump/game_previews/height_128/frames/jump_004.png",
+            "actions/jump/game_previews/height_128/frames/jump_005.png",
+            "actions/jump/game_previews/height_128/frames/jump_006.png",
+            "actions/jump/game_previews/height_128/frames/jump_007.png",
+            "actions/jump/game_previews/height_128/frames/jump_008.png",
+            "actions/jump/game_previews/height_128/frames/jump_009.png",
+            "actions/jump/game_previews/height_128/frames/jump_010.png",
+            "actions/jump/game_previews/height_128/frames/jump_011.png"
+          ],
+          "spritesheet": "actions/jump/game_previews/height_128/spritesheet.png",
+          "preview_gif": "actions/jump/game_previews/height_128/preview.gif",
+          "contact_sheet": "actions/jump/game_previews/height_128/contact_sheet.png"
+        },
+        "height_192": {
+          "frame_size": {
+            "width": 141,
+            "height": 192
+          },
+          "frames": [
+            "actions/jump/game_previews/height_192/frames/jump_000.png",
+            "actions/jump/game_previews/height_192/frames/jump_001.png",
+            "actions/jump/game_previews/height_192/frames/jump_002.png",
+            "actions/jump/game_previews/height_192/frames/jump_003.png",
+            "actions/jump/game_previews/height_192/frames/jump_004.png",
+            "actions/jump/game_previews/height_192/frames/jump_005.png",
+            "actions/jump/game_previews/height_192/frames/jump_006.png",
+            "actions/jump/game_previews/height_192/frames/jump_007.png",
+            "actions/jump/game_previews/height_192/frames/jump_008.png",
+            "actions/jump/game_previews/height_192/frames/jump_009.png",
+            "actions/jump/game_previews/height_192/frames/jump_010.png",
+            "actions/jump/game_previews/height_192/frames/jump_011.png"
+          ],
+          "spritesheet": "actions/jump/game_previews/height_192/spritesheet.png",
+          "preview_gif": "actions/jump/game_previews/height_192/preview.gif",
+          "contact_sheet": "actions/jump/game_previews/height_192/contact_sheet.png"
+        },
+        "height_256": {
+          "frame_size": {
+            "width": 188,
+            "height": 256
+          },
+          "frames": [
+            "actions/jump/game_previews/height_256/frames/jump_000.png",
+            "actions/jump/game_previews/height_256/frames/jump_001.png",
+            "actions/jump/game_previews/height_256/frames/jump_002.png",
+            "actions/jump/game_previews/height_256/frames/jump_003.png",
+            "actions/jump/game_previews/height_256/frames/jump_004.png",
+            "actions/jump/game_previews/height_256/frames/jump_005.png",
+            "actions/jump/game_previews/height_256/frames/jump_006.png",
+            "actions/jump/game_previews/height_256/frames/jump_007.png",
+            "actions/jump/game_previews/height_256/frames/jump_008.png",
+            "actions/jump/game_previews/height_256/frames/jump_009.png",
+            "actions/jump/game_previews/height_256/frames/jump_010.png",
+            "actions/jump/game_previews/height_256/frames/jump_011.png"
+          ],
+          "spritesheet": "actions/jump/game_previews/height_256/spritesheet.png",
+          "preview_gif": "actions/jump/game_previews/height_256/preview.gif",
+          "contact_sheet": "actions/jump/game_previews/height_256/contact_sheet.png"
+        }
+      },
+      "layered": null,
+      "production_ready_report": "actions/jump/production_ready_report.json",
+      "runtime": {
+        "fps": 8,
+        "frame_duration_ms": 125,
+        "loop": false,
+        "source_frame_count": 12,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "playback_frame_count": 12,
+        "hit_frames": [],
+        "invulnerable_frames": [],
+        "parry_frames": [],
+        "frame_density_note": "Playback indices may add limited-animation holds for runtime feel. True inbetween art should come from an authored or I2I rough retake.",
+        "origin": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "pivot": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "origin_note": "Use a stable bottom-center canvas origin so action transitions do not jump.",
+        "collision_box": {
+          "x": 5,
+          "y": 9,
+          "width": 347,
+          "height": 442
+        },
+        "visible_bbox": {
+          "x": 9,
+          "y": 13,
+          "width": 341,
+          "height": 434
+        },
+        "ground_y_range": 207,
+        "phase_events": [
+          {
+            "frame": 0,
+            "phase": "neutral_crouch"
+          },
+          {
+            "frame": 1,
+            "phase": "deep_crouch"
+          },
+          {
+            "frame": 2,
+            "phase": "takeoff_extend"
+          },
+          {
+            "frame": 3,
+            "phase": "early_rise"
+          },
+          {
+            "frame": 4,
+            "phase": "rising_knees_bent"
+          },
+          {
+            "frame": 5,
+            "phase": "apex_approach"
+          },
+          {
+            "frame": 6,
+            "phase": "apex_hold"
+          },
+          {
+            "frame": 7,
+            "phase": "falling_extend"
+          },
+          {
+            "frame": 8,
+            "phase": "falling_reach"
+          },
+          {
+            "frame": 9,
+            "phase": "landing_contact"
+          },
+          {
+            "frame": 10,
+            "phase": "landing_settle"
+          },
+          {
+            "frame": 11,
+            "phase": "landing_recovery"
+          }
+        ],
+        "transition_notes": [
+          "idle",
+          "walk",
+          "run",
+          "hurt",
+          "dodge_backstep",
+          "parry_sword",
+          "attack_sword_light"
+        ],
+        "review_role": "non-looping jump arc",
+        "import_assumptions": {
+          "godot": "SpriteFrames or AnimatedSprite2D per action; use origin as bottom-center canvas.",
+          "aseprite": "Import frames as one tag per action; keep transparent canvas size unchanged."
+        },
+        "frame_density_review": {
+          "source_frame_count": 12,
+          "playback_frame_count": 12,
+          "recommended_min": 12,
+          "recommended_max": 16,
+          "decision": "within_recommended_range",
+          "policy": "review_guidance_not_universal_rule",
+          "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+        }
+      },
+      "frame_density_review": {
+        "source_frame_count": 12,
+        "playback_frame_count": 12,
+        "recommended_min": 12,
+        "recommended_max": 16,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      }
+    },
+    "hurt": {
+      "action": "hurt",
+      "frame_count": 8,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "imagegen_hurt_8frame_tiles_20260615_rough",
+      "phase_names": [
+        "brace",
+        "impact_recoil",
+        "strong_recoil",
+        "peak_recoil",
+        "stagger_forward",
+        "crouch_settle",
+        "recover_half",
+        "recover"
+      ],
+      "frames": [
+        "actions/hurt/frames/hurt_000.png",
+        "actions/hurt/frames/hurt_001.png",
+        "actions/hurt/frames/hurt_002.png",
+        "actions/hurt/frames/hurt_003.png",
+        "actions/hurt/frames/hurt_004.png",
+        "actions/hurt/frames/hurt_005.png",
+        "actions/hurt/frames/hurt_006.png",
+        "actions/hurt/frames/hurt_007.png"
+      ],
+      "spritesheet": "actions/hurt/spritesheet.png",
+      "preview_gif": "actions/hurt/preview.gif",
+      "contact_sheet": "actions/hurt/contact_sheet.png",
+      "game_previews": {
+        "height_128": {
+          "frame_size": {
+            "width": 94,
+            "height": 128
+          },
+          "frames": [
+            "actions/hurt/game_previews/height_128/frames/hurt_000.png",
+            "actions/hurt/game_previews/height_128/frames/hurt_001.png",
+            "actions/hurt/game_previews/height_128/frames/hurt_002.png",
+            "actions/hurt/game_previews/height_128/frames/hurt_003.png",
+            "actions/hurt/game_previews/height_128/frames/hurt_004.png",
+            "actions/hurt/game_previews/height_128/frames/hurt_005.png",
+            "actions/hurt/game_previews/height_128/frames/hurt_006.png",
+            "actions/hurt/game_previews/height_128/frames/hurt_007.png"
+          ],
+          "spritesheet": "actions/hurt/game_previews/height_128/spritesheet.png",
+          "preview_gif": "actions/hurt/game_previews/height_128/preview.gif",
+          "contact_sheet": "actions/hurt/game_previews/height_128/contact_sheet.png"
+        },
+        "height_192": {
+          "frame_size": {
+            "width": 141,
+            "height": 192
+          },
+          "frames": [
+            "actions/hurt/game_previews/height_192/frames/hurt_000.png",
+            "actions/hurt/game_previews/height_192/frames/hurt_001.png",
+            "actions/hurt/game_previews/height_192/frames/hurt_002.png",
+            "actions/hurt/game_previews/height_192/frames/hurt_003.png",
+            "actions/hurt/game_previews/height_192/frames/hurt_004.png",
+            "actions/hurt/game_previews/height_192/frames/hurt_005.png",
+            "actions/hurt/game_previews/height_192/frames/hurt_006.png",
+            "actions/hurt/game_previews/height_192/frames/hurt_007.png"
+          ],
+          "spritesheet": "actions/hurt/game_previews/height_192/spritesheet.png",
+          "preview_gif": "actions/hurt/game_previews/height_192/preview.gif",
+          "contact_sheet": "actions/hurt/game_previews/height_192/contact_sheet.png"
+        },
+        "height_256": {
+          "frame_size": {
+            "width": 188,
+            "height": 256
+          },
+          "frames": [
+            "actions/hurt/game_previews/height_256/frames/hurt_000.png",
+            "actions/hurt/game_previews/height_256/frames/hurt_001.png",
+            "actions/hurt/game_previews/height_256/frames/hurt_002.png",
+            "actions/hurt/game_previews/height_256/frames/hurt_003.png",
+            "actions/hurt/game_previews/height_256/frames/hurt_004.png",
+            "actions/hurt/game_previews/height_256/frames/hurt_005.png",
+            "actions/hurt/game_previews/height_256/frames/hurt_006.png",
+            "actions/hurt/game_previews/height_256/frames/hurt_007.png"
+          ],
+          "spritesheet": "actions/hurt/game_previews/height_256/spritesheet.png",
+          "preview_gif": "actions/hurt/game_previews/height_256/preview.gif",
+          "contact_sheet": "actions/hurt/game_previews/height_256/contact_sheet.png"
+        }
+      },
+      "layered": null,
+      "production_ready_report": "actions/hurt/production_ready_report.json",
+      "runtime": {
+        "fps": 8,
+        "frame_duration_ms": 125,
+        "loop": false,
+        "source_frame_count": 8,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "playback_frame_count": 8,
+        "hit_frames": [],
+        "invulnerable_frames": [],
+        "parry_frames": [],
+        "frame_density_note": "Playback indices may add limited-animation holds for runtime feel. True inbetween art should come from an authored or I2I rough retake.",
+        "origin": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "pivot": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "origin_note": "Use a stable bottom-center canvas origin so action transitions do not jump.",
+        "collision_box": {
+          "x": 35,
+          "y": 71,
+          "width": 270,
+          "height": 380
+        },
+        "visible_bbox": {
+          "x": 39,
+          "y": 75,
+          "width": 262,
+          "height": 372
+        },
+        "ground_y_range": 0,
+        "phase_events": [
+          {
+            "frame": 0,
+            "phase": "brace"
+          },
+          {
+            "frame": 1,
+            "phase": "impact_recoil"
+          },
+          {
+            "frame": 2,
+            "phase": "strong_recoil"
+          },
+          {
+            "frame": 3,
+            "phase": "peak_recoil"
+          },
+          {
+            "frame": 4,
+            "phase": "stagger_forward"
+          },
+          {
+            "frame": 5,
+            "phase": "crouch_settle"
+          },
+          {
+            "frame": 6,
+            "phase": "recover_half"
+          },
+          {
+            "frame": 7,
+            "phase": "recover"
+          }
+        ],
+        "transition_notes": [
+          "idle",
+          "walk",
+          "dodge_backstep",
+          "parry_sword",
+          "attack_sword_light"
+        ],
+        "review_role": "non-looping small damage reaction",
+        "import_assumptions": {
+          "godot": "SpriteFrames or AnimatedSprite2D per action; use origin as bottom-center canvas.",
+          "aseprite": "Import frames as one tag per action; keep transparent canvas size unchanged."
+        },
+        "frame_density_review": {
+          "source_frame_count": 8,
+          "playback_frame_count": 8,
+          "recommended_min": 8,
+          "recommended_max": 12,
+          "decision": "within_recommended_range",
+          "policy": "review_guidance_not_universal_rule",
+          "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+        }
+      },
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      }
+    },
+    "dodge_backstep": {
+      "action": "dodge_backstep",
+      "frame_count": 8,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "imagegen_dodge_backstep_8frame_tiles_20260615_rough",
+      "phase_names": [
+        "ready",
+        "anticipation_crouch",
+        "push_off",
+        "low_backstep",
+        "slide_peak",
+        "landing",
+        "recover_low",
+        "ready_return"
+      ],
+      "frames": [
+        "actions/dodge_backstep/frames/dodge_backstep_000.png",
+        "actions/dodge_backstep/frames/dodge_backstep_001.png",
+        "actions/dodge_backstep/frames/dodge_backstep_002.png",
+        "actions/dodge_backstep/frames/dodge_backstep_003.png",
+        "actions/dodge_backstep/frames/dodge_backstep_004.png",
+        "actions/dodge_backstep/frames/dodge_backstep_005.png",
+        "actions/dodge_backstep/frames/dodge_backstep_006.png",
+        "actions/dodge_backstep/frames/dodge_backstep_007.png"
+      ],
+      "spritesheet": "actions/dodge_backstep/spritesheet.png",
+      "preview_gif": "actions/dodge_backstep/preview.gif",
+      "contact_sheet": "actions/dodge_backstep/contact_sheet.png",
+      "game_previews": {
+        "height_128": {
+          "frame_size": {
+            "width": 94,
+            "height": 128
+          },
+          "frames": [
+            "actions/dodge_backstep/game_previews/height_128/frames/dodge_backstep_000.png",
+            "actions/dodge_backstep/game_previews/height_128/frames/dodge_backstep_001.png",
+            "actions/dodge_backstep/game_previews/height_128/frames/dodge_backstep_002.png",
+            "actions/dodge_backstep/game_previews/height_128/frames/dodge_backstep_003.png",
+            "actions/dodge_backstep/game_previews/height_128/frames/dodge_backstep_004.png",
+            "actions/dodge_backstep/game_previews/height_128/frames/dodge_backstep_005.png",
+            "actions/dodge_backstep/game_previews/height_128/frames/dodge_backstep_006.png",
+            "actions/dodge_backstep/game_previews/height_128/frames/dodge_backstep_007.png"
+          ],
+          "spritesheet": "actions/dodge_backstep/game_previews/height_128/spritesheet.png",
+          "preview_gif": "actions/dodge_backstep/game_previews/height_128/preview.gif",
+          "contact_sheet": "actions/dodge_backstep/game_previews/height_128/contact_sheet.png"
+        },
+        "height_192": {
+          "frame_size": {
+            "width": 141,
+            "height": 192
+          },
+          "frames": [
+            "actions/dodge_backstep/game_previews/height_192/frames/dodge_backstep_000.png",
+            "actions/dodge_backstep/game_previews/height_192/frames/dodge_backstep_001.png",
+            "actions/dodge_backstep/game_previews/height_192/frames/dodge_backstep_002.png",
+            "actions/dodge_backstep/game_previews/height_192/frames/dodge_backstep_003.png",
+            "actions/dodge_backstep/game_previews/height_192/frames/dodge_backstep_004.png",
+            "actions/dodge_backstep/game_previews/height_192/frames/dodge_backstep_005.png",
+            "actions/dodge_backstep/game_previews/height_192/frames/dodge_backstep_006.png",
+            "actions/dodge_backstep/game_previews/height_192/frames/dodge_backstep_007.png"
+          ],
+          "spritesheet": "actions/dodge_backstep/game_previews/height_192/spritesheet.png",
+          "preview_gif": "actions/dodge_backstep/game_previews/height_192/preview.gif",
+          "contact_sheet": "actions/dodge_backstep/game_previews/height_192/contact_sheet.png"
+        },
+        "height_256": {
+          "frame_size": {
+            "width": 188,
+            "height": 256
+          },
+          "frames": [
+            "actions/dodge_backstep/game_previews/height_256/frames/dodge_backstep_000.png",
+            "actions/dodge_backstep/game_previews/height_256/frames/dodge_backstep_001.png",
+            "actions/dodge_backstep/game_previews/height_256/frames/dodge_backstep_002.png",
+            "actions/dodge_backstep/game_previews/height_256/frames/dodge_backstep_003.png",
+            "actions/dodge_backstep/game_previews/height_256/frames/dodge_backstep_004.png",
+            "actions/dodge_backstep/game_previews/height_256/frames/dodge_backstep_005.png",
+            "actions/dodge_backstep/game_previews/height_256/frames/dodge_backstep_006.png",
+            "actions/dodge_backstep/game_previews/height_256/frames/dodge_backstep_007.png"
+          ],
+          "spritesheet": "actions/dodge_backstep/game_previews/height_256/spritesheet.png",
+          "preview_gif": "actions/dodge_backstep/game_previews/height_256/preview.gif",
+          "contact_sheet": "actions/dodge_backstep/game_previews/height_256/contact_sheet.png"
+        }
+      },
+      "layered": null,
+      "production_ready_report": "actions/dodge_backstep/production_ready_report.json",
+      "runtime": {
+        "fps": 8,
+        "frame_duration_ms": 125,
+        "loop": false,
+        "source_frame_count": 8,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "playback_frame_count": 8,
+        "hit_frames": [],
+        "invulnerable_frames": [
+          2,
+          3,
+          4
+        ],
+        "parry_frames": [],
+        "frame_density_note": "Playback indices may add limited-animation holds for runtime feel. True inbetween art should come from an authored or I2I rough retake.",
+        "origin": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "pivot": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "origin_note": "Use a stable bottom-center canvas origin so action transitions do not jump.",
+        "collision_box": {
+          "x": 0,
+          "y": 87,
+          "width": 339,
+          "height": 364
+        },
+        "visible_bbox": {
+          "x": 2,
+          "y": 91,
+          "width": 333,
+          "height": 356
+        },
+        "ground_y_range": 0,
+        "phase_events": [
+          {
+            "frame": 0,
+            "phase": "ready"
+          },
+          {
+            "frame": 1,
+            "phase": "anticipation_crouch"
+          },
+          {
+            "frame": 2,
+            "phase": "push_off"
+          },
+          {
+            "frame": 3,
+            "phase": "low_backstep"
+          },
+          {
+            "frame": 4,
+            "phase": "slide_peak"
+          },
+          {
+            "frame": 5,
+            "phase": "landing"
+          },
+          {
+            "frame": 6,
+            "phase": "recover_low"
+          },
+          {
+            "frame": 7,
+            "phase": "ready_return"
+          }
+        ],
+        "transition_notes": [
+          "idle",
+          "walk",
+          "run",
+          "jump",
+          "hurt",
+          "parry_sword",
+          "attack_sword_light"
+        ],
+        "review_role": "non-looping evasive backstep",
+        "import_assumptions": {
+          "godot": "SpriteFrames or AnimatedSprite2D per action; use origin as bottom-center canvas.",
+          "aseprite": "Import frames as one tag per action; keep transparent canvas size unchanged."
+        },
+        "frame_density_review": {
+          "source_frame_count": 8,
+          "playback_frame_count": 8,
+          "recommended_min": 8,
+          "recommended_max": 12,
+          "decision": "within_recommended_range",
+          "policy": "review_guidance_not_universal_rule",
+          "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+        }
+      },
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      }
+    },
+    "parry_sword": {
+      "action": "parry_sword",
+      "frame_count": 8,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "native_layers_imagegen_parry_sword_body_8frame_tiles_20260615",
+      "phase_names": [
+        "ready",
+        "raise_guard",
+        "brace",
+        "parry_contact",
+        "deflect",
+        "recoil_hold",
+        "recover",
+        "ready_return"
+      ],
+      "frames": [
+        "actions/parry_sword/frames/parry_sword_000.png",
+        "actions/parry_sword/frames/parry_sword_001.png",
+        "actions/parry_sword/frames/parry_sword_002.png",
+        "actions/parry_sword/frames/parry_sword_003.png",
+        "actions/parry_sword/frames/parry_sword_004.png",
+        "actions/parry_sword/frames/parry_sword_005.png",
+        "actions/parry_sword/frames/parry_sword_006.png",
+        "actions/parry_sword/frames/parry_sword_007.png"
+      ],
+      "spritesheet": "actions/parry_sword/spritesheet.png",
+      "preview_gif": "actions/parry_sword/preview.gif",
+      "contact_sheet": "actions/parry_sword/contact_sheet.png",
+      "game_previews": {
+        "height_128": {
+          "frame_size": {
+            "width": 94,
+            "height": 128
+          },
+          "frames": [
+            "actions/parry_sword/game_previews/height_128/frames/parry_sword_000.png",
+            "actions/parry_sword/game_previews/height_128/frames/parry_sword_001.png",
+            "actions/parry_sword/game_previews/height_128/frames/parry_sword_002.png",
+            "actions/parry_sword/game_previews/height_128/frames/parry_sword_003.png",
+            "actions/parry_sword/game_previews/height_128/frames/parry_sword_004.png",
+            "actions/parry_sword/game_previews/height_128/frames/parry_sword_005.png",
+            "actions/parry_sword/game_previews/height_128/frames/parry_sword_006.png",
+            "actions/parry_sword/game_previews/height_128/frames/parry_sword_007.png"
+          ],
+          "spritesheet": "actions/parry_sword/game_previews/height_128/spritesheet.png",
+          "preview_gif": "actions/parry_sword/game_previews/height_128/preview.gif",
+          "contact_sheet": "actions/parry_sword/game_previews/height_128/contact_sheet.png"
+        },
+        "height_192": {
+          "frame_size": {
+            "width": 141,
+            "height": 192
+          },
+          "frames": [
+            "actions/parry_sword/game_previews/height_192/frames/parry_sword_000.png",
+            "actions/parry_sword/game_previews/height_192/frames/parry_sword_001.png",
+            "actions/parry_sword/game_previews/height_192/frames/parry_sword_002.png",
+            "actions/parry_sword/game_previews/height_192/frames/parry_sword_003.png",
+            "actions/parry_sword/game_previews/height_192/frames/parry_sword_004.png",
+            "actions/parry_sword/game_previews/height_192/frames/parry_sword_005.png",
+            "actions/parry_sword/game_previews/height_192/frames/parry_sword_006.png",
+            "actions/parry_sword/game_previews/height_192/frames/parry_sword_007.png"
+          ],
+          "spritesheet": "actions/parry_sword/game_previews/height_192/spritesheet.png",
+          "preview_gif": "actions/parry_sword/game_previews/height_192/preview.gif",
+          "contact_sheet": "actions/parry_sword/game_previews/height_192/contact_sheet.png"
+        },
+        "height_256": {
+          "frame_size": {
+            "width": 188,
+            "height": 256
+          },
+          "frames": [
+            "actions/parry_sword/game_previews/height_256/frames/parry_sword_000.png",
+            "actions/parry_sword/game_previews/height_256/frames/parry_sword_001.png",
+            "actions/parry_sword/game_previews/height_256/frames/parry_sword_002.png",
+            "actions/parry_sword/game_previews/height_256/frames/parry_sword_003.png",
+            "actions/parry_sword/game_previews/height_256/frames/parry_sword_004.png",
+            "actions/parry_sword/game_previews/height_256/frames/parry_sword_005.png",
+            "actions/parry_sword/game_previews/height_256/frames/parry_sword_006.png",
+            "actions/parry_sword/game_previews/height_256/frames/parry_sword_007.png"
+          ],
+          "spritesheet": "actions/parry_sword/game_previews/height_256/spritesheet.png",
+          "preview_gif": "actions/parry_sword/game_previews/height_256/preview.gif",
+          "contact_sheet": "actions/parry_sword/game_previews/height_256/contact_sheet.png"
+        }
+      },
+      "layered": {
+        "manifest": "actions/parry_sword/layered_manifest.json",
+        "source": "native_separated_layers",
+        "layers": [
+          "body",
+          "weapon",
+          "effect"
+        ],
+        "z_order": [
+          "weapon",
+          "body",
+          "effect"
+        ],
+        "weapon_visible_frames": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "effect_visible_frames": [
+          3,
+          4
+        ],
+        "timing_windows": {
+          "hit_frames": [],
+          "parry_frames": [
+            3,
+            4
+          ],
+          "invulnerable_frames": []
+        },
+        "extraction_method": null,
+        "composition_method": "native_body_weapon_effect_layers"
+      },
+      "production_ready_report": "actions/parry_sword/production_ready_report.json",
+      "runtime": {
+        "fps": 8,
+        "frame_duration_ms": 125,
+        "loop": false,
+        "source_frame_count": 8,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "playback_frame_count": 8,
+        "hit_frames": [],
+        "invulnerable_frames": [],
+        "parry_frames": [
+          3,
+          4
+        ],
+        "frame_density_note": "Playback indices may add limited-animation holds for runtime feel. True inbetween art should come from an authored or I2I rough retake.",
+        "origin": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "pivot": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "origin_note": "Use a stable bottom-center canvas origin so action transitions do not jump.",
+        "collision_box": {
+          "x": 0,
+          "y": 7,
+          "width": 345,
+          "height": 444
+        },
+        "visible_bbox": {
+          "x": 2,
+          "y": 11,
+          "width": 339,
+          "height": 436
+        },
+        "ground_y_range": 0,
+        "phase_events": [
+          {
+            "frame": 0,
+            "phase": "ready"
+          },
+          {
+            "frame": 1,
+            "phase": "raise_guard"
+          },
+          {
+            "frame": 2,
+            "phase": "brace"
+          },
+          {
+            "frame": 3,
+            "phase": "parry_contact"
+          },
+          {
+            "frame": 4,
+            "phase": "deflect"
+          },
+          {
+            "frame": 5,
+            "phase": "recoil_hold"
+          },
+          {
+            "frame": 6,
+            "phase": "recover"
+          },
+          {
+            "frame": 7,
+            "phase": "ready_return"
+          }
+        ],
+        "transition_notes": [
+          "idle",
+          "walk",
+          "run",
+          "jump",
+          "hurt",
+          "dodge_backstep",
+          "attack_sword_light"
+        ],
+        "review_role": "non-looping sword parry guard",
+        "import_assumptions": {
+          "godot": "SpriteFrames or AnimatedSprite2D per action; use origin as bottom-center canvas.",
+          "aseprite": "Import frames as one tag per action; keep transparent canvas size unchanged."
+        },
+        "layered": {
+          "manifest": "actions/parry_sword/layered_manifest.json",
+          "layers": [
+            "body",
+            "weapon",
+            "effect"
+          ],
+          "z_order": [
+            "weapon",
+            "body",
+            "effect"
+          ],
+          "source": "native_separated_layers"
+        },
+        "frame_density_review": {
+          "source_frame_count": 8,
+          "playback_frame_count": 8,
+          "recommended_min": 8,
+          "recommended_max": 12,
+          "decision": "within_recommended_range",
+          "policy": "review_guidance_not_universal_rule",
+          "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+        }
+      },
+      "frame_density_review": {
+        "source_frame_count": 8,
+        "playback_frame_count": 8,
+        "recommended_min": 8,
+        "recommended_max": 12,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      }
+    },
+    "attack_sword_light": {
+      "action": "attack_sword_light",
+      "frame_count": 16,
+      "frame_size": {
+        "width": 352,
+        "height": 480
+      },
+      "production_ready": true,
+      "status": "production_ready",
+      "source": "native_layers_route_a_attack_sword_light_body_16frame_retime_20260615",
+      "phase_names": [
+        "ready",
+        "anticipation_1",
+        "anticipation_2",
+        "draw_back",
+        "windup",
+        "slash_start",
+        "active_slash_1",
+        "active_slash_2",
+        "active_follow_through",
+        "overshoot",
+        "recoil_1",
+        "recoil_2",
+        "settle_1",
+        "settle_2",
+        "recover",
+        "ready_return"
+      ],
+      "frames": [
+        "actions/attack_sword_light/frames/attack_sword_light_000.png",
+        "actions/attack_sword_light/frames/attack_sword_light_001.png",
+        "actions/attack_sword_light/frames/attack_sword_light_002.png",
+        "actions/attack_sword_light/frames/attack_sword_light_003.png",
+        "actions/attack_sword_light/frames/attack_sword_light_004.png",
+        "actions/attack_sword_light/frames/attack_sword_light_005.png",
+        "actions/attack_sword_light/frames/attack_sword_light_006.png",
+        "actions/attack_sword_light/frames/attack_sword_light_007.png",
+        "actions/attack_sword_light/frames/attack_sword_light_008.png",
+        "actions/attack_sword_light/frames/attack_sword_light_009.png",
+        "actions/attack_sword_light/frames/attack_sword_light_010.png",
+        "actions/attack_sword_light/frames/attack_sword_light_011.png",
+        "actions/attack_sword_light/frames/attack_sword_light_012.png",
+        "actions/attack_sword_light/frames/attack_sword_light_013.png",
+        "actions/attack_sword_light/frames/attack_sword_light_014.png",
+        "actions/attack_sword_light/frames/attack_sword_light_015.png"
+      ],
+      "spritesheet": "actions/attack_sword_light/spritesheet.png",
+      "preview_gif": "actions/attack_sword_light/preview.gif",
+      "contact_sheet": "actions/attack_sword_light/contact_sheet.png",
+      "game_previews": {
+        "height_128": {
+          "frame_size": {
+            "width": 94,
+            "height": 128
+          },
+          "frames": [
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_000.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_001.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_002.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_003.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_004.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_005.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_006.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_007.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_008.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_009.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_010.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_011.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_012.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_013.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_014.png",
+            "actions/attack_sword_light/game_previews/height_128/frames/attack_sword_light_015.png"
+          ],
+          "spritesheet": "actions/attack_sword_light/game_previews/height_128/spritesheet.png",
+          "preview_gif": "actions/attack_sword_light/game_previews/height_128/preview.gif",
+          "contact_sheet": "actions/attack_sword_light/game_previews/height_128/contact_sheet.png"
+        },
+        "height_192": {
+          "frame_size": {
+            "width": 141,
+            "height": 192
+          },
+          "frames": [
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_000.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_001.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_002.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_003.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_004.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_005.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_006.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_007.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_008.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_009.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_010.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_011.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_012.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_013.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_014.png",
+            "actions/attack_sword_light/game_previews/height_192/frames/attack_sword_light_015.png"
+          ],
+          "spritesheet": "actions/attack_sword_light/game_previews/height_192/spritesheet.png",
+          "preview_gif": "actions/attack_sword_light/game_previews/height_192/preview.gif",
+          "contact_sheet": "actions/attack_sword_light/game_previews/height_192/contact_sheet.png"
+        },
+        "height_256": {
+          "frame_size": {
+            "width": 188,
+            "height": 256
+          },
+          "frames": [
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_000.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_001.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_002.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_003.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_004.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_005.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_006.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_007.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_008.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_009.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_010.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_011.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_012.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_013.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_014.png",
+            "actions/attack_sword_light/game_previews/height_256/frames/attack_sword_light_015.png"
+          ],
+          "spritesheet": "actions/attack_sword_light/game_previews/height_256/spritesheet.png",
+          "preview_gif": "actions/attack_sword_light/game_previews/height_256/preview.gif",
+          "contact_sheet": "actions/attack_sword_light/game_previews/height_256/contact_sheet.png"
+        }
+      },
+      "layered": {
+        "manifest": "actions/attack_sword_light/layered_manifest.json",
+        "source": "native_separated_layers",
+        "layers": [
+          "body",
+          "weapon",
+          "effect"
+        ],
+        "z_order": [
+          "weapon",
+          "body",
+          "effect"
+        ],
+        "weapon_visible_frames": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "effect_visible_frames": [
+          6,
+          7
+        ],
+        "timing_windows": {
+          "hit_frames": [
+            6,
+            7
+          ],
+          "parry_frames": [],
+          "invulnerable_frames": []
+        },
+        "extraction_method": null,
+        "composition_method": "native_body_weapon_effect_layers"
+      },
+      "production_ready_report": "actions/attack_sword_light/production_ready_report.json",
+      "runtime": {
+        "fps": 8,
+        "frame_duration_ms": 125,
+        "loop": false,
+        "source_frame_count": 16,
+        "playback_frame_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "playback_frame_count": 16,
+        "hit_frames": [
+          6,
+          7
+        ],
+        "invulnerable_frames": [],
+        "parry_frames": [],
+        "frame_density_note": "Playback indices may add limited-animation holds for runtime feel. True inbetween art should come from an authored or I2I rough retake.",
+        "origin": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "pivot": {
+          "policy": "bottom_center_canvas",
+          "x": 176,
+          "y": 480
+        },
+        "origin_note": "Use a stable bottom-center canvas origin so action transitions do not jump.",
+        "collision_box": {
+          "x": 7,
+          "y": 23,
+          "width": 333,
+          "height": 428
+        },
+        "visible_bbox": {
+          "x": 11,
+          "y": 27,
+          "width": 325,
+          "height": 420
+        },
+        "ground_y_range": 0,
+        "phase_events": [
+          {
+            "frame": 0,
+            "phase": "ready"
+          },
+          {
+            "frame": 1,
+            "phase": "anticipation_1"
+          },
+          {
+            "frame": 2,
+            "phase": "anticipation_2"
+          },
+          {
+            "frame": 3,
+            "phase": "draw_back"
+          },
+          {
+            "frame": 4,
+            "phase": "windup"
+          },
+          {
+            "frame": 5,
+            "phase": "slash_start"
+          },
+          {
+            "frame": 6,
+            "phase": "active_slash_1"
+          },
+          {
+            "frame": 7,
+            "phase": "active_slash_2"
+          },
+          {
+            "frame": 8,
+            "phase": "active_follow_through"
+          },
+          {
+            "frame": 9,
+            "phase": "overshoot"
+          },
+          {
+            "frame": 10,
+            "phase": "recoil_1"
+          },
+          {
+            "frame": 11,
+            "phase": "recoil_2"
+          },
+          {
+            "frame": 12,
+            "phase": "settle_1"
+          },
+          {
+            "frame": 13,
+            "phase": "settle_2"
+          },
+          {
+            "frame": 14,
+            "phase": "recover"
+          },
+          {
+            "frame": 15,
+            "phase": "ready_return"
+          }
+        ],
+        "transition_notes": [
+          "idle",
+          "walk",
+          "run",
+          "jump",
+          "hurt",
+          "dodge_backstep",
+          "parry_sword"
+        ],
+        "review_role": "non-looping light one-handed sword attack",
+        "import_assumptions": {
+          "godot": "SpriteFrames or AnimatedSprite2D per action; use origin as bottom-center canvas.",
+          "aseprite": "Import frames as one tag per action; keep transparent canvas size unchanged."
+        },
+        "layered": {
+          "manifest": "actions/attack_sword_light/layered_manifest.json",
+          "layers": [
+            "body",
+            "weapon",
+            "effect"
+          ],
+          "z_order": [
+            "weapon",
+            "body",
+            "effect"
+          ],
+          "source": "native_separated_layers"
+        },
+        "frame_density_review": {
+          "source_frame_count": 16,
+          "playback_frame_count": 16,
+          "recommended_min": 12,
+          "recommended_max": 18,
+          "decision": "within_recommended_range",
+          "policy": "review_guidance_not_universal_rule",
+          "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+        }
+      },
+      "frame_density_review": {
+        "source_frame_count": 16,
+        "playback_frame_count": 16,
+        "recommended_min": 12,
+        "recommended_max": 18,
+        "decision": "within_recommended_range",
+        "policy": "review_guidance_not_universal_rule",
+        "fake_inbetween_policy": "reject_crossfade_or_blended_ghost_frames"
+      }
+    }
+  },
+  "identity_report": "identity_report.json",
+  "runtime_manifest": "runtime_manifest.json",
+  "pack_review": {
+    "all_actions_contact_sheet": "pack_review/all_actions_contact_sheet.png",
+    "consistency_report": "pack_review/consistency_report.json",
+    "style_consistency_report": "pack_review/style_consistency_report.json",
+    "godot_import_manifest": "pack_review/godot_import_manifest.json",
+    "aseprite_import_notes": "pack_review/aseprite_import_notes.md"
+  },
+  "style_reference_set": {
+    "path": "assets/style_reference_sets/character_sprite_pack_v1",
+    "manifest": "assets/style_reference_sets/character_sprite_pack_v1/manifest.json",
+    "contact_sheet": "assets/style_reference_sets/character_sprite_pack_v1/contact_sheet.png",
+    "frame_count": 5
+  },
+  "spritesheet_authoring_policy": {
+    "source_inspiration": "NO6KIKO/gorest-2d-animation-spritesheet-generator",
+    "source_url": "https://github.com/NO6KIKO/gorest-2d-animation-spritesheet-generator",
+    "generation_preference": "full_spritesheet_first_then_split_frames",
+    "normalization": "global_uniform_scale_not_per_frame_resize",
+    "anchor_policy": "stable_root_anchor_with_bottom_center_runtime_origin",
+    "grid_policy": "detect_source_cells_before_falling_back_to_proportional_grid",
+    "tail_frame_policy": "do_not_export_a_duplicate_first_frame_as_the_final_loop_frame",
+    "route_fit": "non_conflicting_route_a_guidance_for_future_generated_rough_sheets"
+  },
+  "production_gate": {
+    "target": "character_sprite_asset_pack_mvp",
+    "decision": "production_ready",
+    "production_ready": true,
+    "checks": {
+      "walk_production_ready": true,
+      "idle_production_ready": true,
+      "run_production_ready": true,
+      "jump_production_ready": true,
+      "hurt_production_ready": true,
+      "dodge_backstep_production_ready": true,
+      "parry_sword_production_ready": true,
+      "attack_sword_light_production_ready": true,
+      "identity_cues_pass": true,
+      "unsupported_backends_unused": true,
+      "runtime_metadata_present": true,
+      "pack_review_generated": true,
+      "consistency_gate_pass": true,
+      "style_consistency_gate_pass": true,
+      "frame_density_policy_present": true,
+      "frame_density_pass": true
+    },
+    "blocking_issues": [],
+    "scope_statement": "walk, idle, run, jump, hurt, dodge_backstep, parry_sword, and attack_sword_light are production-ready and ready for runtime import review."
+  },
+  "backend_usage": {
+    "uses_comfyui": false,
+    "uses_wan_video": false,
+    "uses_controlnet": false,
+    "uses_new_model_backend": false,
+    "uses_120_frame_generation": false
+  },
+  "production_ready": true,
+  "known_limits": [
+    "The accepted sprite is a game-ready redesign, not a faithful frame-by-frame animation of the original illustration.",
+    "Walk, idle, run, jump, hurt, dodge_backstep, parry_sword, and attack_sword_light are production-ready for this MVP pack.",
+    "Dodge/parry are reviewable modern action-game utility actions, not a complete combat state machine.",
+    "Weapon actions are reviewed as simple one-handed sword actions; complex weapon arcs still need authored rough frames."
+  ]
+}
