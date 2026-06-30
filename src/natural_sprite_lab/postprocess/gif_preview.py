@@ -27,7 +27,31 @@ def make_preview_gif(
     return output_path
 
 
+def make_preview_webp(
+    frame_paths: list[Path],
+    output_path: Path,
+    duration_ms: int = 120,
+    loop: bool = True,
+) -> Path:
+    frames = [Image.open(path).convert("RGBA") for path in frame_paths]
+    if not frames:
+        raise ValueError("Cannot create preview WebP without frames.")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    frames[0].save(
+        output_path,
+        save_all=True,
+        append_images=frames[1:],
+        duration=duration_ms,
+        loop=0 if loop else 1,
+        lossless=True,
+        quality=100,
+        method=4,
+    )
+    return output_path
+
+
 def _flatten_for_gif(image: Image.Image) -> Image.Image:
-    background = Image.new("RGBA", image.size, (240, 240, 240, 255))
+    background = Image.new("RGBA", image.size, (214, 218, 222, 255))
     background.alpha_composite(image)
     return background.convert("P", palette=Image.Palette.ADAPTIVE)

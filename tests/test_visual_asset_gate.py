@@ -142,6 +142,51 @@ def test_visual_asset_gate_detects_and_fixes_green_edge_fringe(tmp_path: Path) -
     assert fixed_report["actions"]["jump"]["metrics"]["border_green_cyan_fringe_frames"] == []
 
 
+def test_visual_asset_gate_detects_and_fixes_highlight_clipping(tmp_path: Path) -> None:
+    pack = tmp_path / "highlight_clip_pack"
+    frames = pack / "actions" / "idle" / "frames"
+    frames.mkdir(parents=True)
+    for index in range(4):
+        _make_highlight_clipped_frame(frames / f"idle_{index:03d}.png")
+
+    manifest = {
+        "route": "character_sprite_asset_pack",
+        "actions": {
+            "idle": {
+                "frame_count": 4,
+                "frames": [f"actions/idle/frames/idle_{index:03d}.png" for index in range(4)],
+                "runtime": {"fps": 6, "loop": True},
+            }
+        },
+    }
+    (pack / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    report_path = pack / "pack_review" / "visual_gate_report.json"
+    fixed_dir = tmp_path / "fixed_highlight_clip_pack"
+    subprocess.run(
+        [
+            sys.executable,
+            str(_SCRIPT),
+            "--manifest",
+            str(pack / "manifest.json"),
+            "--report",
+            str(report_path),
+            "--auto-fix-output",
+            str(fixed_dir),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert "foreground_highlight_clipping" in report["actions"]["idle"]["findings"]
+    fixed_report = json.loads(fixed_dir.joinpath("visual_gate_report.json").read_text(encoding="utf-8"))
+    fixed_idle = fixed_report["actions"]["idle"]
+    assert fixed_idle["metrics"]["highlight_clip_frames"] == []
+    assert fixed_idle["metrics"]["luminance_p99_max"] < 250
+
+
 def test_visual_asset_gate_detects_weak_weapon_readability(tmp_path: Path) -> None:
     pack = tmp_path / "weak_weapon_pack"
     frames = pack / "actions" / "attack_sword_light" / "frames"
@@ -355,6 +400,48 @@ def test_visual_asset_gate_detects_poor_recovery_to_idle_pose(tmp_path: Path) ->
     assert "poor_recovery_to_idle_pose" in hurt["findings"]
 
 
+def test_visual_asset_gate_scales_geometry_limits_for_high_resolution_pack(tmp_path: Path) -> None:
+    pack = tmp_path / "hires_geometry_pack"
+    frames = pack / "actions" / "run" / "frames"
+    frames.mkdir(parents=True)
+    widths = [300, 550, 300, 550]
+    for index, width in enumerate(widths):
+        _make_hires_run_frame(frames / f"run_{index:03d}.png", body_width=width)
+
+    manifest = {
+        "route": "character_sprite_asset_pack",
+        "actions": {
+            "run": {
+                "frame_count": 4,
+                "frames": [f"actions/run/frames/run_{index:03d}.png" for index in range(4)],
+                "runtime": {"fps": 10, "loop": True},
+            }
+        },
+    }
+    (pack / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    report_path = pack / "pack_review" / "visual_gate_report.json"
+    subprocess.run(
+        [
+            sys.executable,
+            str(_SCRIPT),
+            "--manifest",
+            str(pack / "manifest.json"),
+            "--report",
+            str(report_path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    run = report["actions"]["run"]
+    assert run["metrics"]["frame_width"] == 1024
+    assert run["metrics"]["bbox_width_range"] == 250
+    assert "large_width_or_scale_jitter" not in run["findings"]
+
+
 def _make_frame(path: Path, dark: bool, fragment: bool) -> None:
     image = Image.new("RGBA", (96, 128), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
@@ -387,6 +474,17 @@ def _make_green_fringe_frame(path: Path) -> None:
     draw.rectangle((28, 20, 68, 118), fill=(35, 35, 42, 255))
     draw.rectangle((24, 18, 72, 120), outline=(0, 210, 80, 255), width=3)
     draw.ellipse((40, 8, 58, 28), fill=(238, 220, 210, 255))
+    image.save(path)
+
+
+def _make_highlight_clipped_frame(path: Path) -> None:
+    image = Image.new("RGBA", (96, 128), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((30, 26, 70, 116), fill=(30, 30, 38, 255))
+    draw.rectangle((36, 6, 64, 52), fill=(255, 255, 255, 255))
+    draw.ellipse((45, 14, 63, 32), fill=(255, 244, 236, 255))
+    draw.rectangle((34, 78, 44, 122), fill=(16, 16, 18, 255))
+    draw.rectangle((56, 78, 66, 122), fill=(16, 16, 18, 255))
     image.save(path)
 
 
@@ -426,4 +524,16 @@ def _make_motion_frame(path: Path, x_offset: int) -> None:
     draw.rectangle((x, 34, x + 44, 84), fill=(34, 34, 42, 255))
     draw.rectangle((x + 6, 84, x + 16, 122), fill=(32, 30, 35, 255))
     draw.rectangle((x + 28, 84, x + 38, 122), fill=(32, 30, 35, 255))
+    image.save(path)
+
+
+def _make_hires_run_frame(path: Path, body_width: int) -> None:
+    image = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    left = 512 - body_width // 2
+    right = left + body_width
+    draw.rectangle((left, 340, right, 820), fill=(34, 34, 42, 255))
+    draw.ellipse((462, 250, 562, 350), fill=(238, 220, 210, 255))
+    draw.rectangle((left + 40, 820, left + 110, 1010), fill=(32, 30, 35, 255))
+    draw.rectangle((right - 110, 820, right - 40, 1010), fill=(32, 30, 35, 255))
     image.save(path)

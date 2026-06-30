@@ -23,6 +23,13 @@ from scripts.visual_asset_gate import auto_fix_pack, evaluate_pack
         ("action_style_drift", "hurt", "action_brightness_style_drift"),
         ("abrupt_frame_delta_outlier", "walk", "abrupt_frame_delta_outlier"),
         ("poor_idle_recovery", "hurt", "poor_recovery_to_idle_pose"),
+        ("foreground_highlight_clipping", "idle", "foreground_highlight_clipping"),
+        ("missing_weapon_layer_separation", "attack_sword_light", "missing_separated_weapon_or_effect_layer"),
+        ("identity_lock_missing", "walk", "identity_consistency_lock_missing"),
+        ("jump_character_too_small", "jump", "jump_character_scale_too_small"),
+        ("idle_too_static", "idle", "idle_too_static_or_low_effort"),
+        ("low_secondary_motion_hold_frames", "walk", "low_secondary_motion_or_hold_frame_reuse"),
+        ("secondary_cloth_motion_policy_missing", "walk", "secondary_cloth_motion_policy_missing"),
     ],
 )
 def test_known_visual_trauma_corpus_cases_are_blocked(
@@ -58,6 +65,20 @@ def _build_trauma_case(pack: Path, case_name: str) -> None:
         _build_single_action_pack(pack, "walk", _abrupt_motion_frames)
     elif case_name == "poor_idle_recovery":
         _build_poor_idle_recovery_pack(pack)
+    elif case_name == "foreground_highlight_clipping":
+        _build_single_action_pack(pack, "idle", _highlight_clipped_frames)
+    elif case_name == "missing_weapon_layer_separation":
+        _build_full_art_direction_pack(pack, separated_weapon=False, identity_lock=True, secondary_motion=True)
+    elif case_name == "identity_lock_missing":
+        _build_full_art_direction_pack(pack, separated_weapon=True, identity_lock=False, secondary_motion=True)
+    elif case_name == "jump_character_too_small":
+        _build_full_art_direction_pack(pack, separated_weapon=True, identity_lock=True, secondary_motion=True, jump_small=True)
+    elif case_name == "idle_too_static":
+        _build_single_action_pack(pack, "idle", _static_idle_frames)
+    elif case_name == "low_secondary_motion_hold_frames":
+        _build_single_action_pack(pack, "walk", _hold_reuse_frames)
+    elif case_name == "secondary_cloth_motion_policy_missing":
+        _build_full_art_direction_pack(pack, separated_weapon=True, identity_lock=True, secondary_motion=False)
     else:
         raise AssertionError(f"unknown trauma case: {case_name}")
 
@@ -124,6 +145,57 @@ def _write_manifest(pack: Path, actions: dict[str, list[str]]) -> None:
     (pack / "manifest.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+def _build_full_art_direction_pack(
+    pack: Path,
+    *,
+    separated_weapon: bool,
+    identity_lock: bool,
+    secondary_motion: bool,
+    jump_small: bool = False,
+) -> None:
+    builders = {
+        "idle": lambda path, action: _art_direction_frames(path, action, height=118, width=42),
+        "walk": lambda path, action: _art_direction_frames(path, action, height=122, width=46),
+        "run": lambda path, action: _art_direction_frames(path, action, height=118, width=54),
+        "jump": lambda path, action: _art_direction_frames(
+            path,
+            action,
+            height=72 if jump_small else 118,
+            width=38 if jump_small else 46,
+        ),
+        "hurt": lambda path, action: _art_direction_frames(path, action, height=112, width=48),
+        "attack_sword_light": lambda path, action: _art_direction_frames(path, action, height=116, width=50, sword=True),
+    }
+    actions = {}
+    for action, builder in builders.items():
+        builder(pack, action)
+        actions[action] = [
+            path.relative_to(pack).as_posix()
+            for path in sorted((pack / "actions" / action / "frames").glob("*.png"))
+        ]
+    payload = {
+        "route": "character_sprite_asset_pack",
+        "actions": {
+            action: {
+                "frame_count": len(frames),
+                "frames": frames,
+                "runtime": {"fps": 8, "loop": action in {"walk", "idle", "run"}},
+            }
+            for action, frames in actions.items()
+        },
+    }
+    if separated_weapon:
+        payload["actions"]["attack_sword_light"]["runtime"]["layered"] = {
+            "z_order": ["weapon", "body", "effect"]
+        }
+    if identity_lock:
+        payload["identity_consistency"] = {"locked_reference": "source_design.png"}
+    if secondary_motion:
+        payload["secondary_motion_policy"] = {"hair": "tracked", "skirt": "tracked"}
+    pack.mkdir(parents=True, exist_ok=True)
+    (pack / "manifest.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
 def _jump_scale_frames(pack: Path, action: str) -> None:
     frames = pack / "actions" / action / "frames"
     frames.mkdir(parents=True, exist_ok=True)
@@ -179,6 +251,78 @@ def _weak_weapon_frames(pack: Path, action: str) -> None:
 
 def _abrupt_motion_frames(pack: Path, action: str) -> None:
     _motion_frames(pack, action, [0, 0, 44, 0, 0])
+
+
+def _highlight_clipped_frames(pack: Path, action: str) -> None:
+    frames = pack / "actions" / action / "frames"
+    frames.mkdir(parents=True, exist_ok=True)
+    for index in range(4):
+        image = Image.new("RGBA", (120, 160), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        draw.rectangle((40, 34, 84, 122), fill=(34, 34, 42, 255))
+        draw.rectangle((44, 8, 80, 62), fill=(255, 255, 255, 255))
+        draw.ellipse((54, 18, 78, 42), fill=(255, 244, 236, 255))
+        draw.rectangle((46, 122, 58, 154), fill=(16, 16, 18, 255))
+        draw.rectangle((68, 122, 80, 154), fill=(16, 16, 18, 255))
+        image.save(frames / f"{action}_{index:03d}.png")
+
+
+def _static_idle_frames(pack: Path, action: str) -> None:
+    frames = pack / "actions" / action / "frames"
+    frames.mkdir(parents=True, exist_ok=True)
+    image = Image.new("RGBA", (160, 180), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    draw.ellipse((68, 12, 92, 36), fill=(238, 220, 210, 255))
+    draw.rectangle((56, 40, 104, 122), fill=(34, 34, 42, 255))
+    draw.rectangle((62, 122, 76, 168), fill=(32, 30, 35, 255))
+    draw.rectangle((86, 122, 100, 168), fill=(32, 30, 35, 255))
+    for index in range(4):
+        image.save(frames / f"{action}_{index:03d}.png")
+
+
+def _hold_reuse_frames(pack: Path, action: str) -> None:
+    frames = pack / "actions" / action / "frames"
+    frames.mkdir(parents=True, exist_ok=True)
+    keyframes = []
+    for x_offset in [0, 18, 34, 18]:
+        image = Image.new("RGBA", (640, 640), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        x = 280 + x_offset
+        draw.ellipse((x + 20, 120, x + 76, 176), fill=(238, 220, 210, 255))
+        draw.rectangle((x, 190, x + 96, 440), fill=(34, 34, 42, 255))
+        draw.rectangle((x + 16, 440, x + 42, 610), fill=(32, 30, 35, 255))
+        draw.rectangle((x + 58, 440, x + 84, 610), fill=(32, 30, 35, 255))
+        keyframes.append(image)
+    expanded = []
+    for image in keyframes:
+        expanded.extend([image, image.copy()])
+    for index, image in enumerate(expanded):
+        image.save(frames / f"{action}_{index:03d}.png")
+
+
+def _art_direction_frames(
+    pack: Path,
+    action: str,
+    *,
+    height: int,
+    width: int,
+    sword: bool = False,
+) -> None:
+    frames = pack / "actions" / action / "frames"
+    frames.mkdir(parents=True, exist_ok=True)
+    for index in range(4):
+        image = Image.new("RGBA", (180, 180), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        left = 90 - width // 2 + (index % 2) * 2
+        top = 170 - height
+        right = left + width
+        draw.ellipse((left + width * 0.25, top - 24, left + width * 0.75, top + 4), fill=(238, 220, 210, 255))
+        draw.rectangle((left, top + 8, right, top + height * 0.68), fill=(34, 34, 42, 255))
+        draw.rectangle((left + 6, top + height * 0.68, left + 18, 170), fill=(32, 30, 35, 255))
+        draw.rectangle((right - 18, top + height * 0.68, right - 6, 170), fill=(32, 30, 35, 255))
+        if sword:
+            draw.line((right, top + 45, min(176, right + 54), top + 10), fill=(236, 236, 245, 255), width=3)
+        image.save(frames / f"{action}_{index:03d}.png")
 
 
 def _motion_frames(pack: Path, action: str, offsets: list[int]) -> None:

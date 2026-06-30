@@ -10,7 +10,7 @@ from typing import Any
 
 from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageStat
 
-from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
+from natural_sprite_lab.postprocess.gif_preview import make_preview_gif, make_preview_webp
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet, make_sprite_sheet
 
 
@@ -23,6 +23,7 @@ def main() -> None:
     args = parser.parse_args()
 
     result = evaluate_pack(args.manifest)
+    _regenerate_review_for_manifest(args.manifest)
     if args.report:
         _write_json(args.report, result)
     if args.auto_fix_output:
@@ -33,6 +34,12 @@ def main() -> None:
     print(json.dumps(result, indent=2, ensure_ascii=False))
     if args.fail_on_review and result["decision"] != "production_ready":
         raise SystemExit(1)
+
+
+def _regenerate_review_for_manifest(manifest_path: Path) -> None:
+    manifest_path = manifest_path.resolve()
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    _regenerate_pack_review(manifest_path.parent, manifest)
 
 
 def evaluate_pack(manifest_path: Path) -> dict[str, Any]:
@@ -48,6 +55,7 @@ def evaluate_pack(manifest_path: Path) -> dict[str, Any]:
         action_reports[action] = evaluate_action(action, frame_paths, bool(info.get("runtime", {}).get("loop", True)))
     _apply_pack_style_findings(manifest_path, actions, action_reports)
     _apply_idle_reference_findings(manifest_path, actions, action_reports)
+    _apply_art_direction_findings(manifest, actions, action_reports)
 
     blocking_actions = [
         action
@@ -154,6 +162,7 @@ def _auto_fix_images(action: str, images: list[Image.Image]) -> list[Image.Image
     frames = [_reduce_border_chroma_fringe(frame) for frame in frames]
     if action == "hurt":
         frames = _trim_hurt_side_panel_artifacts(frames)
+        frames = [_extend_hard_vertical_alpha_cuts(frame) for frame in frames]
         frames = [_remove_stray_components(frame) for frame in frames]
     if action not in {"jump", "run"}:
         frames = _stabilize_bottom_center(frames)
@@ -183,6 +192,7 @@ def _regenerate_action_artifacts(output_dir: Path, action: str, info: dict[str, 
     loop = bool(runtime.get("loop", True))
     make_sprite_sheet(frame_paths, action_dir / "spritesheet.png", columns=len(frame_paths))
     make_preview_gif(frame_paths, action_dir / "preview.gif", duration_ms=round(1000 / fps), loop=loop)
+    make_preview_webp(frame_paths, action_dir / "preview.webp", duration_ms=round(1000 / fps), loop=loop)
     make_contact_sheet(frame_paths, action_dir / "contact_sheet.png", columns=min(6, len(frame_paths)))
 
 
@@ -221,6 +231,47 @@ def _regenerate_pack_review(output_dir: Path, manifest: dict[str, Any]) -> None:
         canvas.alpha_composite(thumb, (x, y))
         draw.text((x + 4, y + 212), labels[index], fill=(30, 30, 30, 255))
     canvas.save(review_dir / "all_actions_contact_sheet.png")
+    _write_full_resolution_pack_review(output_dir, manifest, review_dir)
+
+
+def _write_full_resolution_pack_review(output_dir: Path, manifest: dict[str, Any], review_dir: Path) -> None:
+    actions = manifest.get("actions", {})
+    if not actions:
+        return
+    first_frame = None
+    for info in actions.values():
+        frames = info.get("frames", [])
+        if frames:
+            first_frame = Image.open(output_dir / frames[0]).convert("RGBA")
+            break
+    if first_frame is None:
+        return
+
+    frame_width, frame_height = first_frame.size
+    label_height = max(28, round(frame_height * 0.05))
+    columns = 4
+    rows: list[tuple[str, list[Path]]] = []
+    for action, info in actions.items():
+        frame_paths = [output_dir / frame for frame in info.get("frames", [])]
+        if not frame_paths:
+            continue
+        rows.append((action, frame_paths))
+        make_contact_sheet(frame_paths, review_dir / f"{action}_fullres_contact_sheet.png", columns=min(columns, len(frame_paths)))
+
+    cells: list[tuple[str, Path]] = []
+    for action, frame_paths in rows:
+        for index, frame_path in enumerate(frame_paths):
+            cells.append((f"{action} {index:02d}", frame_path))
+    row_count = (len(cells) + columns - 1) // columns
+    canvas = Image.new("RGBA", (columns * frame_width, row_count * (frame_height + label_height)), (245, 245, 245, 255))
+    draw = ImageDraw.Draw(canvas)
+    for index, (label, frame_path) in enumerate(cells):
+        image = Image.open(frame_path).convert("RGBA")
+        x = (index % columns) * frame_width
+        y = (index // columns) * (frame_height + label_height)
+        canvas.alpha_composite(image, (x, y))
+        draw.text((x + 8, y + frame_height + 6), label, fill=(30, 30, 30, 255))
+    canvas.save(review_dir / "all_actions_contact_sheet_fullres.png")
 
 
 def _action_metrics(images: list[Image.Image], boxes: list[tuple[int, int, int, int]], loop: bool) -> dict[str, Any]:
@@ -231,6 +282,7 @@ def _action_metrics(images: list[Image.Image], boxes: list[tuple[int, int, int, 
     center_ys = [(box[1] + box[3]) * 0.5 for box in boxes]
     bottoms = [box[3] for box in boxes]
     colors = [_foreground_color_stats(image) for image in images]
+    tone_reports = [_foreground_tone_clip_report(image) for image in images]
     component_reports = [_component_report(image) for image in images]
     hand_cues = [_hand_cue_report(image, box) for image, box in zip(images, boxes)]
     border_fringe_reports = [_border_chroma_fringe_report(image) for image in images]
@@ -238,7 +290,8 @@ def _action_metrics(images: list[Image.Image], boxes: list[tuple[int, int, int, 
     vertical_cut_reports = [_hard_vertical_alpha_cut_report(image, box) for image, box in zip(images, boxes)]
     step_deltas = [_mean_delta(images[index], images[index + 1]) for index in range(len(images) - 1)]
     loop_delta = _mean_delta(images[-1], images[0]) if loop and len(images) > 1 else None
-    step_delta_median = median(step_deltas) if step_deltas else 0.0
+    non_hold_step_deltas = [value for value in step_deltas if value > 0.5]
+    step_delta_median = median(non_hold_step_deltas or step_deltas) if step_deltas else 0.0
     step_delta_outlier_threshold = max(18.0, step_delta_median * 2.4)
     isolated_delta_outliers = _isolated_frame_delta_outlier_frames(images, step_deltas)
     step_delta_outlier_frames = sorted(
@@ -253,9 +306,12 @@ def _action_metrics(images: list[Image.Image], boxes: list[tuple[int, int, int, 
     hand_area_median = median(hand_areas) if hand_areas else 0.0
     hand_low_threshold = max(18.0, hand_area_median * 0.55)
     return {
+        "frame_width": images[0].width,
+        "frame_height": images[0].height,
         "bbox_width_range": round(max(widths) - min(widths), 3),
         "bbox_width_median": round(median(widths), 3),
         "bbox_height_range": round(max(heights) - min(heights), 3),
+        "bbox_height_median": round(median(heights), 3),
         "center_x_range": round(max(center_xs) - min(center_xs), 3),
         "center_y_range": round(max(center_ys) - min(center_ys), 3),
         "ground_y_range": round(max(bottoms) - min(bottoms), 3),
@@ -285,6 +341,15 @@ def _action_metrics(images: list[Image.Image], boxes: list[tuple[int, int, int, 
         ],
         "brightness_range": round(max(item["brightness"] for item in colors) - min(item["brightness"] for item in colors), 4),
         "saturation_range": round(max(item["saturation"] for item in colors) - min(item["saturation"] for item in colors), 4),
+        "highlight_clip_ratio_max": round(max(item["highlight_clip_ratio"] for item in tone_reports), 4),
+        "highlight_near_clip_ratio_max": round(max(item["highlight_near_clip_ratio"] for item in tone_reports), 4),
+        "shadow_crush_ratio_max": round(max(item["shadow_crush_ratio"] for item in tone_reports), 4),
+        "luminance_p99_max": round(max(item["luminance_p99"] for item in tone_reports), 3),
+        "highlight_clip_frames": [
+            index
+            for index, item in enumerate(tone_reports)
+            if item["highlight_clip_ratio"] > 0.035 or item["luminance_p99"] >= 250
+        ],
         "upper_body_hand_cue_area_min": round(min(hand_areas), 3) if hand_areas else 0,
         "upper_body_hand_cue_area_median": round(hand_area_median, 3),
         "upper_body_hand_cue_low_frames": [
@@ -302,15 +367,21 @@ def _action_metrics(images: list[Image.Image], boxes: list[tuple[int, int, int, 
         "step_delta_max": round(max(step_deltas), 4) if step_deltas else 0,
         "step_delta_outlier_frames": step_delta_outlier_frames,
         "mean_step_delta": round(sum(step_deltas) / max(1, len(step_deltas)), 4),
+        "hold_step_ratio": round(
+            sum(1 for value in step_deltas if value <= 0.5) / max(1, len(step_deltas)),
+            4,
+        ),
         "loop_delta": None if loop_delta is None else round(loop_delta, 4),
     }
 
 
 def _findings_for_action(action: str, metrics: dict[str, Any]) -> list[str]:
     findings = []
-    width_limit = 120 if action in {"run", "jump", "attack_sword_light"} else 80
-    height_limit = 96 if action == "jump" else 52
-    center_limit = 96 if action in {"run", "jump", "attack_sword_light"} else 52
+    horizontal_scale = max(1.0, float(metrics.get("frame_width", 256)) / 256.0)
+    vertical_scale = max(1.0, float(metrics.get("frame_height", 384)) / 384.0)
+    width_limit = (120 if action in {"run", "jump", "attack_sword_light"} else 80) * horizontal_scale
+    height_limit = (96 if action == "jump" else 52) * vertical_scale
+    center_limit = (96 if action in {"run", "jump", "attack_sword_light"} else 52) * horizontal_scale
     if metrics["edge_touch_frames"]:
         findings.append("possible_cropping_or_canvas_edge_touch")
     if metrics["extra_component_frames"]:
@@ -335,10 +406,16 @@ def _findings_for_action(action: str, metrics: dict[str, Any]) -> list[str]:
         findings.append("frame_to_frame_brightness_drift")
     if metrics["saturation_range"] > 0.28:
         findings.append("frame_to_frame_saturation_drift")
+    if metrics["highlight_clip_frames"]:
+        findings.append("foreground_highlight_clipping")
     if metrics["border_green_cyan_fringe_frames"]:
         findings.append("green_cyan_alpha_edge_fringe")
     if metrics["step_delta_outlier_frames"]:
         findings.append("abrupt_frame_delta_outlier")
+    if action == "idle" and (metrics["mean_step_delta"] < 1.0 or metrics["hold_step_ratio"] >= 0.45):
+        findings.append("idle_too_static_or_low_effort")
+    if action != "idle" and metrics["hold_step_ratio"] >= 0.45 and metrics["frame_width"] >= 512:
+        findings.append("low_secondary_motion_or_hold_frame_reuse")
     if action.startswith("attack_sword") and metrics["weapon_cue_pixels_min"] < 650:
         findings.append("weak_weapon_readability")
     if action in {"walk", "parry_sword"}:
@@ -394,7 +471,7 @@ def _normalize_value_and_saturation(frames: list[Image.Image]) -> list[Image.Ima
         rgb = ImageEnhance.Color(rgb).enhance(saturation_factor)
         out = rgb.convert("RGBA")
         out.putalpha(alpha)
-        normalized.append(out)
+        normalized.append(_reduce_tonal_clipping(out))
     return normalized
 
 
@@ -422,7 +499,7 @@ def _normalize_pack_style(output_dir: Path, manifest: dict[str, Any]) -> None:
             rgb = ImageEnhance.Color(rgb).enhance(saturation_factor)
             out = rgb.convert("RGBA")
             out.putalpha(alpha)
-            _reduce_border_chroma_fringe(out).save(path)
+            _reduce_border_chroma_fringe(_reduce_tonal_clipping(out)).save(path)
 
 
 def _trim_hurt_side_panel_artifacts(frames: list[Image.Image]) -> list[Image.Image]:
@@ -452,6 +529,60 @@ def _trim_hurt_side_panel_artifacts(frames: list[Image.Image]) -> list[Image.Ima
         out = _feather_alpha_outside_x_range(frame, keep_left, keep_right, feather=18)
         fixed.append(out)
     return fixed
+
+
+def _extend_hard_vertical_alpha_cuts(image: Image.Image) -> Image.Image:
+    box = _alpha_bbox(image)
+    report = _hard_vertical_alpha_cut_report(image, box)
+    if report["max_strong_edge_run"] < 72:
+        return image
+
+    out = image.convert("RGBA")
+    pixels = out.load()
+    alpha = out.getchannel("A").load()
+    left, top, right, bottom = box
+    extension = max(8, round(out.width * 0.035))
+    for edge in _hard_cut_edges(out, box):
+        if edge == "left":
+            for distance in range(1, min(extension, left) + 1):
+                factor = (1.0 - distance / (extension + 1)) ** 1.4
+                source_x = min(right - 1, left + max(0, distance // 3))
+                target_x = left - distance
+                for y in range(top, bottom):
+                    red, green, blue, opacity = pixels[source_x, y]
+                    if opacity < 64 or alpha[target_x, y] >= opacity * factor:
+                        continue
+                    pixels[target_x, y] = (red, green, blue, round(opacity * factor))
+        elif edge == "right":
+            max_distance = min(extension, out.width - right)
+            for distance in range(max_distance):
+                factor = (1.0 - (distance + 1) / (extension + 1)) ** 1.4
+                source_x = max(left, right - 1 - max(0, distance // 3))
+                target_x = right + distance
+                for y in range(top, bottom):
+                    red, green, blue, opacity = pixels[source_x, y]
+                    if opacity < 64 or alpha[target_x, y] >= opacity * factor:
+                        continue
+                    pixels[target_x, y] = (red, green, blue, round(opacity * factor))
+    return out
+
+
+def _hard_cut_edges(image: Image.Image, alpha_box: tuple[int, int, int, int]) -> list[str]:
+    left, top, right, bottom = alpha_box
+    alpha = image.getchannel("A").load()
+    edges = []
+    for name, x in (("left", left), ("right", right - 1)):
+        max_run = 0
+        current_run = 0
+        for y in range(top, bottom):
+            if alpha[x, y] >= 160:
+                current_run += 1
+                max_run = max(max_run, current_run)
+            else:
+                current_run = 0
+        if max_run >= 72:
+            edges.append(name)
+    return edges
 
 
 def _feather_alpha_outside_x_range(image: Image.Image, keep_left: int, keep_right: int, feather: int) -> Image.Image:
@@ -557,6 +688,88 @@ def _apply_idle_reference_findings(
         report["decision"] = "production_ready" if not report["findings"] else "needs_retake_or_manual_review"
 
 
+def _apply_art_direction_findings(
+    manifest: dict[str, Any],
+    actions: dict[str, Any],
+    action_reports: dict[str, Any],
+) -> None:
+    required_actions = {"idle", "walk", "run", "jump", "hurt", "attack_sword_light"}
+    if not required_actions.issubset(actions):
+        return
+
+    for action, info in actions.items():
+        report = action_reports.get(action)
+        if not report:
+            continue
+        if action.startswith("attack_sword") and not _has_separated_object_layer(info):
+            _add_finding(report, "missing_separated_weapon_or_effect_layer")
+        if not _has_identity_lock(manifest):
+            _add_finding(report, "identity_consistency_lock_missing")
+        if not _has_secondary_motion_policy(manifest):
+            _add_finding(report, "secondary_cloth_motion_policy_missing")
+        report["decision"] = "production_ready" if not report["findings"] else "needs_retake_or_manual_review"
+
+    reference_heights = [
+        float(action_reports[action]["metrics"].get("bbox_height_median", 0))
+        for action in ("idle", "walk")
+        if action in action_reports
+    ]
+    reference_widths = [
+        float(action_reports[action]["metrics"].get("bbox_width_median", 0))
+        for action in ("idle", "walk")
+        if action in action_reports
+    ]
+    reference_height = median([height for height in reference_heights if height > 0]) if reference_heights else 0
+    reference_width = median([width for width in reference_widths if width > 0]) if reference_widths else 0
+    jump_report = action_reports.get("jump")
+    if jump_report and reference_height > 0:
+        jump_height = float(jump_report["metrics"].get("bbox_height_median", 0))
+        jump_width = float(jump_report["metrics"].get("bbox_width_median", 0))
+        jump_report["metrics"]["reference_standing_height_median"] = round(reference_height, 3)
+        jump_report["metrics"]["jump_to_reference_height_ratio"] = round(jump_height / reference_height, 4)
+        if reference_width > 0:
+            jump_report["metrics"]["reference_standing_width_median"] = round(reference_width, 3)
+            jump_report["metrics"]["jump_to_reference_width_ratio"] = round(jump_width / reference_width, 4)
+        if jump_height < reference_height * 0.82 or (reference_width > 0 and jump_width < reference_width * 0.88):
+            _add_finding(jump_report, "jump_character_scale_too_small")
+            jump_report["decision"] = "needs_retake_or_manual_review"
+
+
+def _add_finding(report: dict[str, Any], finding: str) -> None:
+    if finding not in report["findings"]:
+        report["findings"].append(finding)
+
+
+def _has_separated_object_layer(action_info: dict[str, Any]) -> bool:
+    candidates = [
+        action_info.get("layers"),
+        action_info.get("layered"),
+        action_info.get("runtime", {}).get("layers"),
+        action_info.get("runtime", {}).get("layered"),
+    ]
+    for candidate in candidates:
+        if not candidate:
+            continue
+        text = json.dumps(candidate, ensure_ascii=False).lower()
+        if "weapon" in text or "sword" in text or "effect" in text:
+            return True
+    return False
+
+
+def _has_identity_lock(manifest: dict[str, Any]) -> bool:
+    identity = manifest.get("identity_consistency") or manifest.get("identity_lock")
+    if not isinstance(identity, dict):
+        return False
+    return bool(identity.get("reference") or identity.get("locked_reference") or identity.get("source_design"))
+
+
+def _has_secondary_motion_policy(manifest: dict[str, Any]) -> bool:
+    policy = manifest.get("secondary_motion_policy") or manifest.get("cloth_motion_policy")
+    if not isinstance(policy, dict):
+        return False
+    return bool(policy.get("hair") or policy.get("cloth") or policy.get("skirt") or policy.get("veil"))
+
+
 def _action_style_stats_from_manifest(base_dir: Path, manifest_or_actions: dict[str, Any]) -> dict[str, dict[str, float]]:
     actions = manifest_or_actions.get("actions", manifest_or_actions)
     stats = {}
@@ -653,6 +866,68 @@ def _foreground_color_stats(image: Image.Image) -> dict[str, float]:
         "brightness": round(brightness_sum / max(1, count), 5),
         "saturation": round(saturation_sum / max(1, count), 5),
     }
+
+
+def _foreground_tone_clip_report(image: Image.Image) -> dict[str, float]:
+    rgba = image.convert("RGBA")
+    pixels = rgba.load()
+    luminance_values = []
+    highlight_clip = 0
+    highlight_near_clip = 0
+    shadow_crush = 0
+    for y in range(rgba.height):
+        for x in range(rgba.width):
+            red, green, blue, alpha = pixels[x, y]
+            if alpha < 24:
+                continue
+            luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
+            luminance_values.append(luminance)
+            if luminance >= 250:
+                highlight_clip += 1
+            if luminance >= 240:
+                highlight_near_clip += 1
+            if luminance <= 15:
+                shadow_crush += 1
+    if not luminance_values:
+        return {
+            "highlight_clip_ratio": 0.0,
+            "highlight_near_clip_ratio": 0.0,
+            "shadow_crush_ratio": 0.0,
+            "luminance_p99": 0.0,
+        }
+    luminance_values.sort()
+    total = len(luminance_values)
+    return {
+        "highlight_clip_ratio": highlight_clip / total,
+        "highlight_near_clip_ratio": highlight_near_clip / total,
+        "shadow_crush_ratio": shadow_crush / total,
+        "luminance_p99": luminance_values[min(total - 1, int(total * 0.99))],
+    }
+
+
+def _reduce_tonal_clipping(image: Image.Image) -> Image.Image:
+    rgba = image.convert("RGBA")
+    pixels = rgba.load()
+    for y in range(rgba.height):
+        for x in range(rgba.width):
+            red, green, blue, alpha = pixels[x, y]
+            if alpha < 24:
+                continue
+            pixels[x, y] = (
+                _soften_channel_extremes(red),
+                _soften_channel_extremes(green),
+                _soften_channel_extremes(blue),
+                alpha,
+            )
+    return rgba
+
+
+def _soften_channel_extremes(value: int) -> int:
+    if value >= 236:
+        return round(236 + (value - 236) * 0.36)
+    if value <= 18:
+        return round(7 + value * 0.72)
+    return value
 
 
 def _silhouette_density(image: Image.Image, alpha_box: tuple[int, int, int, int]) -> float:

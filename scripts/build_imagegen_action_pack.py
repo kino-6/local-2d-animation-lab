@@ -8,7 +8,7 @@ from typing import Any
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageStat
 
-from natural_sprite_lab.postprocess.gif_preview import make_preview_gif
+from natural_sprite_lab.postprocess.gif_preview import make_preview_gif, make_preview_webp
 from natural_sprite_lab.postprocess.spritesheet import make_contact_sheet, make_sprite_sheet
 
 
@@ -53,6 +53,10 @@ def main() -> None:
     parser.add_argument("--frame-width", default=256, type=int)
     parser.add_argument("--frame-height", default=384, type=int)
     parser.add_argument("--target-height", default=336, type=int)
+    parser.add_argument("--review-thumb-width", default=150, type=int)
+    parser.add_argument("--review-thumb-height", default=210, type=int)
+    parser.add_argument("--review-crop-width", default=120, type=int)
+    parser.add_argument("--review-crop-height", default=170, type=int)
     parser.add_argument("--clean", action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
 
@@ -63,6 +67,8 @@ def main() -> None:
         asset_name=args.asset_name,
         frame_size=(args.frame_width, args.frame_height),
         target_height=args.target_height,
+        review_thumb_size=(args.review_thumb_width, args.review_thumb_height),
+        review_crop_size=(args.review_crop_width, args.review_crop_height),
         clean=args.clean,
     )
     print(json.dumps(manifest, indent=2, ensure_ascii=False))
@@ -75,6 +81,8 @@ def build_pack(
     asset_name: str,
     frame_size: tuple[int, int],
     target_height: int,
+    review_thumb_size: tuple[int, int] = (150, 210),
+    review_crop_size: tuple[int, int] = (120, 170),
     clean: bool = True,
 ) -> dict[str, Any]:
     if clean and output_dir.exists():
@@ -119,7 +127,7 @@ def build_pack(
         )
         actions[action] = _write_action_artifacts(action, frames, actions_dir / action)
 
-    review = _write_pack_review(output_dir, actions)
+    review = _write_pack_review(output_dir, actions, review_thumb_size, review_crop_size)
     gate = _production_gate(actions, review)
     manifest = {
         "route": "character_sprite_asset_pack",
@@ -189,17 +197,19 @@ def _split_horizontal_cells(sheet: Image.Image, frame_count: int) -> list[Image.
         for index in range(frame_count - 1):
             boundaries.append(round((centers[index] + centers[index + 1]) * 0.5))
         boundaries.append(width)
+        pad_x = round(width / frame_count * 0.22)
         cells = []
         for index in range(frame_count):
-            left = max(0, boundaries[index])
-            right = min(width, boundaries[index + 1])
+            left = max(0, boundaries[index] - pad_x)
+            right = min(width, boundaries[index + 1] + pad_x)
             cells.append(sheet.crop((left, 0, right, height)))
         return cells
 
     cells = []
+    pad_x = round(width / frame_count * 0.22)
     for index in range(frame_count):
-        left = round(index * width / frame_count)
-        right = round((index + 1) * width / frame_count)
+        left = max(0, round(index * width / frame_count) - pad_x)
+        right = min(width, round((index + 1) * width / frame_count) + pad_x)
         cells.append(sheet.crop((left, 0, right, height)))
     return cells
 
@@ -412,6 +422,7 @@ def _write_action_artifacts(action: str, frame_paths: list[Path], action_dir: Pa
         shutil.rmtree(frame_paths[0].parent, ignore_errors=True)
     make_sprite_sheet(final_paths, action_dir / "spritesheet.png", columns=len(final_paths))
     make_preview_gif(final_paths, action_dir / "preview.gif", duration_ms=round(1000 / spec["fps"]), loop=spec["loop"])
+    make_preview_webp(final_paths, action_dir / "preview.webp", duration_ms=round(1000 / spec["fps"]), loop=spec["loop"])
     make_contact_sheet(final_paths, action_dir / "contact_sheet.png", columns=min(6, len(final_paths)))
     metrics = _action_metrics(final_paths, loop=spec["loop"])
     report = {
@@ -434,6 +445,7 @@ def _write_action_artifacts(action: str, frame_paths: list[Path], action_dir: Pa
         "frames": [f"actions/{action}/frames/{action}_{index:03d}.png" for index in range(len(final_paths))],
         "spritesheet": f"actions/{action}/spritesheet.png",
         "preview_gif": f"actions/{action}/preview.gif",
+        "preview_webp": f"actions/{action}/preview.webp",
         "contact_sheet": f"actions/{action}/contact_sheet.png",
         "production_ready_report": f"actions/{action}/production_ready_report.json",
         "runtime": _action_runtime(action, final_paths),
@@ -443,15 +455,24 @@ def _write_action_artifacts(action: str, frame_paths: list[Path], action_dir: Pa
 def _action_runtime(action: str, paths: list[Path]) -> dict[str, Any]:
     spec = ACTION_SPECS[action]
     visible = _union_bbox(paths)
+    first = Image.open(paths[0])
+    scale_x = first.width / 256
+    scale_y = first.height / 384
+    collision_box = {
+        "x": round(94 * scale_x),
+        "y": round(80 * scale_y),
+        "width": round(72 * scale_x),
+        "height": round(294 * scale_y),
+    }
     return {
         "fps": spec["fps"],
         "loop": spec["loop"],
         "source_frame_count": len(paths),
         "playback_frame_count": len(paths),
         "playback_frame_indices": list(range(len(paths))),
-        "origin": {"x": Image.open(paths[0]).width // 2, "y": Image.open(paths[0]).height - 10},
+        "origin": {"x": first.width // 2, "y": first.height - 10},
         "visible_bbox": {"x": visible[0], "y": visible[1], "width": visible[2] - visible[0], "height": visible[3] - visible[1]},
-        "collision_box": {"x": 94, "y": 80, "width": 72, "height": 294},
+        "collision_box": collision_box,
         "hit_frames": [5, 6] if action == "attack_sword_light" else [],
     }
 
@@ -482,14 +503,19 @@ def _mean_delta(a: Image.Image, b: Image.Image) -> float:
     return ImageStat.Stat(diff).mean[0]
 
 
-def _write_pack_review(output_dir: Path, actions: dict[str, Any]) -> dict[str, Any]:
+def _write_pack_review(
+    output_dir: Path,
+    actions: dict[str, Any],
+    review_thumb_size: tuple[int, int],
+    review_crop_size: tuple[int, int],
+) -> dict[str, Any]:
     review_dir = output_dir / "pack_review"
     review_dir.mkdir(parents=True, exist_ok=True)
     rows = []
     for action in actions:
         paths = [output_dir / frame for frame in actions[action]["frames"]]
         rows.append((action, paths))
-    contact = _make_all_actions_contact(rows, review_dir / "all_actions_contact_sheet.png")
+    contact = _make_all_actions_contact(rows, review_dir / "all_actions_contact_sheet.png", review_thumb_size, review_crop_size)
     report = {"actions": {action: actions[action]["status"] for action in actions}}
     _write_text(review_dir / "quality_report.json", json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     godot_manifest = {"route": "character_sprite_asset_pack", "actions": {k: {"frame_count": v["frame_count"], "loop": v["runtime"]["loop"]} for k, v in actions.items()}}
@@ -497,28 +523,37 @@ def _write_pack_review(output_dir: Path, actions: dict[str, Any]) -> dict[str, A
     return {"contact_sheet": str(contact), "quality_report": report}
 
 
-def _make_all_actions_contact(rows: list[tuple[str, list[Path]]], output: Path) -> Path:
+def _make_all_actions_contact(
+    rows: list[tuple[str, list[Path]]],
+    output: Path,
+    thumb_size: tuple[int, int] = (150, 210),
+    crop_size: tuple[int, int] = (120, 170),
+) -> Path:
     thumbs = []
     labels = []
+    thumb_width, thumb_height = thumb_size
+    crop_width, crop_height = crop_size
+    label_height = 26
+    row_stride = thumb_height + label_height
     for action, paths in rows:
         for index, path in enumerate(paths):
             image = Image.open(path).convert("RGBA")
             bbox = _alpha_bbox(image)
             crop = image.crop(bbox)
-            thumb = Image.new("RGBA", (150, 210), (245, 245, 245, 255))
-            crop.thumbnail((120, 170), Image.Resampling.LANCZOS)
-            thumb.alpha_composite(crop, ((150 - crop.width) // 2, 18))
+            thumb = Image.new("RGBA", (thumb_width, thumb_height), (245, 245, 245, 255))
+            crop.thumbnail((crop_width, crop_height), Image.Resampling.LANCZOS)
+            thumb.alpha_composite(crop, ((thumb_width - crop.width) // 2, max(0, thumb_height - crop.height - 14)))
             thumbs.append(thumb)
             labels.append(f"{action} {index:02d}")
     columns = 12
     rows_count = (len(thumbs) + columns - 1) // columns
-    canvas = Image.new("RGBA", (columns * 150, rows_count * 236), (245, 245, 245, 255))
+    canvas = Image.new("RGBA", (columns * thumb_width, rows_count * row_stride), (245, 245, 245, 255))
     draw = ImageDraw.Draw(canvas)
     for index, thumb in enumerate(thumbs):
-        x = (index % columns) * 150
-        y = (index // columns) * 236
+        x = (index % columns) * thumb_width
+        y = (index // columns) * row_stride
         canvas.alpha_composite(thumb, (x, y))
-        draw.text((x + 4, y + 212), labels[index], fill=(30, 30, 30, 255))
+        draw.text((x + 4, y + thumb_height + 2), labels[index], fill=(30, 30, 30, 255))
     canvas.save(output)
     return output
 
